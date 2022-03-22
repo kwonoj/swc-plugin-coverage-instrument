@@ -1,4 +1,5 @@
 [workspace]
 members = [
-  "packages/swc-plugin-istanbul-oxi"
+  "packages/swc-plugin-istanbul-oxi",
+  "packages/istanbul-oxi-instrument"
 ]
