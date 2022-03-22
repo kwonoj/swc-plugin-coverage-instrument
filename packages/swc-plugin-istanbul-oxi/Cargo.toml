@@ -1,0 +1,7 @@
+[package]
+name = "swc-plugin-istanbul-oxi"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+swc_plugin = "0.35.0"
