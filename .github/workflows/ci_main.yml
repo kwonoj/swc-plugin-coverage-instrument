@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  pull_request:
+    types: ['opened', 'reopened', 'synchronize']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Run test
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 16
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+    - name: install
+      run: |
+        npm install -g npm@latest
+        npm ci
+        curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+    - name: test
+      run: cargo test
+    - name: build
+      run: npm run build:inst:spec
