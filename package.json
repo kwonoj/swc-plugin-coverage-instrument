@@ -1,0 +1,26 @@
+{
+  "name": "istanbul-oxi",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kwonoj/istanbul-oxi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "",
+  "bugs": {
+    "url": "https://github.com/kwonoj/istanbul-oxi/issues"
+  },
+  "homepage": "https://github.com/kwonoj/istanbul-oxi#readme",
+  "devDependencies": {
+    "@swc/core": "^1.2.160",
+    "@types/jest": "^27.4.1",
+    "jest": "^27.5.1",
+    "typescript": "^4.6.2"
+  }
+}
