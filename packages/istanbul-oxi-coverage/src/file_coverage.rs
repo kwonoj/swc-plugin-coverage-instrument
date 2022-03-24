@@ -1,5 +1,26 @@
 use std::collections::HashMap;
 
+type LineMap = HashMap<u32, u32>;
+
+#[derive(Copy, Clone)]
+pub struct Coverage {
+    covered: u32,
+    total: u32,
+    coverage: f32,
+}
+
+impl Coverage {
+    pub fn new(covered: u32, total: u32, coverage: f32) -> Coverage {
+        Coverage {
+            covered,
+            total,
+            coverage,
+        }
+    }
+}
+
+type BranchMap = HashMap<u32, Coverage>;
+
 #[derive(Copy, Clone)]
 pub struct UnknownReserved;
 
@@ -13,6 +34,15 @@ pub struct Location {
 pub struct Range {
     start: Location,
     end: Location,
+}
+
+impl Range {
+    pub fn key_from_loc(range: &Range) -> String {
+        format!(
+            "{}|{}|{}|{}",
+            range.start.line, range.start.column, range.end.line, range.end.column
+        )
+    }
 }
 
 #[derive(Clone)]
@@ -54,6 +84,10 @@ pub struct FileCoverage {
     b_t: Option<HashMap<String, UnknownReserved>>,
 }
 
+fn merge_properties() {
+    unimplemented!()
+}
+
 impl FileCoverage {
     pub fn empty(file_path: String, report_logic: bool) -> FileCoverage {
         FileCoverage {
@@ -82,17 +116,83 @@ impl FileCoverage {
 
     /// Returns computed line coverage from statement coverage.
     /// This is a map of hits keyed by line number in the source.
-    pub fn get_line_coverage() {
-        unimplemented!()
+    pub fn get_line_coverage(&self) -> LineMap {
+        let statements_map = &self.statement_map;
+        let statements = &self.s;
+
+        let mut line_map: LineMap = Default::default();
+
+        for (st, count) in statements {
+            let line = statements_map
+                .get(st)
+                .expect("statement not found")
+                .start
+                .line;
+            let pre_val = line_map.get(&line);
+
+            match pre_val {
+                Some(pre_val) if pre_val < count => {
+                    line_map.insert(line, *count);
+                }
+                None => {
+                    line_map.insert(line, *count);
+                }
+                _ => {
+                    //noop
+                }
+            }
+        }
+
+        line_map
     }
 
     /// Returns an array of uncovered line numbers.
-    pub fn get_uncovered_lines() {
-        unimplemented!()
+    pub fn get_uncovered_lines(&self) -> Vec<u32> {
+        let lc = self.get_line_coverage();
+        let mut ret: Vec<u32> = Default::default();
+
+        for (l, hits) in lc {
+            if hits == 0 {
+                ret.push(l);
+            }
+        }
+
+        ret
     }
 
-    pub fn get_branch_coverage_by_line() {
-        unimplemented!()
+    pub fn get_branch_coverage_by_line(&self) -> BranchMap {
+        let branch_map = &self.branch_map;
+        let branches = &self.b;
+
+        let mut prefilter_data: HashMap<u32, Vec<u32>> = Default::default();
+        let mut ret: BranchMap = Default::default();
+
+        for (k, map) in branch_map {
+            let line = if map.line > 0 {
+                map.line
+            } else {
+                map.loc.start.line
+            };
+            let branch_data = branches.get(k).expect("branch data not found");
+
+            if let Some(line_data) = prefilter_data.get_mut(&line) {
+                line_data.append(&mut branch_data.clone());
+            } else {
+                prefilter_data.insert(line, branch_data.clone());
+            }
+        }
+
+        for (k, data_array) in prefilter_data {
+            let covered: Vec<&u32> = data_array.iter().filter(|&x| *x > 0).collect();
+            let coverage = covered.len() as f32 / data_array.len() as f32 * 100 as f32;
+
+            ret.insert(
+                k,
+                Coverage::new(covered.len() as u32, data_array.len() as u32, coverage),
+            );
+        }
+
+        ret
     }
 
     pub fn to_json() {
