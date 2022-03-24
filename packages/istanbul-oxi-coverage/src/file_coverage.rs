@@ -35,15 +35,6 @@ pub struct Range {
     end: Location,
 }
 
-impl Range {
-    pub fn key_from_loc(range: &Range) -> String {
-        format!(
-            "{}|{}|{}|{}",
-            range.start.line, range.start.column, range.end.line, range.end.column
-        )
-    }
-}
-
 #[derive(Clone)]
 pub struct FunctionMapping {
     name: String,
@@ -60,6 +51,13 @@ pub struct BranchMapping {
     line: u32,
 }
 
+fn key_from_loc(range: &Range) -> String {
+    format!(
+        "{}|{}|{}|{}",
+        range.start.line, range.start.column, range.end.line, range.end.column
+    )
+}
+
 /// provides a read-only view of coverage for a single file.
 /// The deep structure of this object is documented elsewhere. It has the following
 /// properties:
@@ -73,6 +71,7 @@ pub struct BranchMapping {
 
 #[derive(Clone)]
 pub struct FileCoverage {
+    pub(crate) all: bool,
     path: String,
     statement_map: HashMap<String, Range>,
     fn_map: HashMap<String, FunctionMapping>,
@@ -83,13 +82,103 @@ pub struct FileCoverage {
     b_t: Option<HashMap<String, Vec<u32>>>,
 }
 
-fn merge_properties() {
-    unimplemented!()
+fn merge_properties_hits_vec(
+    first_hits: &HashMap<String, Vec<u32>>,
+    first_map: &HashMap<String, BranchMapping>,
+    second_hits: &HashMap<String, Vec<u32>>,
+    second_map: &HashMap<String, BranchMapping>,
+    get_item_key_fn: for<'r> fn(&'r BranchMapping) -> String,
+) -> (HashMap<String, Vec<u32>>, HashMap<String, BranchMapping>) {
+    let mut items: HashMap<String, (Vec<u32>, BranchMapping)> = Default::default();
+
+    for (key, item_hits) in first_hits {
+        let item = first_map
+            .get(key)
+            .expect("Corresponding map value should exist");
+        let item_key = get_item_key_fn(item);
+
+        items.insert(item_key, (item_hits.clone(), item.clone()));
+    }
+
+    for (key, item_hits) in second_hits {
+        let item = second_map
+            .get(key)
+            .expect("Corresponding map value should exist");
+        let item_key = get_item_key_fn(item);
+
+        items
+            .entry(item_key)
+            .and_modify(|_pair| {
+                /*
+                item_hits.forEach((hits, h) => {
+                    if (aPair[0][h] !== undefined) aPair[0][h] += hits;
+                    else aPair[0][h] = hits;
+                }); */
+            })
+            .or_insert((item_hits.clone(), item.clone()));
+    }
+
+    let mut hits: HashMap<String, Vec<u32>> = Default::default();
+    let mut map: HashMap<String, BranchMapping> = Default::default();
+
+    for (idx, (_, (hit, item))) in items.iter_mut().enumerate() {
+        hits.insert(idx.to_string(), hit.clone());
+        map.insert(idx.to_string(), item.clone());
+    }
+
+    (hits, map)
+}
+
+fn merge_properties<T>(
+    first_hits: &HashMap<String, u32>,
+    first_map: &HashMap<String, T>,
+    second_hits: &HashMap<String, u32>,
+    second_map: &HashMap<String, T>,
+    get_item_key_fn: for<'r> fn(&'r T) -> String,
+) -> (HashMap<String, u32>, HashMap<String, T>)
+where
+    T: Clone,
+{
+    let mut items: HashMap<String, (u32, T)> = Default::default();
+
+    for (key, item_hits) in first_hits {
+        let item = first_map
+            .get(key)
+            .expect("Corresponding map value should exist");
+        let item_key = get_item_key_fn(item);
+
+        items.insert(item_key, (*item_hits, item.clone()));
+    }
+
+    for (key, item_hits) in second_hits {
+        let item = second_map
+            .get(key)
+            .expect("Corresponding map value should exist");
+        let item_key = get_item_key_fn(item);
+
+        items
+            .entry(item_key)
+            .and_modify(|pair| {
+                pair.0 += *item_hits;
+            })
+            .or_insert((*item_hits, item.clone()));
+    }
+
+    let mut hits: HashMap<String, u32> = Default::default();
+    let mut map: HashMap<String, T> = Default::default();
+
+    for (idx, (_, (hit, item))) in items.iter_mut().enumerate() {
+        hits.insert(idx.to_string(), *hit);
+        map.insert(idx.to_string(), item.clone());
+    }
+
+    (hits, map)
 }
 
 impl FileCoverage {
     pub fn empty(file_path: String, report_logic: bool) -> FileCoverage {
         FileCoverage {
+            all: false,
             path: file_path,
             statement_map: Default::default(),
             fn_map: Default::default(),
@@ -197,9 +286,64 @@ impl FileCoverage {
     pub fn to_json() {
         unimplemented!()
     }
+    /// Merges a second coverage object into this one, updating hit counts
+    pub fn merge(&mut self, coverage: &FileCoverage) {
+        if coverage.all {
+            return;
+        }
 
-    pub fn merge() {
-        unimplemented!()
+        if self.all {
+            *self = coverage.clone();
+            return;
+        }
+
+        let (statement_hits_merged, statement_map_merged) = merge_properties(
+            &self.s,
+            &self.statement_map,
+            &coverage.s,
+            &coverage.statement_map,
+            |range: &Range| key_from_loc(range),
+        );
+
+        self.s = statement_hits_merged;
+        self.statement_map = statement_map_merged;
+
+        let (fn_hits_merged, fn_map_merged) = merge_properties(
+            &self.f,
+            &self.fn_map,
+            &coverage.f,
+            &coverage.fn_map,
+            |map: &FunctionMapping| key_from_loc(&map.loc),
+        );
+
+        self.f = fn_hits_merged;
+        self.fn_map = fn_map_merged;
+
+        let (branches_hits_merged, branches_map_merged) = merge_properties_hits_vec(
+            &self.b,
+            &self.branch_map,
+            &coverage.b,
+            &coverage.branch_map,
+            |branch: &BranchMapping| key_from_loc(&branch.locations[0]),
+        );
+        self.b = branches_hits_merged;
+        self.branch_map = branches_map_merged;
+
+        // Tracking additional information about branch truthiness
+        // can be optionally enabled:
+        if let Some(branches_true) = &self.b_t {
+            if let Some(coverage_branches_true) = &coverage.b_t {
+                let (branches_true_hits_merged, _) = merge_properties_hits_vec(
+                    branches_true,
+                    &self.branch_map,
+                    coverage_branches_true,
+                    &coverage.branch_map,
+                    |branch: &BranchMapping| key_from_loc(&branch.locations[0]),
+                );
+
+                self.b_t = Some(branches_true_hits_merged);
+            }
+        }
     }
 
     pub fn compute_simple_totals<T>(line_map: &HashMap<T, u32>) -> Totals {
@@ -246,7 +390,20 @@ impl FileCoverage {
         }
     }
 
-    pub fn to_summary() -> CoverageSummary {
-        unimplemented!()
+    pub fn to_summary(&self) -> CoverageSummary {
+        let line_coverage = self.get_line_coverage();
+
+        let line = FileCoverage::compute_simple_totals(&line_coverage);
+        let function = FileCoverage::compute_simple_totals(&self.f);
+        let statement = FileCoverage::compute_simple_totals(&self.s);
+        let branches = FileCoverage::compute_branch_totals(&self.b);
+
+        let branches_true = if let Some(branches_true) = &self.b_t {
+            Some(FileCoverage::compute_branch_totals(&branches_true))
+        } else {
+            None
+        };
+
+        CoverageSummary::new(line, function, statement, branches, branches_true)
     }
 }

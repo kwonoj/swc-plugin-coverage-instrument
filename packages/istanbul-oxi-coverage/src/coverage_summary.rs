@@ -45,7 +45,23 @@ pub struct CoverageSummary {
 }
 
 impl CoverageSummary {
-    pub fn new(summary: &CoverageSummary) -> CoverageSummary {
+    pub fn new(
+        lines: Totals,
+        statements: Totals,
+        functions: Totals,
+        branches: Totals,
+        branches_true: Option<Totals>,
+    ) -> CoverageSummary {
+        CoverageSummary {
+            lines,
+            statements,
+            functions,
+            branches,
+            branches_true,
+        }
+    }
+
+    pub fn from(summary: &CoverageSummary) -> CoverageSummary {
         CoverageSummary {
             lines: summary.lines,
             statements: summary.statements,
