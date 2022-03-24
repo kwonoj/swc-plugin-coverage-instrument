@@ -202,8 +202,16 @@ impl FileCoverage {
         unimplemented!()
     }
 
-    pub fn compute_simple_totals() -> Totals {
-        unimplemented!()
+    pub fn compute_simple_totals<T>(line_map: &HashMap<T, u32>) -> Totals {
+        let mut ret: Totals = Totals {
+            total: line_map.len() as u32,
+            covered: line_map.values().filter(|&x| *x > 0).count() as u32,
+            skipped: 0,
+            pct: CoveragePercentage::Unknown,
+        };
+
+        ret.pct = CoveragePercentage::Value(percent(ret.covered, ret.total));
+        ret
     }
 
     fn compute_branch_totals(branch_map: &HashMap<String, Vec<u32>>) -> Totals {
