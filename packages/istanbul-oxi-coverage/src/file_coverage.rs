@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{CoverageSummary, Totals};
+use crate::{percent, CoveragePercentage, CoverageSummary, Totals};
 
 type LineMap = HashMap<u32, u32>;
 
@@ -206,8 +206,16 @@ impl FileCoverage {
         unimplemented!()
     }
 
-    pub fn compute_branch_totals() -> Totals {
-        unimplemented!()
+    fn compute_branch_totals(branch_map: &HashMap<String, Vec<u32>>) -> Totals {
+        let mut ret: Totals = Default::default();
+
+        branch_map.values().for_each(|branches| {
+            ret.covered += branches.iter().filter(|hits| **hits > 0).count() as u32;
+            ret.total += branches.len() as u32;
+        });
+
+        ret.pct = CoveragePercentage::Value(percent(ret.covered, ret.total));
+        ret
     }
 
     pub fn reset_hits(&mut self) {
