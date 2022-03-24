@@ -11,20 +11,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - uses: actions/setup-node@v2
       with:
         node-version: "16"
         cache: "npm"
-    - name: Cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/
-          target
-          Cargo.lock
-        key: cargo-dev--${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          cargo-dev--${{ runner.os }}
+
     - uses: actions-rs/toolchain@v1
       with:
         profile: minimal
