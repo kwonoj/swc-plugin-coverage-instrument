@@ -14,10 +14,10 @@ impl Default for CoveragePercentage {
 
 #[derive(Default, Copy, Clone)]
 pub struct Totals {
-    total: u32,
-    covered: u32,
-    skipped: u32,
-    pct: CoveragePercentage,
+    pub total: u32,
+    pub covered: u32,
+    pub skipped: u32,
+    pub pct: CoveragePercentage,
 }
 
 impl Totals {
