@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::{CoverageSummary, Totals};
+
 type LineMap = HashMap<u32, u32>;
 
 #[derive(Copy, Clone)]
@@ -20,9 +22,6 @@ impl Coverage {
 }
 
 type BranchMap = HashMap<u32, Coverage>;
-
-#[derive(Copy, Clone)]
-pub struct UnknownReserved;
 
 #[derive(Copy, Clone)]
 pub struct Location {
@@ -81,7 +80,7 @@ pub struct FileCoverage {
     s: HashMap<String, u32>,
     f: HashMap<String, u32>,
     b: HashMap<String, Vec<u32>>,
-    b_t: Option<HashMap<String, UnknownReserved>>,
+    b_t: Option<HashMap<String, Vec<u32>>>,
 }
 
 fn merge_properties() {
@@ -203,19 +202,35 @@ impl FileCoverage {
         unimplemented!()
     }
 
-    pub fn compute_simple_totals() {
+    pub fn compute_simple_totals() -> Totals {
         unimplemented!()
     }
 
-    pub fn compute_branch_totals() {
+    pub fn compute_branch_totals() -> Totals {
         unimplemented!()
     }
 
-    pub fn reset_hits() {
-        unimplemented!()
+    pub fn reset_hits(&mut self) {
+        for val in self.s.values_mut() {
+            *val = 0;
+        }
+
+        for val in self.f.values_mut() {
+            *val = 0;
+        }
+
+        for val in self.b.values_mut() {
+            val.iter_mut().for_each(|x| *x = 0);
+        }
+
+        if let Some(branches_true) = &mut self.b_t {
+            for val in branches_true.values_mut() {
+                val.iter_mut().for_each(|x| *x = 0);
+            }
+        }
     }
 
-    pub fn to_summary() {
+    pub fn to_summary() -> CoverageSummary {
         unimplemented!()
     }
 }

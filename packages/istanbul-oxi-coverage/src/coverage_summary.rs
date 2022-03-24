@@ -13,16 +13,16 @@ impl Default for CoveragePercentage {
 }
 
 #[derive(Default, Copy, Clone)]
-pub struct Summary {
+pub struct Totals {
     total: u32,
     covered: u32,
     skipped: u32,
     pct: CoveragePercentage,
 }
 
-impl Summary {
-    pub fn new() -> Summary {
-        Summary {
+impl Totals {
+    pub fn new() -> Totals {
+        Totals {
             total: 0,
             covered: 0,
             skipped: 0,
@@ -30,18 +30,18 @@ impl Summary {
         }
     }
 
-    pub fn default() -> Summary {
-        Summary::new()
+    pub fn default() -> Totals {
+        Totals::new()
     }
 }
 
 #[derive(Default)]
 pub struct CoverageSummary {
-    lines: Summary,
-    statements: Summary,
-    functions: Summary,
-    branches: Summary,
-    branches_true: Option<Summary>,
+    lines: Totals,
+    statements: Totals,
+    functions: Totals,
+    branches: Totals,
+    branches_true: Option<Totals>,
 }
 
 impl CoverageSummary {
