@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build:inst:spec": "wasm-pack build packages/istanbul-oxi-instrument-wasm --target nodejs --dev",
-    "test": "npm-run-all build:inst:spec && cargo check && jest",
+    "test": "npm-run-all build:inst:spec && cargo test && jest",
     "prepare": "husky install"
   },
   "repository": {
