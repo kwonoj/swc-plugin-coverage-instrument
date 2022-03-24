@@ -1,6 +1,6 @@
 use crate::percent;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum CoveragePercentage {
     Unknown,
     Value(f32),
@@ -12,7 +12,7 @@ impl Default for CoveragePercentage {
     }
 }
 
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Copy, Clone, PartialEq, Debug)]
 pub struct Totals {
     pub total: u32,
     pub covered: u32,
@@ -21,7 +21,16 @@ pub struct Totals {
 }
 
 impl Totals {
-    pub fn new() -> Totals {
+    pub fn new(total: u32, covered: u32, skipped: u32, pct: CoveragePercentage) -> Totals {
+        Totals {
+            total,
+            covered,
+            skipped,
+            pct,
+        }
+    }
+
+    pub fn default() -> Totals {
         Totals {
             total: 0,
             covered: 0,
@@ -29,13 +38,9 @@ impl Totals {
             pct: CoveragePercentage::Unknown,
         }
     }
-
-    pub fn default() -> Totals {
-        Totals::new()
-    }
 }
 
-#[derive(Default)]
+#[derive(Default, Copy, Clone)]
 pub struct CoverageSummary {
     lines: Totals,
     statements: Totals,
@@ -131,5 +136,38 @@ impl CoverageSummary {
 
     pub fn is_empty(&self) -> bool {
         self.lines.total == 0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{CoveragePercentage, CoverageSummary, Totals};
+
+    #[test]
+    fn should_able_to_create_empty() {
+        let summary = CoverageSummary::default();
+
+        assert!(summary.is_empty());
+    }
+
+    #[test]
+    fn should_able_to_merge() {
+        let basic = Totals::new(5, 4, 0, crate::CoveragePercentage::Value(80.0));
+        let empty = Totals::default();
+
+        let mut first = CoverageSummary::new(basic, basic, basic, empty, Some(empty));
+        let mut second = first.clone();
+
+        second.statements.covered = 5;
+        first.merge(&second);
+
+        assert_eq!(
+            first.statements,
+            Totals::new(10, 9, 0, CoveragePercentage::Value(90.0))
+        );
+
+        assert_eq!(first.branches.pct, CoveragePercentage::Value(100.0));
+        let branches_true = first.branches_true.expect("Should exist");
+        assert_eq!(branches_true.pct, CoveragePercentage::Value(100.0));
     }
 }
