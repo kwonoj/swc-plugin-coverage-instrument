@@ -24,16 +24,25 @@ jobs:
       with:
         node-version: "16"
         cache: "npm"
-
     - uses: actions-rs/toolchain@v1
       with:
         profile: minimal
+        components: llvm-tools-preview
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
     - name: install
       run: |
         npm install -g npm@latest
         npm ci
         curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-    - name: test
-      run: cargo test
     - name: build
       run: npm run build:inst:spec
+    - name: test
+      run: npm test
+    - name: Generate code coverage
+      run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+    - uses: codecov/codecov-action@v2
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: lcov.info
+        verbose: true
