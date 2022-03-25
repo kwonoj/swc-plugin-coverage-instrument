@@ -1,13 +1,12 @@
-use std::collections::HashMap;
+use indexmap::IndexMap;
 
 use crate::{
     coverage::Coverage,
     percent,
-    types::{
-        BranchCoverageMap, BranchHitMap, BranchMap, BranchMapping, FunctionMap, FunctionMapping,
-    },
+    types::{Branch, BranchCoverageMap, BranchHitMap, BranchMap, Function, FunctionMap},
     CoveragePercentage, CoverageSummary, LineHitMap, Range, StatementMap, Totals,
 };
+use std::fmt::Debug;
 
 fn key_from_loc(range: &Range) -> String {
     format!(
@@ -21,9 +20,9 @@ fn merge_properties_hits_vec(
     first_map: &BranchMap,
     second_hits: &BranchHitMap,
     second_map: &BranchMap,
-    get_item_key_fn: for<'r> fn(&'r BranchMapping) -> String,
-) -> (BranchHitMap, HashMap<u32, BranchMapping>) {
-    let mut items: HashMap<String, (Vec<u32>, BranchMapping)> = Default::default();
+    get_item_key_fn: for<'r> fn(&'r Branch) -> String,
+) -> (BranchHitMap, IndexMap<u32, Branch>) {
+    let mut items: IndexMap<String, (Vec<u32>, Branch)> = Default::default();
 
     for (key, item_hits) in first_hits {
         let item = first_map
@@ -65,15 +64,15 @@ fn merge_properties_hits_vec(
 
 fn merge_properties<T>(
     first_hits: &LineHitMap,
-    first_map: &HashMap<u32, T>,
+    first_map: &IndexMap<u32, T>,
     second_hits: &LineHitMap,
-    second_map: &HashMap<u32, T>,
+    second_map: &IndexMap<u32, T>,
     get_item_key_fn: for<'r> fn(&'r T) -> String,
-) -> (LineHitMap, HashMap<u32, T>)
+) -> (LineHitMap, IndexMap<u32, T>)
 where
-    T: Clone,
+    T: Clone + Debug,
 {
-    let mut items: HashMap<String, (u32, T)> = Default::default();
+    let mut items: IndexMap<String, (u32, T)> = Default::default();
 
     for (key, item_hits) in first_hits {
         let item = first_map
@@ -99,9 +98,9 @@ where
     }
 
     let mut hits: LineHitMap = Default::default();
-    let mut map: HashMap<u32, T> = Default::default();
+    let mut map: IndexMap<u32, T> = Default::default();
 
-    for (idx, (_, (hit, item))) in items.iter_mut().enumerate() {
+    for (idx, (hit, item)) in items.values().enumerate() {
         hits.insert(idx as u32, *hit);
         map.insert(idx as u32, item.clone());
     }
@@ -110,8 +109,7 @@ where
 }
 
 /// provides a read-only view of coverage for a single file.
-/// The deep structure of this object is documented elsewhere. It has the following
-/// properties:
+/// It has the following properties:
 /// `path` - the file path for which coverage is being tracked
 /// `statementMap` - map of statement locations keyed by statement index
 /// `fnMap` - map of function metadata keyed by function index
@@ -119,18 +117,21 @@ where
 /// `s` - hit counts for statements
 /// `f` - hit count for functions
 /// `b` - hit count for branches
+///
+/// Note: internally it uses IndexMap to represent key-value pairs for the coverage data,
+/// as logic for merge relies on the order of keys in the map.
 
 #[derive(Clone)]
 pub struct FileCoverage {
     pub(crate) all: bool,
-    path: String,
-    statement_map: StatementMap,
-    fn_map: FunctionMap,
-    branch_map: BranchMap,
-    s: LineHitMap,
-    f: LineHitMap,
-    b: BranchHitMap,
-    b_t: Option<BranchHitMap>,
+    pub(crate) path: String,
+    pub(crate) statement_map: StatementMap,
+    pub(crate) fn_map: FunctionMap,
+    pub(crate) branch_map: BranchMap,
+    pub(crate) s: LineHitMap,
+    pub(crate) f: LineHitMap,
+    pub(crate) b: BranchHitMap,
+    pub(crate) b_t: Option<BranchHitMap>,
 }
 
 impl FileCoverage {
@@ -271,7 +272,7 @@ impl FileCoverage {
             &self.fn_map,
             &coverage.f,
             &coverage.fn_map,
-            |map: &FunctionMapping| key_from_loc(&map.loc),
+            |map: &Function| key_from_loc(&map.loc),
         );
 
         self.f = fn_hits_merged;
@@ -282,7 +283,7 @@ impl FileCoverage {
             &self.branch_map,
             &coverage.b,
             &coverage.branch_map,
-            |branch: &BranchMapping| key_from_loc(&branch.locations[0]),
+            |branch: &Branch| key_from_loc(&branch.locations[0]),
         );
         self.b = branches_hits_merged;
         self.branch_map = branches_map_merged;
@@ -296,7 +297,7 @@ impl FileCoverage {
                     &self.branch_map,
                     coverage_branches_true,
                     &coverage.branch_map,
-                    |branch: &BranchMapping| key_from_loc(&branch.locations[0]),
+                    |branch: &Branch| key_from_loc(&branch.locations[0]),
                 );
 
                 self.b_t = Some(branches_true_hits_merged);
@@ -304,16 +305,15 @@ impl FileCoverage {
         }
     }
 
-    pub fn compute_simple_totals<T>(line_map: &HashMap<T, u32>) -> Totals {
-        let mut ret: Totals = Totals {
-            total: line_map.len() as u32,
-            covered: line_map.values().filter(|&x| *x > 0).count() as u32,
+    pub fn compute_simple_totals<T>(line_map: &IndexMap<T, u32>) -> Totals {
+        let total = line_map.len() as u32;
+        let covered = line_map.values().filter(|&x| *x > 0).count() as u32;
+        Totals {
+            total,
+            covered,
             skipped: 0,
-            pct: CoveragePercentage::Unknown,
-        };
-
-        ret.pct = CoveragePercentage::Value(percent(ret.covered, ret.total));
-        ret
+            pct: CoveragePercentage::Value(percent(covered, total)),
+        }
     }
 
     fn compute_branch_totals(branch_map: &BranchHitMap) -> Totals {
@@ -362,25 +362,110 @@ impl FileCoverage {
             None
         };
 
-        CoverageSummary::new(line, function, statement, branches, branches_true)
+        CoverageSummary::new(line, statement, function, branches, branches_true)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use indexmap::IndexMap;
 
-    use crate::{FileCoverage, Range};
+    use crate::{
+        coverage_summary::{CoveragePercentage, Totals},
+        types::{Branch, Function},
+        FileCoverage, Range,
+    };
 
     #[test]
     fn should_able_to_merge() {
-        let base_statement_map = HashMap::from([
-            ("0".to_string(), Range::new(1, 1, 1, 100)),
-            ("1".to_string(), Range::new(2, 1, 2, 50)),
-            ("2".to_string(), Range::new(2, 51, 2, 100)),
-            ("3".to_string(), Range::new(2, 101, 3, 100)),
-        ]);
+        let base = FileCoverage {
+            all: false,
+            path: "/path/to/file".to_string(),
+            statement_map: IndexMap::from([
+                (0, Range::new(1, 1, 1, 100)),
+                (1, Range::new(2, 1, 2, 50)),
+                (2, Range::new(2, 51, 2, 100)),
+                (3, Range::new(2, 101, 3, 100)),
+            ]),
+            fn_map: IndexMap::from([(
+                0,
+                Function {
+                    name: "foobar".to_string(),
+                    line: 1,
+                    loc: Range::new(1, 1, 1, 50),
+                    decl: Default::default(),
+                },
+            )]),
+            branch_map: IndexMap::from([(
+                0,
+                Branch {
+                    branch_type: "if".to_string(),
+                    line: 2,
+                    locations: vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
+                    loc: Default::default(),
+                },
+            )]),
+            s: IndexMap::from([(0, 0), (1, 0), (2, 0), (3, 0)]),
+            f: IndexMap::from([(0, 0)]),
+            b: IndexMap::from([(0, vec![0, 0])]),
+            b_t: None,
+        };
 
-        let mut base = FileCoverage::from_file_path("/path/to/file".to_string(), false);
+        let mut first = base.clone();
+        let mut second = base.clone();
+
+        first.s.insert(0, 1);
+        first.f.insert(0, 1);
+        first.b.entry(0).and_modify(|v| v[0] = 1);
+
+        second.s.insert(1, 1);
+        second.f.insert(0, 1);
+        second.b.entry(0).and_modify(|v| v[1] = 2);
+
+        let summary = first.to_summary();
+        assert_eq!(
+            summary.statements,
+            Totals::new(4, 1, 0, CoveragePercentage::Value(25.0))
+        );
+        assert_eq!(
+            summary.lines,
+            Totals::new(2, 1, 0, CoveragePercentage::Value(50.0))
+        );
+        assert_eq!(
+            summary.functions,
+            Totals::new(1, 1, 0, CoveragePercentage::Value(100.0))
+        );
+        assert_eq!(
+            summary.branches,
+            Totals::new(2, 1, 0, CoveragePercentage::Value(50.0))
+        );
+
+        first.merge(&second);
+        let summary = first.to_summary();
+
+        assert_eq!(
+            summary.statements,
+            Totals::new(4, 2, 0, CoveragePercentage::Value(50.0))
+        );
+        assert_eq!(
+            summary.lines,
+            Totals::new(2, 2, 0, CoveragePercentage::Value(100.0))
+        );
+        assert_eq!(
+            summary.functions,
+            Totals::new(1, 1, 0, CoveragePercentage::Value(100.0))
+        );
+        /*
+        assert_eq!(
+            summary.branches,
+            Totals::new(2, 2, 0, CoveragePercentage::Value(100.0))
+        );
+        */
+
+        assert_eq!(first.s.get(&0), Some(&1));
+        assert_eq!(first.s.get(&1), Some(&1));
+        assert_eq!(first.f.get(&0), Some(&2));
+        assert_eq!(first.b.get(&0).unwrap()[0], 1);
+        //assert_eq!(first.b.get(&0).unwrap()[1], 2);
     }
 }

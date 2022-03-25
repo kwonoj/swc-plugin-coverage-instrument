@@ -42,11 +42,11 @@ impl Totals {
 
 #[derive(Default, Copy, Clone)]
 pub struct CoverageSummary {
-    lines: Totals,
-    statements: Totals,
-    functions: Totals,
-    branches: Totals,
-    branches_true: Option<Totals>,
+    pub(crate) lines: Totals,
+    pub(crate) statements: Totals,
+    pub(crate) functions: Totals,
+    pub(crate) branches: Totals,
+    pub(crate) branches_true: Option<Totals>,
 }
 
 impl CoverageSummary {
