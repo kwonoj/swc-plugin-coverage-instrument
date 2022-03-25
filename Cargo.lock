@@ -285,6 +285,9 @@ dependencies = [
 [[package]]
 name = "istanbul-oxi-coverage"
 version = "0.1.0"
+dependencies = [
+ "indexmap",
+]
 
 [[package]]
 name = "istanbul-oxi-instrument"
