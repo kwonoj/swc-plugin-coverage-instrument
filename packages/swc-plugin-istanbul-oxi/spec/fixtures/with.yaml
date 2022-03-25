@@ -1,0 +1,23 @@
+---
+name: with statement - no blocks
+code: |
+  with (Math) output = abs(args[0]);
+tests:
+  - args: [-1]
+    out: 1
+    lines: {'1': 1}
+    statements: {'0': 1, '1': 1}
+instrumentOpts:
+  esModules: false
+
+---
+name: with statement with block
+code: |
+  with (Math) { output = abs(args[0]); }
+tests:
+  - args: [-1]
+    out: 1
+    lines: {'1': 1}
+    statements: {'0': 1, '1': 1}
+instrumentOpts:
+  esModules: false
