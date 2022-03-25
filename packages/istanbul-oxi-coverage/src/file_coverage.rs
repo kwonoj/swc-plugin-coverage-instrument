@@ -41,12 +41,14 @@ fn merge_properties_hits_vec(
 
         items
             .entry(item_key)
-            .and_modify(|_pair| {
-                /*
-                item_hits.forEach((hits, h) => {
-                    if (aPair[0][h] !== undefined) aPair[0][h] += hits;
-                    else aPair[0][h] = hits;
-                }); */
+            .and_modify(|pair| {
+                if pair.0.len() < item_hits.len() {
+                    pair.0.resize(item_hits.len(), 0);
+                }
+
+                for (h, hits) in item_hits.iter().enumerate() {
+                    pair.0[h] += hits;
+                }
             })
             .or_insert((item_hits.clone(), item.clone()));
     }
@@ -54,7 +56,7 @@ fn merge_properties_hits_vec(
     let mut hits: BranchHitMap = Default::default();
     let mut map: BranchMap = Default::default();
 
-    for (idx, (_, (hit, item))) in items.iter_mut().enumerate() {
+    for (idx, (hit, item)) in items.values().enumerate() {
         hits.insert(idx as u32, hit.clone());
         map.insert(idx as u32, item.clone());
     }
@@ -121,7 +123,7 @@ where
 /// Note: internally it uses IndexMap to represent key-value pairs for the coverage data,
 /// as logic for merge relies on the order of keys in the map.
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FileCoverage {
     pub(crate) all: bool,
     pub(crate) path: String,
@@ -215,11 +217,12 @@ impl FileCoverage {
         let mut ret: BranchCoverageMap = Default::default();
 
         for (k, map) in branch_map {
-            let line = if map.line > 0 {
-                map.line
+            let line = if let Some(line) = map.line {
+                line
             } else {
-                map.loc.start.line
+                map.loc.expect("Either line or loc should exist").start.line
             };
+
             let branch_data = branches.get(k).expect("branch data not found");
 
             if let Some(line_data) = prefilter_data.get_mut(&line) {
@@ -371,13 +374,14 @@ mod tests {
     use indexmap::IndexMap;
 
     use crate::{
+        coverage::Coverage,
         coverage_summary::{CoveragePercentage, Totals},
         types::{Branch, Function},
         FileCoverage, Range,
     };
 
     #[test]
-    fn should_able_to_merge() {
+    fn should_able_to_merge_another_file() {
         let base = FileCoverage {
             all: false,
             path: "/path/to/file".to_string(),
@@ -398,12 +402,11 @@ mod tests {
             )]),
             branch_map: IndexMap::from([(
                 0,
-                Branch {
-                    branch_type: "if".to_string(),
-                    line: 2,
-                    locations: vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
-                    loc: Default::default(),
-                },
+                Branch::from_line(
+                    "if".to_string(),
+                    2,
+                    vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
+                ),
             )]),
             s: IndexMap::from([(0, 0), (1, 0), (2, 0), (3, 0)]),
             f: IndexMap::from([(0, 0)]),
@@ -455,17 +458,435 @@ mod tests {
             summary.functions,
             Totals::new(1, 1, 0, CoveragePercentage::Value(100.0))
         );
-        /*
+
         assert_eq!(
             summary.branches,
             Totals::new(2, 2, 0, CoveragePercentage::Value(100.0))
         );
-        */
 
         assert_eq!(first.s.get(&0), Some(&1));
         assert_eq!(first.s.get(&1), Some(&1));
         assert_eq!(first.f.get(&0), Some(&2));
         assert_eq!(first.b.get(&0).unwrap()[0], 1);
-        //assert_eq!(first.b.get(&0).unwrap()[1], 2);
+        assert_eq!(first.b.get(&0).unwrap()[1], 2);
+    }
+
+    #[test]
+    fn should_able_to_merge_another_file_with_different_starting_indices() {
+        let base = FileCoverage {
+            all: false,
+            path: "/path/to/file".to_string(),
+            statement_map: IndexMap::from([
+                (0, Range::new(1, 1, 1, 100)),
+                (1, Range::new(2, 1, 2, 50)),
+                (2, Range::new(2, 51, 2, 100)),
+                (3, Range::new(2, 101, 3, 100)),
+            ]),
+            fn_map: IndexMap::from([(
+                0,
+                Function {
+                    name: "foobar".to_string(),
+                    line: 1,
+                    loc: Range::new(1, 1, 1, 50),
+                    decl: Default::default(),
+                },
+            )]),
+            branch_map: IndexMap::from([(
+                0,
+                Branch::from_line(
+                    "if".to_string(),
+                    2,
+                    vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
+                ),
+            )]),
+            s: IndexMap::from([(0, 0), (1, 0), (2, 0), (3, 0)]),
+            f: IndexMap::from([(0, 0)]),
+            b: IndexMap::from([(0, vec![0, 0])]),
+            b_t: None,
+        };
+
+        let base_other = FileCoverage {
+            all: false,
+            path: "/path/to/file".to_string(),
+            statement_map: IndexMap::from([
+                (1, Range::new(1, 1, 1, 100)),
+                (2, Range::new(2, 1, 2, 50)),
+                (3, Range::new(2, 51, 2, 100)),
+                (4, Range::new(2, 101, 3, 100)),
+            ]),
+            fn_map: IndexMap::from([(
+                1,
+                Function {
+                    name: "foobar".to_string(),
+                    line: 1,
+                    loc: Range::new(1, 1, 1, 50),
+                    decl: Default::default(),
+                },
+            )]),
+            branch_map: IndexMap::from([(
+                1,
+                Branch::from_line(
+                    "if".to_string(),
+                    2,
+                    vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
+                ),
+            )]),
+            s: IndexMap::from([(1, 0), (2, 0), (3, 0), (4, 0)]),
+            f: IndexMap::from([(1, 0)]),
+            b: IndexMap::from([(1, vec![0, 0])]),
+            b_t: None,
+        };
+
+        let mut first = base.clone();
+        let mut second = base_other.clone();
+
+        first.s.insert(0, 1);
+        first.f.insert(0, 1);
+        first.b.entry(0).and_modify(|v| v[0] = 1);
+
+        second.s.insert(2, 1);
+        second.f.insert(1, 1);
+        second.b.entry(1).and_modify(|v| v[1] = 2);
+
+        let summary = first.to_summary();
+        assert_eq!(
+            summary.statements,
+            Totals::new(4, 1, 0, CoveragePercentage::Value(25.0))
+        );
+        assert_eq!(
+            summary.lines,
+            Totals::new(2, 1, 0, CoveragePercentage::Value(50.0))
+        );
+        assert_eq!(
+            summary.functions,
+            Totals::new(1, 1, 0, CoveragePercentage::Value(100.0))
+        );
+        assert_eq!(
+            summary.branches,
+            Totals::new(2, 1, 0, CoveragePercentage::Value(50.0))
+        );
+
+        first.merge(&second);
+        let summary = first.to_summary();
+
+        assert_eq!(
+            summary.statements,
+            Totals::new(4, 2, 0, CoveragePercentage::Value(50.0))
+        );
+        assert_eq!(
+            summary.lines,
+            Totals::new(2, 2, 0, CoveragePercentage::Value(100.0))
+        );
+        assert_eq!(
+            summary.functions,
+            Totals::new(1, 1, 0, CoveragePercentage::Value(100.0))
+        );
+
+        assert_eq!(
+            summary.branches,
+            Totals::new(2, 2, 0, CoveragePercentage::Value(100.0))
+        );
+
+        assert_eq!(first.s.get(&0), Some(&1));
+        assert_eq!(first.s.get(&1), Some(&1));
+        assert_eq!(first.f.get(&0), Some(&2));
+        assert_eq!(first.b.get(&0).unwrap()[0], 1);
+        assert_eq!(first.b.get(&0).unwrap()[1], 2);
+    }
+
+    #[test]
+    fn should_drop_data_while_merge() {
+        let base = FileCoverage {
+            all: false,
+            path: "/path/to/file".to_string(),
+            statement_map: IndexMap::from([
+                (1, Range::new(1, 1, 1, 100)),
+                (2, Range::new(2, 1, 2, 50)),
+                (3, Range::new(2, 51, 2, 100)),
+                (4, Range::new(2, 101, 3, 100)),
+            ]),
+            fn_map: IndexMap::from([(
+                1,
+                Function {
+                    name: "foobar".to_string(),
+                    line: 1,
+                    loc: Range::new(1, 1, 1, 50),
+                    decl: Default::default(),
+                },
+            )]),
+            branch_map: IndexMap::from([(
+                1,
+                Branch::from_line(
+                    "if".to_string(),
+                    2,
+                    vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
+                ),
+            )]),
+            s: IndexMap::from([(1, 0), (2, 0), (3, 0), (4, 0)]),
+            f: IndexMap::from([(1, 0)]),
+            b: IndexMap::from([(1, vec![0, 0])]),
+            b_t: None,
+        };
+
+        let create_coverage = |all: bool| {
+            let mut ret = base.clone();
+            if all {
+                ret.all = true;
+            } else {
+                ret.s.insert(1, 1);
+                ret.f.insert(1, 1);
+                ret.b.entry(1).and_modify(|v| v[0] = 1);
+            }
+
+            ret
+        };
+
+        let expected = create_coverage(false);
+
+        let mut cov = create_coverage(true);
+        cov.merge(&create_coverage(false));
+        assert_eq!(cov, expected);
+
+        let mut cov = create_coverage(false);
+        cov.merge(&create_coverage(true));
+        assert_eq!(cov, expected);
+    }
+
+    #[test]
+    fn merges_another_file_coverage_tracks_logical_truthiness() {
+        let base = FileCoverage {
+            all: false,
+            path: "/path/to/file".to_string(),
+            statement_map: IndexMap::from([
+                (0, Range::new(1, 1, 1, 100)),
+                (1, Range::new(2, 1, 2, 50)),
+                (2, Range::new(2, 51, 2, 100)),
+                (3, Range::new(2, 101, 3, 100)),
+            ]),
+            fn_map: IndexMap::from([(
+                0,
+                Function {
+                    name: "foobar".to_string(),
+                    line: 1,
+                    loc: Range::new(1, 1, 1, 50),
+                    decl: Default::default(),
+                },
+            )]),
+            branch_map: IndexMap::from([(
+                0,
+                Branch::from_line(
+                    "if".to_string(),
+                    2,
+                    vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
+                ),
+            )]),
+            s: IndexMap::from([(0, 0), (1, 0), (2, 0), (3, 0)]),
+            f: IndexMap::from([(0, 0)]),
+            b: IndexMap::from([(0, vec![0, 0])]),
+            b_t: None,
+        };
+
+        let mut first = base.clone();
+        let mut second = base.clone();
+
+        first.s.insert(0, 1);
+        first.f.insert(0, 1);
+        first.b.entry(0).and_modify(|v| v[0] = 1);
+        first.b_t = Some(IndexMap::from([(0, vec![1])]));
+
+        second.s.insert(1, 1);
+        second.f.insert(0, 1);
+        second.b.entry(0).and_modify(|v| v[1] = 2);
+        second.b_t = Some(IndexMap::from([(0, vec![0, 2])]));
+
+        let summary = first.to_summary();
+
+        assert_eq!(
+            summary.statements,
+            Totals::new(4, 1, 0, CoveragePercentage::Value(25.0))
+        );
+        assert_eq!(
+            summary.lines,
+            Totals::new(2, 1, 0, CoveragePercentage::Value(50.0))
+        );
+        assert_eq!(
+            summary.functions,
+            Totals::new(1, 1, 0, CoveragePercentage::Value(100.0))
+        );
+
+        assert_eq!(
+            summary.branches,
+            Totals::new(2, 1, 0, CoveragePercentage::Value(50.0))
+        );
+
+        first.merge(&second);
+        let summary = first.to_summary();
+
+        assert_eq!(
+            summary.statements,
+            Totals::new(4, 2, 0, CoveragePercentage::Value(50.0))
+        );
+        assert_eq!(
+            summary.lines,
+            Totals::new(2, 2, 0, CoveragePercentage::Value(100.0))
+        );
+        assert_eq!(
+            summary.functions,
+            Totals::new(1, 1, 0, CoveragePercentage::Value(100.0))
+        );
+
+        assert_eq!(
+            summary.branches,
+            Totals::new(2, 2, 0, CoveragePercentage::Value(100.0))
+        );
+
+        assert_eq!(first.s.get(&0), Some(&1));
+        assert_eq!(first.s.get(&1), Some(&1));
+        assert_eq!(first.f.get(&0), Some(&2));
+        assert_eq!(first.b.get(&0).unwrap()[0], 1);
+        assert_eq!(first.b.get(&0).unwrap()[1], 2);
+        let b_t = first.b_t.unwrap();
+        assert_eq!(b_t.get(&0).unwrap()[0], 1);
+        assert_eq!(b_t.get(&0).unwrap()[1], 2);
+    }
+
+    #[test]
+    fn should_reset_hits() {
+        let base = FileCoverage {
+            all: false,
+            path: "/path/to/file".to_string(),
+            statement_map: IndexMap::from([
+                (1, Range::new(1, 1, 1, 100)),
+                (2, Range::new(2, 1, 2, 50)),
+                (3, Range::new(2, 51, 2, 100)),
+                (4, Range::new(2, 101, 3, 100)),
+            ]),
+            fn_map: IndexMap::from([(
+                1,
+                Function {
+                    name: "foobar".to_string(),
+                    line: 1,
+                    loc: Range::new(1, 1, 1, 50),
+                    decl: Default::default(),
+                },
+            )]),
+            branch_map: IndexMap::from([(
+                1,
+                Branch::from_line(
+                    "if".to_string(),
+                    2,
+                    vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
+                ),
+            )]),
+            s: IndexMap::from([(1, 2), (2, 3), (3, 1), (4, 0)]),
+            f: IndexMap::from([(1, 54)]),
+            b: IndexMap::from([(1, vec![1, 50])]),
+            b_t: Some(IndexMap::from([(1, vec![1, 50])])),
+        };
+
+        let mut value = base.clone();
+        value.reset_hits();
+
+        assert_eq!(IndexMap::from([(1, 0), (2, 0), (3, 0), (4, 0)]), value.s);
+        assert_eq!(IndexMap::from([(1, 0)]), value.f);
+        assert_eq!(IndexMap::from([(1, vec![0, 0])]), value.b);
+        assert_eq!(Some(IndexMap::from([(1, vec![0, 0])])), value.b_t);
+    }
+
+    #[test]
+    fn should_return_uncovered_lines() {
+        let base = FileCoverage {
+            all: false,
+            path: "/path/to/file".to_string(),
+            statement_map: IndexMap::from([
+                (1, Range::new(1, 1, 1, 100)),
+                (2, Range::new(1, 101, 1, 200)),
+                (3, Range::new(2, 1, 2, 100)),
+            ]),
+            fn_map: Default::default(),
+            branch_map: Default::default(),
+            s: IndexMap::from([(1, 0), (2, 1), (3, 0)]),
+            f: Default::default(),
+            b: Default::default(),
+            b_t: None,
+        };
+
+        assert_eq!(base.get_uncovered_lines(), vec![2]);
+    }
+
+    #[test]
+    fn should_return_branch_coverage_by_line() {
+        let base = FileCoverage {
+            all: false,
+            path: "/path/to/file".to_string(),
+            statement_map: Default::default(),
+            fn_map: Default::default(),
+            branch_map: IndexMap::from([
+                (1, Branch::from_line("".to_string(), 1, Default::default())),
+                (2, Branch::from_line("".to_string(), 2, Default::default())),
+            ]),
+            s: Default::default(),
+            f: Default::default(),
+            b: IndexMap::from([(1, vec![1, 0]), (2, vec![0, 0, 0, 1])]),
+            b_t: None,
+        };
+
+        let coverage = base.get_branch_coverage_by_line();
+        assert_eq!(
+            coverage,
+            IndexMap::from([
+                (1, Coverage::new(1, 2, 50.0)),
+                (2, Coverage::new(1, 4, 25.0)),
+            ])
+        );
+    }
+
+    #[test]
+    fn should_return_branch_coverage_by_line_with_cobertura_branchmap_structure() {
+        let base = FileCoverage {
+            all: false,
+            path: "/path/to/file".to_string(),
+            statement_map: Default::default(),
+            fn_map: Default::default(),
+            branch_map: IndexMap::from([
+                (
+                    1,
+                    Branch::from_loc("".to_string(), Range::new(1, 1, 1, 100), Default::default()),
+                ),
+                (
+                    2,
+                    Branch::from_loc(
+                        "".to_string(),
+                        Range::new(2, 50, 2, 100),
+                        Default::default(),
+                    ),
+                ),
+            ]),
+            s: Default::default(),
+            f: Default::default(),
+            b: IndexMap::from([(1, vec![1, 0]), (2, vec![0, 0, 0, 1])]),
+            b_t: None,
+        };
+
+        let coverage = base.get_branch_coverage_by_line();
+        assert_eq!(
+            coverage,
+            IndexMap::from([
+                (1, Coverage::new(1, 2, 50.0)),
+                (2, Coverage::new(1, 4, 25.0)),
+            ])
+        )
+    }
+
+    #[test]
+    fn should_allow_file_coverage_to_be_init_with_logical_truthiness() {
+        assert_eq!(
+            FileCoverage::from_file_path("".to_string(), false).b_t,
+            None
+        );
+        assert_eq!(
+            FileCoverage::from_file_path("".to_string(), true).b_t,
+            Some(Default::default())
+        );
     }
 }
