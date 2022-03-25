@@ -7,7 +7,7 @@ mod range;
 mod types;
 
 use coverage::*;
-use coverage_map::*;
+pub use coverage_map::CoverageMap;
 use coverage_summary::*;
 pub use file_coverage::FileCoverage;
 use percent::*;
