@@ -1,0 +1,14 @@
+---
+name: handles experimental babylon features
+code: |
+  var profile = <div>
+    <img src="avatar.png" className="profile" />
+    <h3>{[user.firstName, user.lastName].join(' ')}</h3>
+  </div>;
+opts:
+  generateOnly: true
+instrumentOpts:
+  parserPlugins:
+    - "jsx"
+tests:
+  - name: jsx syntax
