@@ -2,3 +2,6 @@
 name = "istanbul-oxi-instrument"
 version = "0.1.0"
 edition = "2021"
+
+[dependencies]
+istanbul-oxi-coverage = { version = "0.1.0", path = "../istanbul-oxi-coverage" }

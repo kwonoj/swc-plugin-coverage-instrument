@@ -292,6 +292,9 @@ dependencies = [
 [[package]]
 name = "istanbul-oxi-instrument"
 version = "0.1.0"
+dependencies = [
+ "istanbul-oxi-coverage",
+]
 
 [[package]]
 name = "istanbul-oxi-instrument-wasm"

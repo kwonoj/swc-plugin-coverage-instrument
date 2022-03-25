@@ -11,5 +11,5 @@ pub use coverage_map::CoverageMap;
 use coverage_summary::*;
 pub use file_coverage::FileCoverage;
 use percent::*;
-use range::*;
+pub use range::*;
 use types::*;
