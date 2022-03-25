@@ -1,9 +1,15 @@
+mod coverage;
 mod coverage_map;
 mod coverage_summary;
 mod file_coverage;
 mod percent;
+mod range;
+mod types;
 
-pub use coverage_map::*;
-pub use coverage_summary::*;
-pub use file_coverage::*;
-pub use percent::*;
+use coverage::*;
+use coverage_map::*;
+use coverage_summary::*;
+pub use file_coverage::FileCoverage;
+use percent::*;
+use range::*;
+use types::*;

@@ -1,55 +1,13 @@
 use std::collections::HashMap;
 
-use crate::{percent, CoveragePercentage, CoverageSummary, Totals};
-
-type LineMap = HashMap<u32, u32>;
-
-#[derive(Copy, Clone)]
-pub struct Coverage {
-    covered: u32,
-    total: u32,
-    coverage: f32,
-}
-
-impl Coverage {
-    pub fn new(covered: u32, total: u32, coverage: f32) -> Coverage {
-        Coverage {
-            covered,
-            total,
-            coverage,
-        }
-    }
-}
-
-type BranchMap = HashMap<u32, Coverage>;
-
-#[derive(Copy, Clone)]
-pub struct Location {
-    line: u32,
-    column: u32,
-}
-
-#[derive(Copy, Clone)]
-pub struct Range {
-    start: Location,
-    end: Location,
-}
-
-#[derive(Clone)]
-pub struct FunctionMapping {
-    name: String,
-    decl: Range,
-    loc: Range,
-    line: u32,
-}
-
-#[derive(Clone)]
-pub struct BranchMapping {
-    loc: Range,
-    branch_type: String,
-    locations: Vec<Range>,
-    line: u32,
-}
+use crate::{
+    coverage::Coverage,
+    percent,
+    types::{
+        BranchCoverageMap, BranchHitMap, BranchMap, BranchMapping, FunctionMap, FunctionMapping,
+    },
+    CoveragePercentage, CoverageSummary, LineHitMap, Range, StatementMap, Totals,
+};
 
 fn key_from_loc(range: &Range) -> String {
     format!(
@@ -58,37 +16,13 @@ fn key_from_loc(range: &Range) -> String {
     )
 }
 
-/// provides a read-only view of coverage for a single file.
-/// The deep structure of this object is documented elsewhere. It has the following
-/// properties:
-/// `path` - the file path for which coverage is being tracked
-/// `statementMap` - map of statement locations keyed by statement index
-/// `fnMap` - map of function metadata keyed by function index
-/// `branchMap` - map of branch metadata keyed by branch index
-/// `s` - hit counts for statements
-/// `f` - hit count for functions
-/// `b` - hit count for branches
-
-#[derive(Clone)]
-pub struct FileCoverage {
-    pub(crate) all: bool,
-    path: String,
-    statement_map: HashMap<String, Range>,
-    fn_map: HashMap<String, FunctionMapping>,
-    branch_map: HashMap<String, BranchMapping>,
-    s: HashMap<String, u32>,
-    f: HashMap<String, u32>,
-    b: HashMap<String, Vec<u32>>,
-    b_t: Option<HashMap<String, Vec<u32>>>,
-}
-
 fn merge_properties_hits_vec(
-    first_hits: &HashMap<String, Vec<u32>>,
-    first_map: &HashMap<String, BranchMapping>,
-    second_hits: &HashMap<String, Vec<u32>>,
-    second_map: &HashMap<String, BranchMapping>,
+    first_hits: &BranchHitMap,
+    first_map: &BranchMap,
+    second_hits: &BranchHitMap,
+    second_map: &BranchMap,
     get_item_key_fn: for<'r> fn(&'r BranchMapping) -> String,
-) -> (HashMap<String, Vec<u32>>, HashMap<String, BranchMapping>) {
+) -> (BranchHitMap, HashMap<u32, BranchMapping>) {
     let mut items: HashMap<String, (Vec<u32>, BranchMapping)> = Default::default();
 
     for (key, item_hits) in first_hits {
@@ -118,24 +52,24 @@ fn merge_properties_hits_vec(
             .or_insert((item_hits.clone(), item.clone()));
     }
 
-    let mut hits: HashMap<String, Vec<u32>> = Default::default();
-    let mut map: HashMap<String, BranchMapping> = Default::default();
+    let mut hits: BranchHitMap = Default::default();
+    let mut map: BranchMap = Default::default();
 
     for (idx, (_, (hit, item))) in items.iter_mut().enumerate() {
-        hits.insert(idx.to_string(), hit.clone());
-        map.insert(idx.to_string(), item.clone());
+        hits.insert(idx as u32, hit.clone());
+        map.insert(idx as u32, item.clone());
     }
 
     (hits, map)
 }
 
 fn merge_properties<T>(
-    first_hits: &HashMap<String, u32>,
-    first_map: &HashMap<String, T>,
-    second_hits: &HashMap<String, u32>,
-    second_map: &HashMap<String, T>,
+    first_hits: &LineHitMap,
+    first_map: &HashMap<u32, T>,
+    second_hits: &LineHitMap,
+    second_map: &HashMap<u32, T>,
     get_item_key_fn: for<'r> fn(&'r T) -> String,
-) -> (HashMap<String, u32>, HashMap<String, T>)
+) -> (LineHitMap, HashMap<u32, T>)
 where
     T: Clone,
 {
@@ -164,15 +98,39 @@ where
             .or_insert((*item_hits, item.clone()));
     }
 
-    let mut hits: HashMap<String, u32> = Default::default();
-    let mut map: HashMap<String, T> = Default::default();
+    let mut hits: LineHitMap = Default::default();
+    let mut map: HashMap<u32, T> = Default::default();
 
     for (idx, (_, (hit, item))) in items.iter_mut().enumerate() {
-        hits.insert(idx.to_string(), *hit);
-        map.insert(idx.to_string(), item.clone());
+        hits.insert(idx as u32, *hit);
+        map.insert(idx as u32, item.clone());
     }
 
     (hits, map)
+}
+
+/// provides a read-only view of coverage for a single file.
+/// The deep structure of this object is documented elsewhere. It has the following
+/// properties:
+/// `path` - the file path for which coverage is being tracked
+/// `statementMap` - map of statement locations keyed by statement index
+/// `fnMap` - map of function metadata keyed by function index
+/// `branchMap` - map of branch metadata keyed by branch index
+/// `s` - hit counts for statements
+/// `f` - hit count for functions
+/// `b` - hit count for branches
+
+#[derive(Clone)]
+pub struct FileCoverage {
+    pub(crate) all: bool,
+    path: String,
+    statement_map: StatementMap,
+    fn_map: FunctionMap,
+    branch_map: BranchMap,
+    s: LineHitMap,
+    f: LineHitMap,
+    b: BranchHitMap,
+    b_t: Option<BranchHitMap>,
 }
 
 impl FileCoverage {
@@ -184,8 +142,8 @@ impl FileCoverage {
             fn_map: Default::default(),
             branch_map: Default::default(),
             s: Default::default(),
-            f: Default::default(),
             b: Default::default(),
+            f: Default::default(),
             b_t: if report_logic {
                 Some(Default::default())
             } else {
@@ -204,11 +162,11 @@ impl FileCoverage {
 
     /// Returns computed line coverage from statement coverage.
     /// This is a map of hits keyed by line number in the source.
-    pub fn get_line_coverage(&self) -> LineMap {
+    pub fn get_line_coverage(&self) -> LineHitMap {
         let statements_map = &self.statement_map;
         let statements = &self.s;
 
-        let mut line_map: LineMap = Default::default();
+        let mut line_map: LineHitMap = Default::default();
 
         for (st, count) in statements {
             let line = statements_map
@@ -248,12 +206,12 @@ impl FileCoverage {
         ret
     }
 
-    pub fn get_branch_coverage_by_line(&self) -> BranchMap {
+    pub fn get_branch_coverage_by_line(&self) -> BranchCoverageMap {
         let branch_map = &self.branch_map;
         let branches = &self.b;
 
-        let mut prefilter_data: HashMap<u32, Vec<u32>> = Default::default();
-        let mut ret: BranchMap = Default::default();
+        let mut prefilter_data: BranchHitMap = Default::default();
+        let mut ret: BranchCoverageMap = Default::default();
 
         for (k, map) in branch_map {
             let line = if map.line > 0 {
@@ -358,7 +316,7 @@ impl FileCoverage {
         ret
     }
 
-    fn compute_branch_totals(branch_map: &HashMap<String, Vec<u32>>) -> Totals {
+    fn compute_branch_totals(branch_map: &BranchHitMap) -> Totals {
         let mut ret: Totals = Default::default();
 
         branch_map.values().for_each(|branches| {
@@ -405,5 +363,24 @@ impl FileCoverage {
         };
 
         CoverageSummary::new(line, function, statement, branches, branches_true)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use crate::{FileCoverage, Range};
+
+    #[test]
+    fn should_able_to_merge() {
+        let base_statement_map = HashMap::from([
+            ("0".to_string(), Range::new(1, 1, 1, 100)),
+            ("1".to_string(), Range::new(2, 1, 2, 50)),
+            ("2".to_string(), Range::new(2, 51, 2, 100)),
+            ("3".to_string(), Range::new(2, 101, 3, 100)),
+        ]);
+
+        let mut base = FileCoverage::from_file_path("/path/to/file".to_string(), false);
     }
 }
