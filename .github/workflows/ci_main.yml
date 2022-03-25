@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/cache@v3
+    - uses: actions/cache@v2
       with:
         path: |
           ~/.cargo/bin/
