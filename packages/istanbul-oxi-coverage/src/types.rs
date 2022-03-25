@@ -2,7 +2,7 @@ use indexmap::IndexMap;
 
 use crate::{coverage::Coverage, Range};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Function {
     pub(crate) name: String,
     pub(crate) decl: Range,
@@ -10,12 +10,31 @@ pub struct Function {
     pub(crate) line: u32,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Branch {
-    pub(crate) loc: Range,
+    pub(crate) loc: Option<Range>,
     pub(crate) branch_type: String,
     pub(crate) locations: Vec<Range>,
-    pub(crate) line: u32,
+    pub(crate) line: Option<u32>,
+}
+
+impl Branch {
+    pub fn from_line(branch_type: String, line: u32, locations: Vec<Range>) -> Branch {
+        Branch {
+            loc: None,
+            branch_type,
+            locations,
+            line: Some(line),
+        }
+    }
+    pub fn from_loc(branch_type: String, loc: Range, locations: Vec<Range>) -> Branch {
+        Branch {
+            loc: Some(loc),
+            branch_type,
+            locations,
+            line: None,
+        }
+    }
 }
 
 /// Map to line number to hit count.

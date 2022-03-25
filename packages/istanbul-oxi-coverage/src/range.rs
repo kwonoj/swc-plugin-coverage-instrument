@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, Default, Debug)]
+#[derive(Copy, Clone, Default, Debug, PartialEq)]
 pub struct Location {
     pub(crate) line: u32,
     pub(crate) column: u32,
@@ -9,7 +9,7 @@ impl Location {
     }
 }
 
-#[derive(Copy, Clone, Default, Debug)]
+#[derive(Copy, Clone, Default, Debug, PartialEq)]
 pub struct Range {
     pub(crate) start: Location,
     pub(crate) end: Location,
