@@ -6,7 +6,8 @@
   "scripts": {
     "build:inst:spec": "wasm-pack build packages/istanbul-oxi-instrument-wasm --target nodejs --dev",
     "build:plugin": "cargo build -p swc-plugin-istanbul-oxi --target wasm32-wasi",
-    "test": "npm-run-all build:plugin && jest",
+    "test": "npm-run-all build:plugin && cross-env FILTER=skip_every_fixture_test mocha",
+    "test:debug": "npm-run-all build:plugin && cross-env FILTER=yield mocha",
     "prepare": "husky install"
   },
   "repository": {
@@ -21,18 +22,24 @@
   },
   "homepage": "https://github.com/kwonoj/istanbul-oxi#readme",
   "devDependencies": {
+    "@babel/core": "^7.17.8",
     "@babel/preset-env": "^7.16.11",
     "@babel/preset-typescript": "^7.16.7",
+    "@istanbuljs/schema": "^0.1.3",
+    "@swc-node/register": "^1.4.2",
     "@swc/core": "^1.2.160",
     "@taplo/cli": "^0.3.2",
-    "@types/jest": "^27.4.1",
+    "@types/chai": "^4.3.0",
     "@types/js-yaml": "^4.0.5",
     "@types/lodash.clone": "^4.5.6",
+    "@types/mocha": "^9.1.0",
+    "chai": "^4.3.6",
+    "cross-env": "^7.0.3",
     "husky": "^7.0.4",
-    "jest": "^27.5.1",
     "js-yaml": "^4.1.0",
     "lint-staged": "^12.3.7",
     "lodash.clone": "^4.5.0",
+    "mocha": "^9.2.2",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.6.0",
     "typescript": "^4.6.2"

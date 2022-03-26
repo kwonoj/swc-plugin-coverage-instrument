@@ -1,4 +1,3 @@
-import { transform } from "@swc/core";
 import * as path from "path";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
@@ -6,29 +5,6 @@ import { create } from "./util/verifier";
 import * as guards from "./util/guards";
 
 const clone: typeof import("lodash.clone") = require("lodash.clone");
-
-const pluginBinary = path.resolve(
-  __dirname,
-  "../../../target/wasm32-wasi/debug/swc_plugin_istanbul_oxi.wasm"
-);
-
-const instrument = async (
-  code: string,
-  filename: string,
-  inputSourceMap?: unknown
-) => {
-  let output = transform(code, {
-    filename,
-    jsc: {
-      target: "es2022",
-      experimental: {
-        plugins: [[pluginBinary, {}]],
-      },
-    },
-  });
-
-  return output;
-};
 
 const dir = path.resolve(__dirname, "fixtures");
 const files = fs.readdirSync(dir).filter((f) => {
