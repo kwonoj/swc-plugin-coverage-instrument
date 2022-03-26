@@ -1,0 +1,8 @@
+{
+  "require": ["@swc-node/register"],
+  "reporter": "dot",
+  "extensions": ["ts", "js"],
+  "recursive": true,
+  "enable-source-maps": true,
+  "spec": "./packages/**/*.spec.*"
+}
