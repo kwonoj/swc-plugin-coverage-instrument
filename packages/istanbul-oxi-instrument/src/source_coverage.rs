@@ -10,6 +10,11 @@ pub struct SourceCoverage {
 pub struct UnknownReserved;
 
 impl SourceCoverage {
+    pub fn new(file_path: String, report_logic: bool) -> SourceCoverage {
+        SourceCoverage {
+            inner: FileCoverage::from_file_path(file_path, report_logic),
+        }
+    }
     pub fn new_statement(&mut self, loc: Range) {}
     pub fn new_function(&mut self, decl: Range, loc: Range) {}
     pub fn new_branch(&mut self, loc: Range, is_report_logic: bool) {}

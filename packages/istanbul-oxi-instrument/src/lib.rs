@@ -1,5 +1,5 @@
 mod source_coverage;
 mod visitor;
 
-use source_coverage::*;
+pub use source_coverage::SourceCoverage;
 pub use visitor::*;
