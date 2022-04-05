@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as yaml from "js-yaml";
 import { create } from "./util/verifier";
 import * as guards from "./util/guards";
+import { assert } from "chai";
 
 const clone: typeof import("lodash.clone") = require("lodash.clone");
 
@@ -53,7 +54,7 @@ function generateTests(docs) {
       if (doc.err) {
         it("has errors", () => {
           console.error(doc.err);
-          expect(true).toBe(false);
+          assert.ok(false, doc.err);
         });
       } else {
         (doc.tests || []).forEach((t) => {
@@ -75,7 +76,7 @@ function generateTests(docs) {
               await v.verify(args, out, test);
             }
             if (noCoverage) {
-              expect(v.code).toEqual(v.generatedCode);
+              assert.equal(v.code, v.generatedCode);
             }
           };
           if (skip) {
