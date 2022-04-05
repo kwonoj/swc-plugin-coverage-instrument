@@ -1,4 +1,10 @@
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
+
 use once_cell::sync::Lazy;
+use serde_json::Value;
 use swc_plugin::{
     ast::*,
     comments::{Comment, Comments, PluginCommentsProxy},
@@ -33,17 +39,34 @@ struct CoverageState {
 }
 
 impl CoverageState {
-    pub fn new() -> CoverageState {
+    pub fn new(
+        var_name: &str,
+        attrs: UnknownReserved,
+        next_ignore: Option<UnknownReserved>,
+        cov: UnknownReserved,
+        ignore_class_method: UnknownReserved,
+        types: UnknownReserved,
+        source_mapping_url: Option<UnknownReserved>,
+        report_logic: bool,
+    ) -> CoverageState {
+        let var_name_hash = CoverageState::get_var_name_hash(var_name);
+
         CoverageState {
-            var_name: Default::default(),
-            attrs: Default::default(),
-            next_ignore: Default::default(),
-            cov: Default::default(),
-            ignore_class_method: Default::default(),
-            types: Default::default(),
-            source_mapping_url: Default::default(),
-            report_logic: false,
+            var_name: var_name_hash,
+            attrs,
+            next_ignore,
+            cov,
+            ignore_class_method,
+            types,
+            source_mapping_url,
+            report_logic,
         }
+    }
+
+    fn get_var_name_hash(name: &str) -> String {
+        let mut s = DefaultHasher::new();
+        name.hash(&mut s);
+        return format!("cov_{}", s.finish());
     }
 }
 
@@ -52,6 +75,7 @@ impl VisitMut for CoverageState {}
 /// Parent visitor
 struct CoverageVisitor {
     comments: Option<PluginCommentsProxy>,
+    filename: String,
 }
 
 impl CoverageVisitor {
@@ -102,14 +126,32 @@ impl VisitMut for CoverageVisitor {
             return;
         }
 
-        let mut state = CoverageState::new();
+        let mut state = CoverageState::new(
+            self.filename.as_str(),
+            UnknownReserved,
+            None,
+            UnknownReserved,
+            UnknownReserved,
+            UnknownReserved,
+            None,
+            false,
+        );
         program.visit_mut_children_with(&mut state);
     }
 }
 
 #[plugin_transform]
 pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Program {
+    let context: Value = serde_json::from_str(&metadata.transform_context)
+        .expect("Should able to deserialize context");
+    let filename = if let Some(filename) = (&context["filename"]).as_str() {
+        filename
+    } else {
+        "unknown.js"
+    };
+
     program.fold_with(&mut as_folder(CoverageVisitor {
         comments: metadata.comments,
+        filename: filename.to_string(),
     }))
 }
