@@ -11,7 +11,7 @@ use swc_plugin::{
     comments::{Comment, Comments, PluginCommentsProxy},
     plugin_transform,
     syntax_pos::DUMMY_SP,
-    util::{quote, take::Take},
+    utils::{quote, take::Take},
     TransformPluginProgramMetadata,
 };
 
