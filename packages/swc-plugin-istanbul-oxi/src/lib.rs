@@ -11,11 +11,14 @@ use swc_plugin::{
     comments::{Comment, Comments, PluginCommentsProxy},
     plugin_transform,
     syntax_pos::DUMMY_SP,
-    utils::{quote, take::Take},
+    utils::take::Take,
     TransformPluginProgramMetadata,
 };
 
+mod template;
+
 use regex::Regex as Regexp;
+use template::{create_coverage_fn_decl, create_global_stmt_template};
 
 /// This is not fully identical to original file comments
 /// https://github.com/istanbuljs/istanbuljs/blob/6f45283feo31faaa066375528f6b68e3a9927b2d5/packages/istanbul-lib-instrument/src/visitor.js#L10=
@@ -89,167 +92,6 @@ impl CoverageVisitor {
     fn on_exit(&mut self) {}
 }
 
-/// Returns `var $var_decl_name = $value;`
-fn get_assignment_stmt(var_decl_name: &str, value: Expr) -> (Ident, Stmt) {
-    let ident = Ident::new(var_decl_name.into(), DUMMY_SP);
-
-    let stmt = Stmt::Decl(Decl::Var(VarDecl {
-        kind: VarDeclKind::Var,
-        decls: vec![VarDeclarator {
-            span: DUMMY_SP,
-            name: Pat::Assign(AssignPat {
-                span: DUMMY_SP,
-                left: Box::new(Pat::Ident(BindingIdent::from(ident.clone()))),
-                right: Box::new(value),
-                type_ann: None,
-            }),
-            init: None,
-            definite: false,
-        }],
-        ..VarDecl::dummy()
-    }));
-
-    (ident, stmt)
-}
-
-/// Create a function declaration for the collecting coverage.
-fn create_coverage_fn_decl(
-    coverage_variable: &str,
-    global_ident: Ident,
-    coverage_template: Stmt,
-    var_name: &str,
-    file_path: &str,
-) -> (Ident, ModuleItem) {
-    // Actual fn body statements will be injected
-    let mut stmts = vec![];
-
-    // var path = $file_path;
-    let (path_ident, path_stmt) = get_assignment_stmt(
-        "path",
-        Expr::Lit(Lit::Str(Str {
-            value: file_path.into(),
-            ..Str::dummy()
-        })),
-    );
-    stmts.push(path_stmt);
-
-    // var hash = $HASH;
-    let (hash_ident, hash_stmt) = get_assignment_stmt(
-        "hash",
-        Expr::Lit(Lit::Str(Str {
-            value: "TODO".into(),
-            ..Str::dummy()
-        })),
-    );
-    stmts.push(hash_stmt);
-
-    // var global = new Function("return $global_coverage_scope")();
-    stmts.push(coverage_template);
-
-    // var gcv = ${coverage_variable};
-    let (gcv_ident, gcv_stmt) = get_assignment_stmt(
-        "gcv",
-        Expr::Lit(Lit::Str(Str {
-            value: coverage_variable.into(),
-            ..Str::dummy()
-        })),
-    );
-    stmts.push(gcv_stmt);
-
-    // var coverageData = INITIAL;
-    let (coverage_data_ident, coverage_data_stmt) = get_assignment_stmt(
-        "coverageData",
-        Expr::Lit(Lit::Str(Str {
-            value: "TODO".into(),
-            ..Str::dummy()
-        })),
-    );
-    stmts.push(coverage_data_stmt);
-
-    let coverage_ident = Ident::new("coverage".into(), DUMMY_SP);
-    stmts.push(quote!(
-        "var $coverage = $global[$gcv] || ($global[$gcv] = {})" as Stmt,
-        coverage = coverage_ident.clone(),
-        gcv = gcv_ident.clone(),
-        global = global_ident.clone()
-    ));
-
-    stmts.push(quote!(
-        r#"
-    if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
-        $coverage[$path] = $coverage_data;
-    }
-    "# as Stmt,
-        coverage = coverage_ident.clone(),
-        path = path_ident.clone(),
-        hash = hash_ident.clone(),
-        coverage_data = coverage_data_ident.clone()
-    ));
-
-    // var actualCoverage = coverage[path];
-    let actual_coverage_ident = Ident::new("actualCoverage".into(), DUMMY_SP);
-    stmts.push(quote!(
-        "var $actual_coverage = $coverage[$path];" as Stmt,
-        actual_coverage = actual_coverage_ident.clone(),
-        coverage = coverage_ident.clone(),
-        path = path_ident.clone()
-    ));
-
-    let coverage_fn_ident = Ident::new(var_name.into(), DUMMY_SP);
-    //
-    //COVERAGE_FUNCTION = function () {
-    //   return actualCoverage;
-    //}
-    // TODO: need to add @ts-ignore leading comment
-    let coverage_fn_assign_expr = Expr::Assign(AssignExpr {
-        left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent::from(
-            coverage_fn_ident.clone(),
-        )))),
-        right: Box::new(Expr::Fn(FnExpr {
-            ident: None,
-            function: Function {
-                body: Some(BlockStmt {
-                    span: DUMMY_SP,
-                    stmts: vec![Stmt::Return(ReturnStmt {
-                        span: DUMMY_SP,
-                        arg: Some(Box::new(Expr::Ident(actual_coverage_ident.clone()))),
-                    })],
-                }),
-                ..Function::dummy()
-            },
-        })),
-        ..AssignExpr::dummy()
-    });
-
-    stmts.push(Stmt::Block(BlockStmt {
-        stmts: vec![Stmt::Expr(ExprStmt {
-            span: DUMMY_SP,
-            expr: Box::new(coverage_fn_assign_expr),
-        })],
-        ..BlockStmt::dummy()
-    }));
-
-    stmts.push(Stmt::Return(ReturnStmt {
-        span: DUMMY_SP,
-        arg: Some(Box::new(Expr::Ident(actual_coverage_ident.clone()))),
-    }));
-
-    // moduleitem for fn decl includes body defined above
-    let module_item = ModuleItem::Stmt(Stmt::Decl(Decl::Fn(FnDecl {
-        ident: coverage_fn_ident.clone(),
-        declare: false,
-        function: Function {
-            body: Some(BlockStmt {
-                span: DUMMY_SP,
-                stmts,
-            }),
-            ..Function::dummy()
-        },
-    })));
-
-    (coverage_fn_ident, module_item)
-}
-
 impl VisitMut for CoverageVisitor {
     fn visit_mut_program(&mut self, program: &mut Program) {
         if should_ignore_file(&self.comments, program) {
@@ -315,29 +157,7 @@ impl VisitMut for CoverageVisitor {
                  */
                 unimplemented!("");
             } else {
-                // var global = new Function("return $global_coverage_scope")();
-                let expr = Expr::New(NewExpr {
-                    callee: Box::new(Expr::Ident(Ident::new("Function".into(), DUMMY_SP))),
-                    args: Some(vec![ExprOrSpread {
-                        spread: None,
-                        expr: Box::new(Expr::Lit(Lit::Str(Str {
-                            value: format!("return {}", coverage_global_scope).into(),
-                            ..Str::dummy()
-                        }))),
-                    }]),
-                    ..NewExpr::dummy()
-                });
-
-                get_assignment_stmt(
-                    "global",
-                    Expr::Call(CallExpr {
-                        callee: Callee::Expr(Box::new(Expr::Paren(ParenExpr {
-                            span: DUMMY_SP,
-                            expr: Box::new(expr),
-                        }))),
-                        ..CallExpr::dummy()
-                    }),
-                )
+                create_global_stmt_template(coverage_global_scope)
             }
         } else {
             unimplemented!("");
