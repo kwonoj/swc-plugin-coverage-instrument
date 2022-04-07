@@ -150,13 +150,6 @@ impl VisitMut for CoverageVisitor<'_> {
         // TODO: option: name of global coverage variable. (optional, default `__coverage__`)
         let coverage_variable = "__coverage__";
 
-        /*
-        TODO:
-        const coverageNode = T.valueToNode(coverageData);
-        delete coverageData[MAGIC_KEY];
-        delete coverageData.hash;
-        */
-
         let gv_template = if coverage_global_scope_func {
             // TODO: path.scope.getBinding('Function')
             let is_function_binding_scope = false;
@@ -182,7 +175,6 @@ impl VisitMut for CoverageVisitor<'_> {
             */
         };
 
-        // HASH
         let (coverage_fn_ident, coverage_template) = create_coverage_fn_decl(
             &coverage_variable,
             gv_template.0,
