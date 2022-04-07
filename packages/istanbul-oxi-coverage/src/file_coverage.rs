@@ -1,4 +1,5 @@
 use indexmap::IndexMap;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     coverage::Coverage,
@@ -123,7 +124,7 @@ where
 /// Note: internally it uses IndexMap to represent key-value pairs for the coverage data,
 /// as logic for merge relies on the order of keys in the map.
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileCoverage {
     pub all: bool,
     pub path: String,
@@ -133,6 +134,7 @@ pub struct FileCoverage {
     pub s: LineHitMap,
     pub f: LineHitMap,
     pub b: BranchHitMap,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub b_t: Option<BranchHitMap>,
 }
 

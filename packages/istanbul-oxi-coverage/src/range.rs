@@ -1,4 +1,6 @@
-#[derive(Copy, Clone, Default, Debug, PartialEq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Copy, Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Location {
     pub(crate) line: u32,
     pub(crate) column: u32,
@@ -9,7 +11,7 @@ impl Location {
     }
 }
 
-#[derive(Copy, Clone, Default, Debug, PartialEq)]
+#[derive(Copy, Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Range {
     pub(crate) start: Location,
     pub(crate) end: Location,

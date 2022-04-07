@@ -8,7 +8,7 @@ use once_cell::sync::Lazy;
 use serde_json::Value;
 use swc_plugin::{
     ast::*,
-    comments::{Comment, Comments, PluginCommentsProxy},
+    comments::{Comment, CommentKind, Comments, PluginCommentsProxy},
     plugin_transform,
     syntax_pos::DUMMY_SP,
     utils::take::Take,
@@ -34,8 +34,8 @@ impl Default for UnknownReserved {
 }
 
 /// Internal visitor
-struct CoverageVisitor {
-    comments: Option<PluginCommentsProxy>,
+struct CoverageVisitor<'a> {
+    comments: Option<&'a PluginCommentsProxy>,
     var_name: String,
     file_path: String,
     attrs: UnknownReserved,
@@ -47,9 +47,9 @@ struct CoverageVisitor {
     report_logic: bool,
 }
 
-impl CoverageVisitor {
+impl<'a> CoverageVisitor<'a> {
     pub fn new(
-        comments: Option<PluginCommentsProxy>,
+        comments: Option<&'a PluginCommentsProxy>,
         var_name: &str,
         attrs: UnknownReserved,
         next_ignore: Option<UnknownReserved>,
@@ -58,7 +58,7 @@ impl CoverageVisitor {
         types: UnknownReserved,
         source_mapping_url: Option<UnknownReserved>,
         report_logic: bool,
-    ) -> CoverageVisitor {
+    ) -> CoverageVisitor<'a> {
         let var_name_hash = CoverageVisitor::get_var_name_hash(var_name);
 
         CoverageVisitor {
@@ -92,7 +92,7 @@ impl CoverageVisitor {
     fn on_exit(&mut self) {}
 }
 
-impl VisitMut for CoverageVisitor {
+impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_program(&mut self, program: &mut Program) {
         if should_ignore_file(&self.comments, program) {
             return;
@@ -103,6 +103,26 @@ impl VisitMut for CoverageVisitor {
         }
 
         program.visit_mut_children_with(self);
+
+        let span = match &program {
+            Program::Module(m) => m.span,
+            Program::Script(s) => s.span,
+        };
+
+        let coverage_data_json_str = serde_json::to_string(self.cov.as_ref())
+            .expect("Should able to serialize coverage data");
+
+        // Append coverage data as stringified JSON comments at the bottom of transformed code.
+        // Currently plugin does not have way to pass any other data to the host except transformed program.
+        // This attaches arbitary data to the transformed code itself to retrieve it.
+        self.comments.add_trailing(
+            span.hi,
+            Comment {
+                kind: CommentKind::Block,
+                span: DUMMY_SP,
+                text: format!("__coverage_data_json_comment__::{}", coverage_data_json_str).into(),
+            },
+        );
     }
 
     fn visit_mut_stmt(&mut self, stmt: &mut Stmt) {
@@ -117,10 +137,6 @@ impl VisitMut for CoverageVisitor {
     }
 
     fn visit_mut_module_items(&mut self, items: &mut Vec<ModuleItem>) {
-        for item in items.iter_mut() {
-            item.visit_mut_children_with(self);
-        }
-
         if self.is_instrumented_already() {
             return;
         }
@@ -166,7 +182,7 @@ impl VisitMut for CoverageVisitor {
             */
         };
 
-        // INITIAL (valueToNode(coverageData)), HASH
+        // HASH
         let (coverage_fn_ident, coverage_template) = create_coverage_fn_decl(
             &coverage_variable,
             gv_template.0,
@@ -176,9 +192,6 @@ impl VisitMut for CoverageVisitor {
             self.cov.as_ref(),
         );
 
-        // prepend template to the top of the code
-        items.insert(0, coverage_template);
-
         // explicitly call this.varName to ensure coverage is always initialized
         let m = ModuleItem::Stmt(Stmt::Expr(ExprStmt {
             span: DUMMY_SP,
@@ -187,12 +200,19 @@ impl VisitMut for CoverageVisitor {
                 ..CallExpr::dummy()
             })),
         }));
+
+        for item in items.iter_mut() {
+            item.visit_mut_children_with(self);
+        }
+
+        // prepend template to the top of the code
+        items.insert(0, coverage_template);
         items.insert(1, m);
     }
 }
 
-fn should_ignore_file(comments: &Option<PluginCommentsProxy>, program: &Program) -> bool {
-    if let Some(comments) = &comments {
+fn should_ignore_file(comments: &Option<&PluginCommentsProxy>, program: &Program) -> bool {
+    if let Some(comments) = *comments {
         let pos = match program {
             Program::Module(module) => module.span,
             Program::Script(script) => script.span,
@@ -235,7 +255,7 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
     let report_logic = false;
 
     let visitor = CoverageVisitor::new(
-        metadata.comments,
+        metadata.comments.as_ref(),
         filename,
         UnknownReserved,
         None,

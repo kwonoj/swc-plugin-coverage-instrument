@@ -158,17 +158,16 @@ fn create_coverage_data_object(coverage_data: &FileCoverage) -> Expr {
     })));
     props.push(coverage_schema_prop);
 
-    // Original code creates hash against raw coverage object, but using indexmap prevents to do the same.
-    // generate hash over the props instead.
+    // Original code creates hash against raw coverage object, but we use props ast instead.
     let mut hasher = DefaultHasher::new();
     props.hash(&mut hasher);
     let hash = hasher.finish().to_string();
 
-    let coverage_schema_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+    let hash_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("hash".into(), DUMMY_SP)),
         value: Box::new(Expr::Lit(Lit::Str(Str::from(hash)))),
     })));
-    props.push(coverage_schema_prop);
+    props.push(hash_prop);
 
     Expr::Object(ObjectLit {
         span: DUMMY_SP,
