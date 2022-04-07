@@ -274,6 +274,7 @@ name = "istanbul-oxi-instrument"
 version = "0.1.0"
 dependencies = [
  "istanbul-oxi-coverage",
+ "once_cell",
 ]
 
 [[package]]
@@ -782,10 +783,12 @@ checksum = "6446ced80d6c486436db5c078dde11a9f73d42b57fb273121e160b84f63d894c"
 name = "swc-plugin-istanbul-oxi"
 version = "0.1.0"
 dependencies = [
+ "istanbul-oxi-instrument",
  "once_cell",
  "regex",
  "serde",
  "serde_json",
+ "swc_ecma_quote",
  "swc_plugin",
 ]
 
@@ -949,14 +952,15 @@ dependencies = [
 
 [[package]]
 name = "swc_plugin"
-version = "0.44.0"
+version = "0.44.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bfd24f849de255ee5de6615f65dcfe63e26517ece247067d4cc021421eece80"
+checksum = "56a269b6e3c61d5ff640f92b4a44d81fe4d6e442fbb89db5c0046401396efe12"
 dependencies = [
  "swc_atoms",
  "swc_common",
  "swc_ecma_ast",
  "swc_ecma_quote",
+ "swc_ecma_utils",
  "swc_ecma_visit",
  "swc_plugin_comments",
  "swc_plugin_macro",

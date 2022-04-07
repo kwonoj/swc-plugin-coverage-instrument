@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 istanbul-oxi-coverage = { version = "0.1.0", path = "../istanbul-oxi-coverage" }
+once_cell = "1.10.0"
