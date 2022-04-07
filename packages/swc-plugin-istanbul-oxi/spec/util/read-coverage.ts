@@ -1,8 +1,17 @@
-const { parseSync, traverse } = require("@babel/core");
 const { defaults } = require("@istanbuljs/schema");
-const { MAGIC_KEY, MAGIC_VALUE } = require("./constants");
+import { COVERAGE_MAGIC_KEY, COVERAGE_MAGIC_VALUE } from "./constants";
+import {
+  Expression,
+  Module,
+  ObjectExpression,
+  parseSync,
+  Program,
+  Property,
+  SpreadElement,
+} from "@swc/core";
+import { Visitor } from "@swc/core/Visitor";
 
-function getAst(code) {
+function getAst(code: any): Module {
   if (typeof code === "object" && typeof code.type === "string") {
     // Assume code is already a babel ast.
     return code;
@@ -12,44 +21,45 @@ function getAst(code) {
     throw new Error("Code must be a string");
   }
 
-  // Parse as leniently as possible
-  return parseSync(code, {
-    babelrc: false,
-    configFile: false,
-    parserOpts: {
-      allowAwaitOutsideFunction: true,
-      allowImportExportEverywhere: true,
-      allowReturnOutsideFunction: true,
-      allowSuperOutsideMethod: true,
-      sourceType: "script",
-      plugins: defaults.instrumenter.parserPlugins,
-    },
-  });
+  return parseSync(code, { syntax: "ecmascript", script: true });
 }
 
-//TODO: Should not rely on babel to parse & get initial coverage
-export function readInitialCoverage(code) {
-  const ast = getAst(code);
+class CoverageReadVisitor extends Visitor {
+  private coverageScope: any;
+  public getCoverageScope() {
+    return this.coverageScope;
+  }
 
-  let covScope;
-  traverse(ast, {
-    ObjectProperty(path) {
-      const { node } = path;
+  public visitObjectProperty(
+    n: Property | SpreadElement
+  ): Property | SpreadElement {
+    /*
+    const { node } = path;
       if (
         !node.computed &&
         path.get("key").isIdentifier() &&
-        node.key.name === MAGIC_KEY
+        node.key.name === COVERAGE_MAGIC_KEY
       ) {
         const magicValue = path.get("value").evaluate();
-        if (!magicValue.confident || magicValue.value !== MAGIC_VALUE) {
+        if (!magicValue.confident || magicValue.value !== COVERAGE_MAGIC_VALUE) {
           return;
         }
         covScope =
           path.scope.getFunctionParent() || path.scope.getProgramParent();
         path.stop();
-      }
-    },
-  });
+      }*/
+    return n;
+  }
+}
+
+//TODO: Should not rely on babel to parse & get initial coverage
+export function readInitialCoverage(code: any) {
+  const ast = getAst(code);
+
+  let visitor = new CoverageReadVisitor();
+  visitor.visitProgram(ast);
+
+  let covScope = visitor.getCoverageScope();
 
   if (!covScope) {
     return null;
