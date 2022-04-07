@@ -86,6 +86,7 @@ class Verifier {
       expectedCoverage.inputSourceMap || undefined,
       "Input source map mismatch"
     );
+
     const initial = readInitialCoverage(this.getGeneratedCode());
     assert.ok(initial);
     assert.deepEqual(initial.coverageData, this.result.emptyCoverage);
