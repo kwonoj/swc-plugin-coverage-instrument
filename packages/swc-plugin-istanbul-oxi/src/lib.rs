@@ -44,7 +44,7 @@ struct CoverageVisitor<'a> {
     ignore_class_method: UnknownReserved,
     types: UnknownReserved,
     source_mapping_url: Option<UnknownReserved>,
-    report_logic: bool,
+    instrument_options: InstrumentOptions,
 }
 
 impl<'a> CoverageVisitor<'a> {
@@ -57,7 +57,7 @@ impl<'a> CoverageVisitor<'a> {
         ignore_class_method: UnknownReserved,
         types: UnknownReserved,
         source_mapping_url: Option<UnknownReserved>,
-        report_logic: bool,
+        instrument_options: InstrumentOptions,
     ) -> CoverageVisitor<'a> {
         let var_name_hash = CoverageVisitor::get_var_name_hash(var_name);
 
@@ -71,7 +71,7 @@ impl<'a> CoverageVisitor<'a> {
             ignore_class_method,
             types,
             source_mapping_url,
-            report_logic,
+            instrument_options,
         }
     }
 
@@ -147,8 +147,6 @@ impl VisitMut for CoverageVisitor<'_> {
         let coverage_global_scope = "this";
         //TODO: option: use an evaluated function to find coverageGlobalScope.
         let coverage_global_scope_func = true;
-        // TODO: option: name of global coverage variable. (optional, default `__coverage__`)
-        let coverage_variable = "__coverage__";
 
         let gv_template = if coverage_global_scope_func {
             // TODO: path.scope.getBinding('Function')
@@ -176,7 +174,7 @@ impl VisitMut for CoverageVisitor<'_> {
         };
 
         let (coverage_fn_ident, coverage_template) = create_coverage_fn_decl(
-            &coverage_variable,
+            &self.instrument_options.coverage_variable,
             gv_template.0,
             gv_template.1,
             &self.var_name,
@@ -233,6 +231,12 @@ fn should_ignore_file(comments: &Option<&PluginCommentsProxy>, program: &Program
     }
 }
 
+struct InstrumentOptions {
+    pub coverage_variable: String,
+    pub compact: bool,
+    pub report_logic: bool,
+}
+
 #[plugin_transform]
 pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Program {
     let context: Value = serde_json::from_str(&metadata.transform_context)
@@ -243,19 +247,31 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
         "unknown.js"
     };
 
-    //TODO: support plugin options
-    let report_logic = false;
+    let instrument_options_value: Value = serde_json::from_str(&metadata.plugin_config)
+        .expect("Should able to deserialize plugin config");
+    let instrument_options = InstrumentOptions {
+        coverage_variable: instrument_options_value["coverageVariable"]
+            .as_str()
+            .unwrap_or("__coverage__")
+            .to_string(),
+        compact: instrument_options_value["compact"]
+            .as_bool()
+            .unwrap_or(false),
+        report_logic: instrument_options_value["reportLogic"]
+            .as_bool()
+            .unwrap_or(false),
+    };
 
     let visitor = CoverageVisitor::new(
         metadata.comments.as_ref(),
         filename,
         UnknownReserved,
         None,
-        SourceCoverage::new(filename.to_string(), report_logic),
+        SourceCoverage::new(filename.to_string(), instrument_options.report_logic),
         UnknownReserved,
         UnknownReserved,
         None,
-        report_logic,
+        instrument_options,
     );
 
     program.fold_with(&mut as_folder(visitor))

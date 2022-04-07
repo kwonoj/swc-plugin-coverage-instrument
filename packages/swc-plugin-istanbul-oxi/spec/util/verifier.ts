@@ -11,11 +11,15 @@ const pluginBinary = path.resolve(
   "../../../../target/wasm32-wasi/debug/swc_plugin_istanbul_oxi.wasm"
 );
 
+/// Mimic instrumenter.
 const instrumentSync = (
   code: string,
   filename: string,
-  inputSourceMap?: unknown
+  inputSourceMap?: unknown,
+  instrumentOptions?: Record<string, any>
 ) => {
+  console.log(instrumentOptions);
+
   const ret = transformSync(code, {
     filename: filename ?? "unknown",
     jsc: {
@@ -25,7 +29,7 @@ const instrumentSync = (
       },
       target: "es2022",
       experimental: {
-        plugins: [[pluginBinary, {}]],
+        plugins: [[pluginBinary, instrumentOptions ?? {}]],
       },
       preserveAllComments: true,
     },
@@ -188,7 +192,7 @@ const create = (code, options = {}, instrumentOptions = {}, inputSourceMap) => {
   }
 
   try {
-    let out = instrumentSync(code, file, inputSourceMap);
+    let out = instrumentSync(code, file, inputSourceMap, instrumentOptions);
     instrumenterOutput = out.code;
 
     if (debug) {
