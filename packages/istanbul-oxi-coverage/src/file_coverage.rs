@@ -125,15 +125,15 @@ where
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FileCoverage {
-    pub(crate) all: bool,
-    pub(crate) path: String,
-    pub(crate) statement_map: StatementMap,
-    pub(crate) fn_map: FunctionMap,
-    pub(crate) branch_map: BranchMap,
-    pub(crate) s: LineHitMap,
-    pub(crate) f: LineHitMap,
-    pub(crate) b: BranchHitMap,
-    pub(crate) b_t: Option<BranchHitMap>,
+    pub all: bool,
+    pub path: String,
+    pub statement_map: StatementMap,
+    pub fn_map: FunctionMap,
+    pub branch_map: BranchMap,
+    pub s: LineHitMap,
+    pub f: LineHitMap,
+    pub b: BranchHitMap,
+    pub b_t: Option<BranchHitMap>,
 }
 
 impl FileCoverage {
