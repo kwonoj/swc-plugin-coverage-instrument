@@ -1,8 +1,9 @@
 use indexmap::IndexMap;
+use serde::{Deserialize, Serialize};
 
 use crate::{coverage::Coverage, Range};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Function {
     pub(crate) name: String,
     pub(crate) decl: Range,
@@ -10,7 +11,7 @@ pub struct Function {
     pub(crate) line: u32,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Branch {
     pub(crate) loc: Option<Range>,
     pub(crate) branch_type: String,

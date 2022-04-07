@@ -2,6 +2,7 @@ import { transformSync } from "@swc/core";
 import * as path from "path";
 import { assert } from "chai";
 import { readInitialCoverage } from "./read-coverage";
+import { EOL } from "os";
 
 const clone: typeof import("lodash.clone") = require("lodash.clone");
 
@@ -31,6 +32,21 @@ const instrumentSync = (
   });
 
   return ret;
+};
+
+/**
+ * Poorman's substitution for instrumenter::lastFileCoverage to get the coverage from instrumented codes.
+ * SWC's plugin transform does not allow to pass arbiatary data other than transformed AST, using trailing comment
+ * to grab out data from plugin.
+ */
+const lastFileCoverage = (code?: string) => {
+  const lines = (code ?? "").split(EOL);
+  const commentLine = lines
+    .find((v) => v.includes("__coverage_data_json_comment__::"))
+    ?.split("__coverage_data_json_comment__::")[1];
+
+  const data = commentLine?.substring(0, commentLine.lastIndexOf("*/"));
+  return data ? JSON.parse(data) : {};
 };
 
 type UnknownReserved = any;
@@ -226,8 +242,7 @@ const create = (code, options = {}, instrumentOptions = {}, inputSourceMap) => {
     generatedCode: instrumenterOutput,
     coverageVariable,
     baseline: clone(g[coverageVariable]),
-    //TODO: this may not be correct
-    emptyCoverage: readInitialCoverage(code),
+    emptyCoverage: lastFileCoverage(instrumenterOutput), //mimic instrumenter.getLastFileCoverage()
   });
 };
 
