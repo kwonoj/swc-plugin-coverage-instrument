@@ -59,7 +59,7 @@ pub fn create_global_stmt_template(coverage_global_scope: &str) -> (Ident, Stmt)
     )
 }
 
-fn create_coverage_data_object(coverage_data: &FileCoverage) -> Expr {
+fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Expr) {
     let mut props = vec![];
 
     // Afaik there's no built-in way to iterate over struct properties
@@ -165,14 +165,17 @@ fn create_coverage_data_object(coverage_data: &FileCoverage) -> Expr {
 
     let hash_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("hash".into(), DUMMY_SP)),
-        value: Box::new(Expr::Lit(Lit::Str(Str::from(hash)))),
+        value: Box::new(Expr::Lit(Lit::Str(Str::from(hash.clone())))),
     })));
     props.push(hash_prop);
 
-    Expr::Object(ObjectLit {
-        span: DUMMY_SP,
-        props,
-    })
+    (
+        hash,
+        Expr::Object(ObjectLit {
+            span: DUMMY_SP,
+            props,
+        }),
+    )
 }
 
 /// Creates a function declaration for actual coverage collection.
@@ -197,14 +200,11 @@ pub fn create_coverage_fn_decl(
     );
     stmts.push(path_stmt);
 
+    let (hash, coverage_data_object) = create_coverage_data_object(coverage_data);
+
     // var hash = $HASH;
-    let (hash_ident, hash_stmt) = get_assignment_stmt(
-        "hash",
-        Expr::Lit(Lit::Str(Str {
-            value: "TODO".into(),
-            ..Str::dummy()
-        })),
-    );
+    let (hash_ident, hash_stmt) =
+        get_assignment_stmt("hash", Expr::Lit(Lit::Str(Str::from(hash.clone()))));
     stmts.push(hash_stmt);
 
     // var global = new Function("return $global_coverage_scope")();
@@ -221,7 +221,6 @@ pub fn create_coverage_fn_decl(
     stmts.push(gcv_stmt);
 
     // var coverageData = INITIAL;
-    let coverage_data_object = create_coverage_data_object(coverage_data);
     let (coverage_data_ident, coverage_data_stmt) =
         get_assignment_stmt("coverageData", coverage_data_object);
     stmts.push(coverage_data_stmt);
