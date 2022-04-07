@@ -1,4 +1,3 @@
-import { error } from "console";
 import { transformSync } from "@swc/core";
 import * as path from "path";
 import { assert } from "chai";
@@ -27,6 +26,7 @@ const instrumentSync = (
       experimental: {
         plugins: [[pluginBinary, {}]],
       },
+      preserveAllComments: true,
     },
   });
 
