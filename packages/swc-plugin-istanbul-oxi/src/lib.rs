@@ -134,8 +134,6 @@ impl VisitMut for CoverageVisitor {
         // TODO: option: name of global coverage variable. (optional, default `__coverage__`)
         let coverage_variable = "__coverage__";
 
-        let sealed = self.cov.get_sealed_inner();
-
         /*
         TODO:
         const coverageNode = T.valueToNode(coverageData);
@@ -240,7 +238,7 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
         filename,
         UnknownReserved,
         None,
-        SourceCoverage::from_file_path(filename.to_string(), report_logic),
+        SourceCoverage::new(filename.to_string(), report_logic),
         UnknownReserved,
         UnknownReserved,
         None,
