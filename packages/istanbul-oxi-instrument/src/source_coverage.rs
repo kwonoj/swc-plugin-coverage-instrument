@@ -1,17 +1,4 @@
-use std::{
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
-};
-
 use istanbul_oxi_coverage::{FileCoverage, Range};
-use once_cell::sync::Lazy;
-
-static COVERAGE_MAGIC_VALUE: Lazy<String> = Lazy::new(|| {
-    let mut s = DefaultHasher::new();
-    let name = "istanbul-oxi-instrument";
-    format!("{}@{}", name, 4).hash(&mut s);
-    return format!("cov_{}", s.finish());
-});
 
 /// SourceCoverage provides mutation methods to manipulate the structure of
 /// a file coverage object. Used by the instrumenter to create a full coverage
@@ -27,6 +14,10 @@ impl SourceCoverage {
         SourceCoverage {
             inner: FileCoverage::from_file_path(file_path, report_logic),
         }
+    }
+
+    pub fn as_ref(&self) -> &FileCoverage {
+        &self.inner
     }
 }
 

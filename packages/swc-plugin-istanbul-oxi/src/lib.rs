@@ -173,6 +173,7 @@ impl VisitMut for CoverageVisitor {
             gv_template.1,
             &self.var_name,
             &self.file_path,
+            self.cov.as_ref(),
         );
 
         // prepend template to the top of the code
