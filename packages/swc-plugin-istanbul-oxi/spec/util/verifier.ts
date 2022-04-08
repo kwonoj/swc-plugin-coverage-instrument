@@ -3,6 +3,7 @@ import * as path from "path";
 import { assert } from "chai";
 import { readInitialCoverage } from "./read-coverage";
 import { EOL } from "os";
+import { FileCoverageInterop } from "../../../istanbul-oxi-instrument-wasm/pkg";
 
 const clone: typeof import("lodash.clone") = require("lodash.clone");
 
@@ -18,8 +19,6 @@ const instrumentSync = (
   inputSourceMap?: unknown,
   instrumentOptions?: Record<string, any>
 ) => {
-  console.log(instrumentOptions);
-
   const ret = transformSync(code, {
     filename: filename ?? "unknown",
     jsc: {
@@ -77,7 +76,7 @@ class Verifier {
     );
     assert.deepEqual(actualOutput, expectedOutput, "Output mismatch");
     assert.deepEqual(
-      cov.getLineCoverage(),
+      Object.fromEntries(cov.getLineCoverage()),
       expectedCoverage.lines || {},
       "Line coverage mismatch"
     );
@@ -125,8 +124,8 @@ class Verifier {
   getFileCoverage() {
     const cov = this.getCoverage();
 
-    return cov;
-    //return new FileCoverage(cov[Object.keys(cov)[0]]);
+    const { _coverageSchema, hash, ...fileCoverage } = cov[Object.keys(cov)[0]];
+    return new FileCoverageInterop(fileCoverage);
   }
 
   getGeneratedCode() {
