@@ -3,8 +3,6 @@ name = "istanbul-oxi-coverage"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 indexmap = { version = "1.8.1", features = ["serde"] }
 serde = { version = "1.0.136", features = ["derive"] }

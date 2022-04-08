@@ -125,7 +125,9 @@ where
 /// as logic for merge relies on the order of keys in the map.
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FileCoverage {
+    #[serde(default)]
     pub all: bool,
     pub path: String,
     pub statement_map: StatementMap,
@@ -134,7 +136,7 @@ pub struct FileCoverage {
     pub s: LineHitMap,
     pub f: LineHitMap,
     pub b: BranchHitMap,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub b_t: Option<BranchHitMap>,
 }
 
