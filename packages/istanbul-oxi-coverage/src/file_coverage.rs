@@ -381,7 +381,7 @@ mod tests {
         coverage::Coverage,
         coverage_summary::{CoveragePercentage, Totals},
         types::{Branch, Function},
-        FileCoverage, Range,
+        BranchType, FileCoverage, Range,
     };
 
     #[test]
@@ -407,7 +407,7 @@ mod tests {
             branch_map: IndexMap::from([(
                 0,
                 Branch::from_line(
-                    "if".to_string(),
+                    BranchType::If,
                     2,
                     vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
                 ),
@@ -498,7 +498,7 @@ mod tests {
             branch_map: IndexMap::from([(
                 0,
                 Branch::from_line(
-                    "if".to_string(),
+                    BranchType::If,
                     2,
                     vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
                 ),
@@ -530,7 +530,7 @@ mod tests {
             branch_map: IndexMap::from([(
                 1,
                 Branch::from_line(
-                    "if".to_string(),
+                    BranchType::If,
                     2,
                     vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
                 ),
@@ -621,7 +621,7 @@ mod tests {
             branch_map: IndexMap::from([(
                 1,
                 Branch::from_line(
-                    "if".to_string(),
+                    BranchType::If,
                     2,
                     vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
                 ),
@@ -679,7 +679,7 @@ mod tests {
             branch_map: IndexMap::from([(
                 0,
                 Branch::from_line(
-                    "if".to_string(),
+                    BranchType::If,
                     2,
                     vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
                 ),
@@ -777,7 +777,7 @@ mod tests {
             branch_map: IndexMap::from([(
                 1,
                 Branch::from_line(
-                    "if".to_string(),
+                    BranchType::If,
                     2,
                     vec![Range::new(2, 1, 2, 20), Range::new(2, 50, 2, 100)],
                 ),
@@ -826,8 +826,8 @@ mod tests {
             statement_map: Default::default(),
             fn_map: Default::default(),
             branch_map: IndexMap::from([
-                (1, Branch::from_line("".to_string(), 1, Default::default())),
-                (2, Branch::from_line("".to_string(), 2, Default::default())),
+                (1, Branch::from_line(BranchType::If, 1, Default::default())),
+                (2, Branch::from_line(BranchType::If, 2, Default::default())),
             ]),
             s: Default::default(),
             f: Default::default(),
@@ -855,12 +855,12 @@ mod tests {
             branch_map: IndexMap::from([
                 (
                     1,
-                    Branch::from_loc("".to_string(), Range::new(1, 1, 1, 100), Default::default()),
+                    Branch::from_loc(BranchType::If, Range::new(1, 1, 1, 100), Default::default()),
                 ),
                 (
                     2,
                     Branch::from_loc(
-                        "".to_string(),
+                        BranchType::If,
                         Range::new(2, 50, 2, 100),
                         Default::default(),
                     ),

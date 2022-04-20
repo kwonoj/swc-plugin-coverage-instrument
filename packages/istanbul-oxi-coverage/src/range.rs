@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Location {
-    pub(crate) line: u32,
-    pub(crate) column: u32,
+    pub line: u32,
+    pub column: u32,
 }
 impl Location {
     pub fn default() -> Location {
@@ -13,8 +13,8 @@ impl Location {
 
 #[derive(Copy, Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Range {
-    pub(crate) start: Location,
-    pub(crate) end: Location,
+    pub start: Location,
+    pub end: Location,
 }
 
 impl Range {
