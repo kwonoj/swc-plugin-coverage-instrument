@@ -830,9 +830,9 @@ dependencies = [
 
 [[package]]
 name = "swc_common"
-version = "0.17.20"
+version = "0.17.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41b22848d9ad250e618289ea94a171392aea86d8d878caf0b1cad4589521b6f7"
+checksum = "fc46c0dc9baf12a82ccba5d21209d3f5318e6dddc5440fdab4bbf71e2529d72d"
 dependencies = [
  "ahash",
  "anyhow",
@@ -858,9 +858,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_ast"
-version = "0.75.0"
+version = "0.76.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72961898fbe56591997e667a1ec6a268383582810351c279a15ec710b6177d33"
+checksum = "3b2a73d43c031effb0cf0b57df28fe87f7b6044304e188eb2f832cea964e9c75"
 dependencies = [
  "is-macro",
  "num-bigint",
@@ -874,9 +874,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_parser"
-version = "0.100.2"
+version = "0.102.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "890d967031e3e7330cd7892f27d826b7b4f37c7caa19db85c78a0862e1fe3974"
+checksum = "c6a2f302fb9a20d4b8dafe7d35ae3e467f58f4cecd972a45e4d893efb7e54d50"
 dependencies = [
  "either",
  "enum_kind",
@@ -894,9 +894,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_quote"
-version = "0.11.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "120d20020d0b15e83b118b2d6b31ceb531542e4cc7e2400df201d6ac788ed047"
+checksum = "b13d51013c3b467f305213ba470480f5ce2eedc72a8a89f7bf3985605e5e0f00"
 dependencies = [
  "swc_atoms",
  "swc_common",
@@ -907,9 +907,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_quote_macros"
-version = "0.10.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94ff115e9d781a1dba2a1cc3a0e036f52cb21538ce105ef91b938c1804f22275"
+checksum = "a20bdf89f8363d80a764319360e448605612a29a8b42233dad9630a8ce858d5f"
 dependencies = [
  "anyhow",
  "pmutil",
@@ -925,9 +925,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_utils"
-version = "0.79.0"
+version = "0.81.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80f80b0e71cca39f27c903dad76b33112fe4a8348a0f5555a7cd6801d0ed15ed"
+checksum = "54a6b4842755a0874036d3d396809c763d259af62af228b86f0543b59873a563"
 dependencies = [
  "indexmap",
  "once_cell",
@@ -940,9 +940,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_visit"
-version = "0.61.0"
+version = "0.62.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5ea00a52ba2b971955c62275696d5c59f3cf0cd06db74a66dec378ec9843c78"
+checksum = "d97c42c1e769cd4a442fbe91d076e8600fffae6139a90582db78da27613a033e"
 dependencies = [
  "num-bigint",
  "swc_atoms",
@@ -978,9 +978,9 @@ dependencies = [
 
 [[package]]
 name = "swc_plugin"
-version = "0.45.1"
+version = "0.48.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6e64219e366a9408fe8f39dcb605c42bac0546fb0df47ca191a2ad3710a53a1"
+checksum = "1c5ca669aa1d88fd0d1ee8bf742f0b437bea23d287bb69893b462d9a84b658fb"
 dependencies = [
  "swc_atoms",
  "swc_common",
@@ -988,30 +988,30 @@ dependencies = [
  "swc_ecma_quote",
  "swc_ecma_utils",
  "swc_ecma_visit",
- "swc_plugin_comments",
  "swc_plugin_macro",
-]
-
-[[package]]
-name = "swc_plugin_comments"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e4b9e3ebee2219d6f26c59c00d5ab3b22dbbbd1edb37b193fced2fce5944844"
-dependencies = [
- "better_scoped_tls",
- "rkyv",
- "swc_common",
+ "swc_plugin_proxy",
 ]
 
 [[package]]
 name = "swc_plugin_macro"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e67f4d2260d6ec5375fe1c7705eb2e47a3c2db369f86a81203c993964999bd88"
+checksum = "8c85aa54f6e8743ef665d65856428a272a05819dbfb8017ae5a08d1cd4c5a22e"
 dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "swc_plugin_proxy"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fa47a7a06c7a05106264a5edd9acdce4441d130ab603c41b5ffc1d1bc49fa20"
+dependencies = [
+ "better_scoped_tls",
+ "rkyv",
+ "swc_common",
 ]
 
 [[package]]
