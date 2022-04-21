@@ -3,13 +3,16 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use istanbul_oxi_instrument::{FileCoverage, COVERAGE_MAGIC_KEY, COVERAGE_MAGIC_VALUE};
-use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
+use istanbul_oxi_instrument::{FileCoverage, COVERAGE_MAGIC_VALUE};
+use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
 
-use crate::constants::idents::{
-    IDENT_B, IDENT_BRANCH_MAP, IDENT_BT, IDENT_COLUMN, IDENT_COVERAGE_MAGIC_KEY, IDENT_END,
-    IDENT_F, IDENT_FN_MAP, IDENT_HASH, IDENT_LINE, IDENT_PATH, IDENT_S, IDENT_START,
-    IDENT_STATEMENT_MAP,
+use crate::{
+    constants::idents::{
+        IDENT_B, IDENT_BRANCH_MAP, IDENT_BT, IDENT_COLUMN, IDENT_COVERAGE_MAGIC_KEY, IDENT_END,
+        IDENT_F, IDENT_FN_MAP, IDENT_HASH, IDENT_LINE, IDENT_PATH, IDENT_S, IDENT_START,
+        IDENT_STATEMENT_MAP,
+    },
+    utils::ast_builder::{create_num_lit_expr, create_str, create_str_lit_expr},
 };
 
 pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Expr) {
@@ -19,18 +22,14 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     if coverage_data.all {
         let all_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
             key: PropName::Ident(Ident::new("all".into(), DUMMY_SP)),
-            value: Box::new(Expr::Lit(Lit::Bool(Bool::from(true)))),
+            value: Box::new(Expr::Lit(Lit::Bool(true.into()))),
         })));
         props.push(all_prop);
     }
 
     let path_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(IDENT_PATH.clone()),
-        value: Box::new(Expr::Lit(Lit::Str(Str {
-            value: coverage_data.path.to_string().into(),
-            raw: Some(format!(r#""{}""#, coverage_data.path).into()),
-            ..Str::dummy()
-        }))),
+        value: Box::new(create_str_lit_expr(&coverage_data.path)),
     })));
     props.push(path_prop);
 
@@ -39,7 +38,7 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
         .iter()
         .map(|(key, value)| {
             PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
+                key: PropName::Str(create_str(&key.to_string())),
                 value: Box::new(Expr::Object(ObjectLit {
                     span: DUMMY_SP,
                     props: vec![
@@ -50,19 +49,11 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
                                 props: vec![
                                     PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                                         key: PropName::Ident(IDENT_LINE.clone()),
-                                        value: Box::new(Expr::Lit(Lit::Num(Number {
-                                            span: DUMMY_SP,
-                                            value: value.start.line as f64,
-                                            raw: None,
-                                        }))),
+                                        value: Box::new(create_num_lit_expr(value.start.line)),
                                     }))),
                                     PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                                         key: PropName::Ident(IDENT_COLUMN.clone()),
-                                        value: Box::new(Expr::Lit(Lit::Num(Number {
-                                            span: DUMMY_SP,
-                                            value: value.start.column as f64,
-                                            raw: None,
-                                        }))),
+                                        value: Box::new(create_num_lit_expr(value.start.column)),
                                     }))),
                                 ],
                             })),
@@ -74,19 +65,11 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
                                 props: vec![
                                     PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                                         key: PropName::Ident(IDENT_LINE.clone()),
-                                        value: Box::new(Expr::Lit(Lit::Num(Number {
-                                            span: DUMMY_SP,
-                                            value: value.end.line as f64,
-                                            raw: None,
-                                        }))),
+                                        value: Box::new(create_num_lit_expr(value.end.line)),
                                     }))),
                                     PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                                         key: PropName::Ident(IDENT_COLUMN.clone()),
-                                        value: Box::new(Expr::Lit(Lit::Num(Number {
-                                            span: DUMMY_SP,
-                                            value: value.end.column as f64,
-                                            raw: None,
-                                        }))),
+                                        value: Box::new(create_num_lit_expr(value.end.column)),
                                     }))),
                                 ],
                             })),
@@ -131,12 +114,8 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
         .iter()
         .map(|(key, value)| {
             PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
-                value: Box::new(Expr::Lit(Lit::Num(Number {
-                    span: DUMMY_SP,
-                    value: *value as f64,
-                    raw: None,
-                }))),
+                key: PropName::Str(create_str(&key.to_string())),
+                value: Box::new(create_num_lit_expr(*value)),
             })))
         })
         .collect();
@@ -185,26 +164,20 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     // fill in _coverageSchema, and hash
     let coverage_schema_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(IDENT_COVERAGE_MAGIC_KEY.clone()),
-        value: Box::new(Expr::Lit(Lit::Str(Str {
-            value: COVERAGE_MAGIC_VALUE.into(),
-            raw: Some(format!(r#""{}""#, COVERAGE_MAGIC_VALUE).into()),
-            ..Str::dummy()
-        }))),
+        value: Box::new(create_str_lit_expr(&COVERAGE_MAGIC_VALUE)),
     })));
     props.push(coverage_schema_prop);
 
-    // Original code creates hash against raw coverage object, but we use props ast instead.
+    // Original code creates hash against raw coverage object. In here uses str-serialized object instead.
+    let coverage_str =
+        serde_json::to_string(coverage_data).expect("Should able to serialize coverage data");
     let mut hasher = DefaultHasher::new();
-    props.hash(&mut hasher);
+    coverage_str.hash(&mut hasher);
     let hash = hasher.finish().to_string();
 
     let hash_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(IDENT_HASH.clone()),
-        value: Box::new(Expr::Lit(Lit::Str(Str {
-            value: hash.clone().into(),
-            raw: Some(format!(r#""{}""#, hash.clone()).into()),
-            ..Str::dummy()
-        }))),
+        value: Box::new(create_str_lit_expr(&hash)),
     })));
     props.push(hash_prop);
 
@@ -219,23 +192,13 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
 
 #[cfg(test)]
 mod tests {
-    use istanbul_oxi_instrument::FileCoverage;
+    use istanbul_oxi_instrument::{BranchType, FileCoverage, Range, SourceCoverage};
     use swc_ecma_quote::quote;
     use swc_plugin::ast::*;
 
     use crate::template::create_coverage_data_object::create_coverage_data_object;
 
     use pretty_assertions::assert_eq;
-
-    #[macro_export]
-    macro_rules! try_assert {
-        ($v: tt, $($tt:tt)*) => {{
-            let expected_expr = swc_ecma_quote::quote!($($tt)* as Expr);
-            if $v != expected_expr {
-
-            }
-        }};
-    }
 
     #[test]
     fn should_create_empty() {
@@ -253,7 +216,7 @@ mod tests {
             f: {},
             b: {},
             _coverageSchema: "7101652470475984838",
-            hash: "7200395314456256211"
+            hash: "2749072808032864045"
         }
         "# as Expr
         );
@@ -278,7 +241,48 @@ mod tests {
             b: {},
             bT: {},
             _coverageSchema: "7101652470475984838",
-            hash: "15473612320079640285"
+            hash: "5324777076056671972"
+        }
+        "# as Expr
+        );
+
+        assert_eq!(expected, coverage_data_expr);
+    }
+
+    #[test]
+    fn should_create_statement_map() {
+        let mut coverage_data = SourceCoverage::new("/test/src/statement.js".to_string(), false);
+
+        let dummy_range = Range::new(2, 3, 5, 2);
+        coverage_data.new_statement(&dummy_range);
+
+        let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
+
+        let expected = quote!(
+            r#"
+        {
+            path: "/test/src/statement.js",
+            statementMap: {
+                "0": {
+                    start: {
+                        line: 2,
+                        column: 3
+                    },
+                    end: {
+                        line: 5,
+                        column: 2
+                    }
+                }
+            },
+            fnMap: {},
+            branchMap: {},
+            s: {
+                "0": 0
+            },
+            f: {},
+            b: {},
+            _coverageSchema: "7101652470475984838",
+            hash: "14358638674647738158"
         }
         "# as Expr
         );

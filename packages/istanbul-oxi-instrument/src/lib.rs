@@ -10,3 +10,4 @@ pub use visitor::*;
 // Reexport
 pub use istanbul_oxi_coverage::types::*;
 pub use istanbul_oxi_coverage::FileCoverage;
+pub use istanbul_oxi_coverage::Range;
