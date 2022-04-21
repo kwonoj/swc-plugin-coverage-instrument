@@ -14,44 +14,56 @@ use crate::{
     },
 };
 
-fn create_range_prop(key: &str, value: &Range) -> PropOrSpread {
+fn create_range_object_lit(value: &Range) -> Expr {
+    Expr::Object(ObjectLit {
+        span: DUMMY_SP,
+        props: vec![
+            create_ident_key_value_prop(
+                &IDENT_START,
+                Expr::Object(ObjectLit {
+                    span: DUMMY_SP,
+                    props: vec![
+                        create_ident_key_value_prop(
+                            &IDENT_LINE,
+                            create_num_lit_expr(value.start.line),
+                        ),
+                        create_ident_key_value_prop(
+                            &IDENT_COLUMN,
+                            create_num_lit_expr(value.start.column),
+                        ),
+                    ],
+                }),
+            ),
+            create_ident_key_value_prop(
+                &IDENT_END,
+                Expr::Object(ObjectLit {
+                    span: DUMMY_SP,
+                    props: vec![
+                        create_ident_key_value_prop(
+                            &IDENT_LINE,
+                            create_num_lit_expr(value.end.line),
+                        ),
+                        create_ident_key_value_prop(
+                            &IDENT_COLUMN,
+                            create_num_lit_expr(value.end.column),
+                        ),
+                    ],
+                }),
+            ),
+        ],
+    })
+}
+
+fn create_fn_prop(key: &str, value: &istanbul_oxi_instrument::Function) -> PropOrSpread {
     create_str_key_value_prop(
         key,
         Expr::Object(ObjectLit {
             span: DUMMY_SP,
             props: vec![
-                create_ident_key_value_prop(
-                    &IDENT_START,
-                    Expr::Object(ObjectLit {
-                        span: DUMMY_SP,
-                        props: vec![
-                            create_ident_key_value_prop(
-                                &IDENT_LINE,
-                                create_num_lit_expr(value.start.line),
-                            ),
-                            create_ident_key_value_prop(
-                                &IDENT_COLUMN,
-                                create_num_lit_expr(value.start.column),
-                            ),
-                        ],
-                    }),
-                ),
-                create_ident_key_value_prop(
-                    &IDENT_END,
-                    Expr::Object(ObjectLit {
-                        span: DUMMY_SP,
-                        props: vec![
-                            create_ident_key_value_prop(
-                                &IDENT_LINE,
-                                create_num_lit_expr(value.end.line),
-                            ),
-                            create_ident_key_value_prop(
-                                &IDENT_COLUMN,
-                                create_num_lit_expr(value.end.column),
-                            ),
-                        ],
-                    }),
-                ),
+                create_ident_key_value_prop(&IDENT_NAME, create_str_lit_expr(&value.name)),
+                create_ident_key_value_prop(&IDENT_DECL, create_range_object_lit(&value.decl)),
+                create_ident_key_value_prop(&IDENT_LOC, create_range_object_lit(&value.loc)),
+                create_ident_key_value_prop(&IDENT_LINE, create_num_lit_expr(value.line)),
             ],
         }),
     )
@@ -64,12 +76,10 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
 
     // assign coverage['all']
     if coverage_data.all {
-        let all_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-            key: PropName::Ident(Ident::new("all".into(), DUMMY_SP)),
-            value: Box::new(Expr::Lit(Lit::Bool(true.into()))),
-        })));
-
-        props.push(all_prop);
+        props.push(create_ident_key_value_prop(
+            &IDENT_ALL,
+            Expr::Lit(Lit::Bool(true.into())),
+        ));
     }
 
     // assign coverage['path']
@@ -82,7 +92,9 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     let statement_map_prop_values = coverage_data
         .statement_map
         .iter()
-        .map(|(key, value)| create_range_prop(&key.to_string(), value))
+        .map(|(key, value)| {
+            create_str_key_value_prop(&key.to_string(), create_range_object_lit(value))
+        })
         .collect();
 
     let statement_map_prop = create_ident_key_value_prop(
@@ -95,24 +107,29 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     props.push(statement_map_prop);
 
     // assign coverage['fnMap']
-    let fn_map_prop_values = vec![];
-    let fn_map_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(IDENT_FN_MAP.clone()),
-        value: Box::new(Expr::Object(ObjectLit {
+    let fn_map_prop_values = coverage_data
+        .fn_map
+        .iter()
+        .map(|(key, value)| create_fn_prop(&key.to_string(), value))
+        .collect();
+    let fn_map_prop = create_ident_key_value_prop(
+        &IDENT_FN_MAP,
+        Expr::Object(ObjectLit {
             span: DUMMY_SP,
             props: fn_map_prop_values,
-        })),
-    })));
+        }),
+    );
     props.push(fn_map_prop);
 
     let branch_map_prop_values = vec![];
-    let branch_map_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(IDENT_BRANCH_MAP.clone()),
-        value: Box::new(Expr::Object(ObjectLit {
+    let branch_map_prop = create_ident_key_value_prop(
+        &IDENT_BRANCH_MAP,
+        Expr::Object(ObjectLit {
             span: DUMMY_SP,
             props: branch_map_prop_values,
-        })),
-    })));
+        }),
+    );
+
     props.push(branch_map_prop);
 
     let s_prop_values = coverage_data
@@ -132,7 +149,13 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     );
     props.push(s_prop);
 
-    let f_prop_values = vec![];
+    let f_prop_values = coverage_data
+        .f
+        .iter()
+        .map(|(key, value)| {
+            create_str_key_value_prop(&key.to_string(), create_num_lit_expr(*value))
+        })
+        .collect();
     let f_prop = create_ident_key_value_prop(
         &IDENT_F,
         Expr::Object(ObjectLit {
@@ -164,11 +187,11 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
         props.push(b_t_prop);
     }
 
-    // fill in _coverageSchema, and hash
-    let coverage_schema_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(IDENT_COVERAGE_MAGIC_KEY.clone()),
-        value: Box::new(create_str_lit_expr(&COVERAGE_MAGIC_VALUE)),
-    })));
+    // assign coverage['_coverageSchema']
+    let coverage_schema_prop = create_ident_key_value_prop(
+        &IDENT_COVERAGE_MAGIC_KEY,
+        create_str_lit_expr(&COVERAGE_MAGIC_VALUE),
+    );
     props.push(coverage_schema_prop);
 
     // Original code creates hash against raw coverage object. In here uses str-serialized object instead.
@@ -178,11 +201,11 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     coverage_str.hash(&mut hasher);
     let hash = hasher.finish().to_string();
 
-    let hash_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(IDENT_HASH.clone()),
-        value: Box::new(create_str_lit_expr(&hash)),
-    })));
-    props.push(hash_prop);
+    // assign coverage['hash']
+    props.push(create_ident_key_value_prop(
+        &IDENT_HASH,
+        create_str_lit_expr(&hash),
+    ));
 
     (
         hash,
@@ -220,6 +243,32 @@ mod tests {
             b: {},
             _coverageSchema: "7101652470475984838",
             hash: "2749072808032864045"
+        }
+        "# as Expr
+        );
+
+        assert_eq!(expected, coverage_data_expr);
+    }
+
+    #[test]
+    fn should_create_empty_all() {
+        let mut coverage_data = FileCoverage::empty("anon".to_string(), false);
+        coverage_data.all = true;
+        let (_hash, coverage_data_expr) = create_coverage_data_object(&coverage_data);
+
+        let expected = quote!(
+            r#"
+        {
+            all: true,
+            path: "anon",
+            statementMap: {},
+            fnMap: {},
+            branchMap: {},
+            s: {},
+            f: {},
+            b: {},
+            _coverageSchema: "7101652470475984838",
+            hash: "9996448737459597674"
         }
         "# as Expr
         );
@@ -290,6 +339,187 @@ mod tests {
         "# as Expr
         );
 
+        assert_eq!(expected, coverage_data_expr);
+
+        let dummy_range = Range::new(4, 9, 3, 6);
+        coverage_data.new_statement(&dummy_range);
+
+        let expected = quote!(
+            r#"
+        {
+            path: "/test/src/statement.js",
+            statementMap: {
+                "0": {
+                    start: {
+                        line: 2,
+                        column: 3
+                    },
+                    end: {
+                        line: 5,
+                        column: 2
+                    }
+                },
+                "1": {
+                    start: {
+                        line: 4,
+                        column: 9
+                    },
+                    end: {
+                        line: 3,
+                        column: 6
+                    }
+                }
+            },
+            fnMap: {},
+            branchMap: {},
+            s: {
+                "0": 0,
+                "1": 0,
+            },
+            f: {},
+            b: {},
+            _coverageSchema: "7101652470475984838",
+            hash: "8495704048820686839"
+        }
+        "# as Expr
+        );
+
+        let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
+        assert_eq!(expected, coverage_data_expr);
+    }
+
+    #[test]
+    fn should_create_fn_map() {
+        let mut coverage_data = SourceCoverage::new("/test/src/fn.js".to_string(), false);
+
+        let dummy_range = Range::new(2, 3, 5, 2);
+        let decl_range = Range::new(2, 3, 2, 10);
+        coverage_data.new_function(
+            &Some("named_function".to_string()),
+            &decl_range,
+            &dummy_range,
+        );
+
+        let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
+
+        let expected = quote!(
+            r#"
+        {
+            path: "/test/src/fn.js",
+            statementMap: {},
+            fnMap: {
+                "0": {
+                    name: "named_function",
+                    decl: {
+                        start: {
+                            line: 2,
+                            column: 3
+                        },
+                        end: {
+                            line: 2,
+                            column: 10
+                        }
+                    },
+                    loc: {
+                        start: {
+                            line: 2,
+                            column: 3
+                        },
+                        end: {
+                            line: 5,
+                            column: 2
+                        }
+                    },
+                    line: 2
+                }
+            },
+            branchMap: {},
+            s: {},
+            f: {
+                "0": 0,
+            },
+            b: {},
+            _coverageSchema: "7101652470475984838",
+            hash: "12684468276621003816"
+        }
+        "# as Expr
+        );
+
+        assert_eq!(expected, coverage_data_expr);
+
+        let dummy_range = Range::new(4, 9, 3, 6);
+        let decl_range = Range::new(4, 9, 4, 25);
+        coverage_data.new_function(&None, &decl_range, &dummy_range);
+
+        let expected = quote!(
+            r#"
+        {
+            path: "/test/src/fn.js",
+            statementMap: {},
+            fnMap: {
+                "0": {
+                    name: "named_function",
+                    decl: {
+                        start: {
+                            line: 2,
+                            column: 3
+                        },
+                        end: {
+                            line: 2,
+                            column: 10
+                        }
+                    },
+                    loc: {
+                        start: {
+                            line: 2,
+                            column: 3
+                        },
+                        end: {
+                            line: 5,
+                            column: 2
+                        }
+                    },
+                    line: 2
+                },
+                "1": {
+                    name: "(anonymous_1)",
+                    decl: {
+                        start: {
+                            line: 4,
+                            column: 9
+                        },
+                        end: {
+                            line: 4,
+                            column: 25
+                        }
+                    },
+                    loc: {
+                        start: {
+                            line: 4,
+                            column: 9
+                        },
+                        end: {
+                            line: 3,
+                            column: 6
+                        }
+                    },
+                    line: 4
+                }
+            },
+            branchMap: {},
+            s: {},
+            f: {
+                "0": 0,
+                "1": 0
+            },
+            b: {},
+            _coverageSchema: "7101652470475984838",
+            hash: "8413193639409683826"
+        }
+        "# as Expr
+        );
+
+        let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
         assert_eq!(expected, coverage_data_expr);
     }
 }

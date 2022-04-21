@@ -5,6 +5,11 @@ use once_cell::sync::Lazy;
 use swc_ecma_quote::swc_ecma_ast::Ident;
 use swc_plugin::utils::take::Take;
 
+pub static IDENT_ALL: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "all".into(),
+    ..Ident::dummy()
+});
+
 pub static IDENT_HASH: Lazy<Ident> = Lazy::new(|| Ident {
     sym: "hash".into(),
     ..Ident::dummy()
@@ -87,5 +92,20 @@ pub static IDENT_BT: Lazy<Ident> = Lazy::new(|| Ident {
 
 pub static IDENT_COVERAGE_MAGIC_KEY: Lazy<Ident> = Lazy::new(|| Ident {
     sym: COVERAGE_MAGIC_KEY.into(),
+    ..Ident::dummy()
+});
+
+pub static IDENT_NAME: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "name".into(),
+    ..Ident::dummy()
+});
+
+pub static IDENT_DECL: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "decl".into(),
+    ..Ident::dummy()
+});
+
+pub static IDENT_LOC: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "loc".into(),
     ..Ident::dummy()
 });
