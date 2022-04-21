@@ -40,7 +40,9 @@ jobs:
         curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
         rustup target add wasm32-wasi
     - name: build
-      run: npm run build:inst:spec
+      run: |
+        cargo check
+        npm run build:inst:spec
     - name: test
       run: npm test
     - name: Generate code coverage
