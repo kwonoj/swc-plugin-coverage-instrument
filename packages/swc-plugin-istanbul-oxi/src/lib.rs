@@ -3,6 +3,7 @@ use std::{
     hash::{Hash, Hasher},
 };
 
+use constants::idents::IDENT_GLOBAL;
 use istanbul_oxi_instrument::SourceCoverage;
 use once_cell::sync::Lazy;
 use serde_json::Value;
@@ -179,8 +180,7 @@ impl VisitMut for CoverageVisitor<'_> {
 
         let (coverage_fn_ident, coverage_template) = create_coverage_fn_decl(
             &self.instrument_options.coverage_variable,
-            gv_template.0,
-            gv_template.1,
+            gv_template,
             &self.var_name,
             &self.file_path,
             self.cov.as_ref(),

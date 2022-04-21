@@ -1,8 +1,10 @@
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
 
+use crate::constants::idents::IDENT_GLOBAL;
+
 use super::create_assignment_stmt::create_assignment_stmt;
 
-pub fn create_global_stmt_template(coverage_global_scope: &str) -> (Ident, Stmt) {
+pub fn create_global_stmt_template(coverage_global_scope: &str) -> Stmt {
     // var global = new Function("return $global_coverage_scope")();
     let expr = Expr::New(NewExpr {
         callee: Box::new(Expr::Ident(Ident::new("Function".into(), DUMMY_SP))),
@@ -17,7 +19,7 @@ pub fn create_global_stmt_template(coverage_global_scope: &str) -> (Ident, Stmt)
     });
 
     create_assignment_stmt(
-        "global",
+        &IDENT_GLOBAL,
         Expr::Call(CallExpr {
             callee: Callee::Expr(Box::new(Expr::Paren(ParenExpr {
                 span: DUMMY_SP,

@@ -5,6 +5,8 @@ use swc_plugin::{
     utils::{quote, take::Take},
 };
 
+use crate::constants::idents::*;
+
 use super::{
     create_assignment_stmt::create_assignment_stmt,
     create_coverage_data_object::create_coverage_data_object,
@@ -13,7 +15,6 @@ use super::{
 /// Creates a function declaration for actual coverage collection.
 pub fn create_coverage_fn_decl(
     coverage_variable: &str,
-    global_ident: Ident,
     coverage_template: Stmt,
     var_name: &str,
     file_path: &str,
@@ -23,8 +24,8 @@ pub fn create_coverage_fn_decl(
     let mut stmts = vec![];
 
     // var path = $file_path;
-    let (path_ident, path_stmt) = create_assignment_stmt(
-        "path",
+    let path_stmt = create_assignment_stmt(
+        &IDENT_PATH,
         Expr::Lit(Lit::Str(Str {
             value: file_path.into(),
             ..Str::dummy()
@@ -35,16 +36,16 @@ pub fn create_coverage_fn_decl(
     let (hash, coverage_data_object) = create_coverage_data_object(coverage_data);
 
     // var hash = $HASH;
-    let (hash_ident, hash_stmt) =
-        create_assignment_stmt("hash", Expr::Lit(Lit::Str(Str::from(hash.clone()))));
+    let hash_stmt =
+        create_assignment_stmt(&IDENT_HASH, Expr::Lit(Lit::Str(Str::from(hash.clone()))));
     stmts.push(hash_stmt);
 
     // var global = new Function("return $global_coverage_scope")();
     stmts.push(coverage_template);
 
     // var gcv = ${coverage_variable};
-    let (gcv_ident, gcv_stmt) = create_assignment_stmt(
-        "gcv",
+    let gcv_stmt = create_assignment_stmt(
+        &IDENT_GCV,
         Expr::Lit(Lit::Str(Str {
             value: coverage_variable.into(),
             ..Str::dummy()
@@ -53,16 +54,15 @@ pub fn create_coverage_fn_decl(
     stmts.push(gcv_stmt);
 
     // var coverageData = INITIAL;
-    let (coverage_data_ident, coverage_data_stmt) =
-        create_assignment_stmt("coverageData", coverage_data_object);
+    let coverage_data_stmt = create_assignment_stmt(&IDENT_COVERAGE_DATA, coverage_data_object);
     stmts.push(coverage_data_stmt);
 
     let coverage_ident = Ident::new("coverage".into(), DUMMY_SP);
     stmts.push(quote!(
         "var $coverage = $global[$gcv] || ($global[$gcv] = {})" as Stmt,
         coverage = coverage_ident.clone(),
-        gcv = gcv_ident.clone(),
-        global = global_ident.clone()
+        gcv = IDENT_GCV.clone(),
+        global = IDENT_GLOBAL.clone()
     ));
 
     stmts.push(quote!(
@@ -72,9 +72,9 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
 }
 "# as Stmt,
         coverage = coverage_ident.clone(),
-        path = path_ident.clone(),
-        hash = hash_ident.clone(),
-        coverage_data = coverage_data_ident.clone()
+        path = IDENT_PATH.clone(),
+        hash = IDENT_HASH.clone(),
+        coverage_data = IDENT_COVERAGE_DATA.clone()
     ));
 
     // var actualCoverage = coverage[path];
@@ -83,7 +83,7 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
         "var $actual_coverage = $coverage[$path];" as Stmt,
         actual_coverage = actual_coverage_ident.clone(),
         coverage = coverage_ident.clone(),
-        path = path_ident.clone()
+        path = IDENT_PATH.clone()
     ));
 
     let coverage_fn_ident = Ident::new(var_name.into(), DUMMY_SP);
