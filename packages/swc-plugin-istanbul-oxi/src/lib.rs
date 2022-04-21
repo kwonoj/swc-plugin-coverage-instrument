@@ -15,10 +15,14 @@ use swc_plugin::{
     TransformPluginProgramMetadata,
 };
 
+mod constants;
 mod template;
 
 use regex::Regex as Regexp;
-use template::{create_coverage_fn_decl, create_global_stmt_template};
+use template::{
+    create_coverage_fn_decl::create_coverage_fn_decl,
+    create_global_stmt_template::create_global_stmt_template,
+};
 
 /// This is not fully identical to original file comments
 /// https://github.com/istanbuljs/istanbuljs/blob/6f45283feo31faaa066375528f6b68e3a9927b2d5/packages/istanbul-lib-instrument/src/visitor.js#L10=
