@@ -17,6 +17,7 @@ use swc_plugin::{
 
 mod constants;
 mod template;
+mod utils;
 
 use regex::Regex as Regexp;
 use template::{
