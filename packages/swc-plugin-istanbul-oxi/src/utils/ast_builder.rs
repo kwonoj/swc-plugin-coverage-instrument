@@ -1,9 +1,8 @@
-use swc_ecma_quote::{
-    swc_common::DUMMY_SP,
-    swc_ecma_ast::{Expr, Lit, Number, Str},
-};
+//! TODO: macro
 
-pub fn create_str(value: &str) -> Str {
+use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
+
+fn create_str(value: &str) -> Str {
     Str {
         value: value.clone().into(),
         raw: Some(format!(r#""{}""#, value).into()),
@@ -21,4 +20,18 @@ pub fn create_num_lit_expr(value: u32) -> Expr {
         raw: Some(value.to_string().into()),
         span: DUMMY_SP,
     }))
+}
+
+pub fn create_ident_key_value_prop(key: &Ident, value: Expr) -> PropOrSpread {
+    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(key.clone()),
+        value: Box::new(value),
+    })))
+}
+
+pub fn create_str_key_value_prop(key: &str, value: Expr) -> PropOrSpread {
+    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Str(create_str(&key)),
+        value: Box::new(value),
+    })))
 }
