@@ -3,7 +3,6 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use constants::idents::IDENT_GLOBAL;
 use istanbul_oxi_instrument::SourceCoverage;
 use once_cell::sync::Lazy;
 use serde_json::Value;
