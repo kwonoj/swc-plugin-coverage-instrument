@@ -92,7 +92,7 @@ impl SourceCoverage {
             b,
             Branch {
                 loc: Some(loc.clone()),
-                branch_type,
+                branch_type: branch_type.clone(),
                 locations: vec![],
                 // DEPRECATED: some legacy reports require this info.
                 line: Some(loc.start.line),
@@ -339,9 +339,9 @@ mod tests {
         let mut coverage = SourceCoverage::new("anon".to_string(), false);
 
         let dummy_range = Range::new(2, 3, 5, 2);
-        coverage.new_branch(BranchType::CondExpr, &dummy_range, true);
+        let branch = coverage.new_branch(BranchType::BinaryExpr, &dummy_range, true);
         let branch_path_range = Range::new(3, 3, 4, 4);
-        let branch_path_count = coverage.add_branch_path(0, &branch_path_range);
+        let branch_path_count = coverage.add_branch_path(branch, &branch_path_range);
 
         assert_eq!(branch_path_count, 0);
         let coverage_ref = coverage.as_ref();
@@ -351,7 +351,7 @@ mod tests {
             coverage.as_ref().branch_map.get(&0),
             Some(Branch {
                 loc: Some(dummy_range.clone()),
-                branch_type: BranchType::CondExpr,
+                branch_type: BranchType::BinaryExpr,
                 locations: vec![branch_path_range.clone()],
                 line: Some(dummy_range.start.line)
             })
