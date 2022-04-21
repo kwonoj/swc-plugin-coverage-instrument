@@ -168,9 +168,11 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     })));
     props.push(coverage_schema_prop);
 
-    // Original code creates hash against raw coverage object, but we use props ast instead.
+    // Original code creates hash against raw coverage object. In here uses str-serialized object instead.
+    let coverage_str =
+        serde_json::to_string(coverage_data).expect("Should able to serialize coverage data");
     let mut hasher = DefaultHasher::new();
-    props.hash(&mut hasher);
+    coverage_str.hash(&mut hasher);
     let hash = hasher.finish().to_string();
 
     let hash_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
@@ -214,7 +216,7 @@ mod tests {
             f: {},
             b: {},
             _coverageSchema: "7101652470475984838",
-            hash: "7200395314456256211"
+            hash: "2749072808032864045"
         }
         "# as Expr
         );
@@ -239,7 +241,7 @@ mod tests {
             b: {},
             bT: {},
             _coverageSchema: "7101652470475984838",
-            hash: "15473612320079640285"
+            hash: "5324777076056671972"
         }
         "# as Expr
         );
@@ -280,7 +282,7 @@ mod tests {
             f: {},
             b: {},
             _coverageSchema: "7101652470475984838",
-            hash: "673786009243969507"
+            hash: "14358638674647738158"
         }
         "# as Expr
         );
