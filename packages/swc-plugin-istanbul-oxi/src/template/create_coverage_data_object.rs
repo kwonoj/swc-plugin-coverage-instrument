@@ -3,92 +3,98 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use istanbul_oxi_instrument::{FileCoverage, COVERAGE_MAGIC_VALUE};
+use istanbul_oxi_instrument::{FileCoverage, Range, COVERAGE_MAGIC_VALUE};
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
 
 use crate::{
-    constants::idents::{
-        IDENT_B, IDENT_BRANCH_MAP, IDENT_BT, IDENT_COLUMN, IDENT_COVERAGE_MAGIC_KEY, IDENT_END,
-        IDENT_F, IDENT_FN_MAP, IDENT_HASH, IDENT_LINE, IDENT_PATH, IDENT_S, IDENT_START,
-        IDENT_STATEMENT_MAP,
+    constants::idents::*,
+    utils::ast_builder::{
+        create_ident_key_value_prop, create_num_lit_expr, create_str_key_value_prop,
+        create_str_lit_expr,
     },
-    utils::ast_builder::{create_num_lit_expr, create_str, create_str_lit_expr},
 };
 
+fn create_range_prop(key: &str, value: &Range) -> PropOrSpread {
+    create_str_key_value_prop(
+        key,
+        Expr::Object(ObjectLit {
+            span: DUMMY_SP,
+            props: vec![
+                create_ident_key_value_prop(
+                    &IDENT_START,
+                    Expr::Object(ObjectLit {
+                        span: DUMMY_SP,
+                        props: vec![
+                            create_ident_key_value_prop(
+                                &IDENT_LINE,
+                                create_num_lit_expr(value.start.line),
+                            ),
+                            create_ident_key_value_prop(
+                                &IDENT_COLUMN,
+                                create_num_lit_expr(value.start.column),
+                            ),
+                        ],
+                    }),
+                ),
+                create_ident_key_value_prop(
+                    &IDENT_END,
+                    Expr::Object(ObjectLit {
+                        span: DUMMY_SP,
+                        props: vec![
+                            create_ident_key_value_prop(
+                                &IDENT_LINE,
+                                create_num_lit_expr(value.end.line),
+                            ),
+                            create_ident_key_value_prop(
+                                &IDENT_COLUMN,
+                                create_num_lit_expr(value.end.column),
+                            ),
+                        ],
+                    }),
+                ),
+            ],
+        }),
+    )
+}
+
 pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Expr) {
+    // Afaik there's no built-in way to iterate over struct properties via keys.
+
     let mut props = vec![];
 
-    // Afaik there's no built-in way to iterate over struct properties
+    // assign coverage['all']
     if coverage_data.all {
         let all_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
             key: PropName::Ident(Ident::new("all".into(), DUMMY_SP)),
             value: Box::new(Expr::Lit(Lit::Bool(true.into()))),
         })));
+
         props.push(all_prop);
     }
 
-    let path_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(IDENT_PATH.clone()),
-        value: Box::new(create_str_lit_expr(&coverage_data.path)),
-    })));
-    props.push(path_prop);
+    // assign coverage['path']
+    props.push(create_ident_key_value_prop(
+        &IDENT_PATH,
+        create_str_lit_expr(&coverage_data.path),
+    ));
 
+    // assign coverage['statementMap']
     let statement_map_prop_values = coverage_data
         .statement_map
         .iter()
-        .map(|(key, value)| {
-            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                key: PropName::Str(create_str(&key.to_string())),
-                value: Box::new(Expr::Object(ObjectLit {
-                    span: DUMMY_SP,
-                    props: vec![
-                        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                            key: PropName::Ident(IDENT_START.clone()),
-                            value: Box::new(Expr::Object(ObjectLit {
-                                span: DUMMY_SP,
-                                props: vec![
-                                    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                                        key: PropName::Ident(IDENT_LINE.clone()),
-                                        value: Box::new(create_num_lit_expr(value.start.line)),
-                                    }))),
-                                    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                                        key: PropName::Ident(IDENT_COLUMN.clone()),
-                                        value: Box::new(create_num_lit_expr(value.start.column)),
-                                    }))),
-                                ],
-                            })),
-                        }))),
-                        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                            key: PropName::Ident(IDENT_END.clone()),
-                            value: Box::new(Expr::Object(ObjectLit {
-                                span: DUMMY_SP,
-                                props: vec![
-                                    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                                        key: PropName::Ident(IDENT_LINE.clone()),
-                                        value: Box::new(create_num_lit_expr(value.end.line)),
-                                    }))),
-                                    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                                        key: PropName::Ident(IDENT_COLUMN.clone()),
-                                        value: Box::new(create_num_lit_expr(value.end.column)),
-                                    }))),
-                                ],
-                            })),
-                        }))),
-                    ],
-                })),
-            })))
-        })
+        .map(|(key, value)| create_range_prop(&key.to_string(), value))
         .collect();
 
-    let statement_map_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(IDENT_STATEMENT_MAP.clone()),
-        value: Box::new(Expr::Object(ObjectLit {
+    let statement_map_prop = create_ident_key_value_prop(
+        &IDENT_STATEMENT_MAP,
+        Expr::Object(ObjectLit {
             span: DUMMY_SP,
             props: statement_map_prop_values,
-        })),
-    })));
+        }),
+    );
     props.push(statement_map_prop);
 
+    // assign coverage['fnMap']
     let fn_map_prop_values = vec![];
     let fn_map_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(IDENT_FN_MAP.clone()),
@@ -113,51 +119,48 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
         .s
         .iter()
         .map(|(key, value)| {
-            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                key: PropName::Str(create_str(&key.to_string())),
-                value: Box::new(create_num_lit_expr(*value)),
-            })))
+            create_str_key_value_prop(&key.to_string(), create_num_lit_expr(*value))
         })
         .collect();
 
-    let s_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(IDENT_S.clone()),
-        value: Box::new(Expr::Object(ObjectLit {
+    let s_prop = create_ident_key_value_prop(
+        &IDENT_S,
+        Expr::Object(ObjectLit {
             span: DUMMY_SP,
             props: s_prop_values,
-        })),
-    })));
+        }),
+    );
     props.push(s_prop);
 
     let f_prop_values = vec![];
-    let f_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(IDENT_F.clone()),
-        value: Box::new(Expr::Object(ObjectLit {
+    let f_prop = create_ident_key_value_prop(
+        &IDENT_F,
+        Expr::Object(ObjectLit {
             span: DUMMY_SP,
             props: f_prop_values,
-        })),
-    })));
+        }),
+    );
     props.push(f_prop);
 
     let b_prop_values = vec![];
-    let b_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(IDENT_B.clone()),
-        value: Box::new(Expr::Object(ObjectLit {
+    let b_prop = create_ident_key_value_prop(
+        &IDENT_B,
+        Expr::Object(ObjectLit {
             span: DUMMY_SP,
             props: b_prop_values,
-        })),
-    })));
+        }),
+    );
     props.push(b_prop);
 
     if let Some(b_t) = &coverage_data.b_t {
         let b_t_prop_values = vec![];
-        let b_t_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-            key: PropName::Ident(IDENT_BT.clone()),
-            value: Box::new(Expr::Object(ObjectLit {
+        let b_t_prop = create_ident_key_value_prop(
+            &IDENT_BT,
+            Expr::Object(ObjectLit {
                 span: DUMMY_SP,
                 props: b_t_prop_values,
-            })),
-        })));
+            }),
+        );
         props.push(b_t_prop);
     }
 
