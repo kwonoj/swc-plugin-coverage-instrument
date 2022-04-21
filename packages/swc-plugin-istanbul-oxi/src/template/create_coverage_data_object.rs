@@ -4,7 +4,7 @@ use std::{
 };
 
 use istanbul_oxi_instrument::{FileCoverage, COVERAGE_MAGIC_KEY, COVERAGE_MAGIC_VALUE};
-use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
+use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
 
 pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Expr) {
     let mut props = vec![];
@@ -20,9 +20,11 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
 
     let path_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("path".into(), DUMMY_SP)),
-        value: Box::new(Expr::Lit(Lit::Str(Str::from(
-            coverage_data.path.to_string(),
-        )))),
+        value: Box::new(Expr::Lit(Lit::Str(Str {
+            value: coverage_data.path.to_string().into(),
+            raw: Some(format!(r#""{}""#, coverage_data.path).into()),
+            ..Str::dummy()
+        }))),
     })));
     props.push(path_prop);
 
@@ -32,13 +34,11 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
         .map(|(key, value)| {
             PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                 key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
-                //{"start":{"line":2,"column":11},"end":{"line":2,"column":3}}
                 value: Box::new(Expr::Object(ObjectLit {
                     span: DUMMY_SP,
                     props: vec![
                         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                             key: PropName::Ident(Ident::new("start".to_string().into(), DUMMY_SP)),
-                            //{"start":{"line":2,"column":11},"end":{"line":2,"column":3}}
                             value: Box::new(Expr::Object(ObjectLit {
                                 span: DUMMY_SP,
                                 props: vec![
@@ -47,7 +47,6 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
                                             "line".to_string().into(),
                                             DUMMY_SP,
                                         )),
-                                        //{"start":{"line":2,"column":11},"end":{"line":2,"column":3}}
                                         value: Box::new(Expr::Lit(Lit::Num(Number {
                                             span: DUMMY_SP,
                                             value: value.start.line as f64,
@@ -59,7 +58,6 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
                                             "column".to_string().into(),
                                             DUMMY_SP,
                                         )),
-                                        //{"start":{"line":2,"column":11},"end":{"line":2,"column":3}}
                                         value: Box::new(Expr::Lit(Lit::Num(Number {
                                             span: DUMMY_SP,
                                             value: value.start.column as f64,
@@ -193,7 +191,11 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     // fill in _coverageSchema, and hash
     let coverage_schema_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new(COVERAGE_MAGIC_KEY.clone().into(), DUMMY_SP)),
-        value: Box::new(Expr::Lit(Lit::Str(Str::from(COVERAGE_MAGIC_VALUE.clone())))),
+        value: Box::new(Expr::Lit(Lit::Str(Str {
+            value: COVERAGE_MAGIC_VALUE.into(),
+            raw: Some(format!(r#""{}""#, COVERAGE_MAGIC_VALUE).into()),
+            ..Str::dummy()
+        }))),
     })));
     props.push(coverage_schema_prop);
 
@@ -204,7 +206,11 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
 
     let hash_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("hash".into(), DUMMY_SP)),
-        value: Box::new(Expr::Lit(Lit::Str(Str::from(hash.clone())))),
+        value: Box::new(Expr::Lit(Lit::Str(Str {
+            value: hash.clone().into(),
+            raw: Some(format!(r#""{}""#, hash.clone()).into()),
+            ..Str::dummy()
+        }))),
     })));
     props.push(hash_prop);
 
@@ -215,4 +221,74 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
             props,
         }),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use istanbul_oxi_instrument::FileCoverage;
+    use swc_ecma_quote::quote;
+    use swc_plugin::ast::*;
+
+    use crate::template::create_coverage_data_object::create_coverage_data_object;
+
+    use pretty_assertions::assert_eq;
+
+    #[macro_export]
+    macro_rules! try_assert {
+        ($v: tt, $($tt:tt)*) => {{
+            let expected_expr = swc_ecma_quote::quote!($($tt)* as Expr);
+            if $v != expected_expr {
+
+            }
+        }};
+    }
+
+    #[test]
+    fn should_create_empty() {
+        let coverage_data = FileCoverage::empty("anon".to_string(), false);
+        let (_hash, coverage_data_expr) = create_coverage_data_object(&coverage_data);
+
+        let expected = quote!(
+            r#"
+        {
+            path: "anon",
+            statementMap: {},
+            fnMap: {},
+            branchMap: {},
+            s: {},
+            f: {},
+            b: {},
+            _coverageSchema: "7101652470475984838",
+            hash: "7200395314456256211"
+        }
+        "# as Expr
+        );
+
+        assert_eq!(expected, coverage_data_expr);
+    }
+
+    #[test]
+    fn should_create_empty_report_logic() {
+        let coverage_data = FileCoverage::empty("/test/src/file.js".to_string(), true);
+        let (_hash, coverage_data_expr) = create_coverage_data_object(&coverage_data);
+
+        let expected = quote!(
+            r#"
+        {
+            path: "/test/src/file.js",
+            statementMap: {},
+            fnMap: {},
+            branchMap: {},
+            s: {},
+            f: {},
+            b: {},
+            bT: {},
+            _coverageSchema: "7101652470475984838",
+            hash: "15473612320079640285"
+        }
+        "# as Expr
+        );
+
+        assert_eq!(expected, coverage_data_expr);
+    }
 }
