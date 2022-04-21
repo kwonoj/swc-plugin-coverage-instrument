@@ -26,7 +26,85 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     })));
     props.push(path_prop);
 
-    let statement_map_prop_values = vec![];
+    let statement_map_prop_values = coverage_data
+        .statement_map
+        .iter()
+        .map(|(key, value)| {
+            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
+                //{"start":{"line":2,"column":11},"end":{"line":2,"column":3}}
+                value: Box::new(Expr::Object(ObjectLit {
+                    span: DUMMY_SP,
+                    props: vec![
+                        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                            key: PropName::Ident(Ident::new("start".to_string().into(), DUMMY_SP)),
+                            //{"start":{"line":2,"column":11},"end":{"line":2,"column":3}}
+                            value: Box::new(Expr::Object(ObjectLit {
+                                span: DUMMY_SP,
+                                props: vec![
+                                    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                                        key: PropName::Ident(Ident::new(
+                                            "line".to_string().into(),
+                                            DUMMY_SP,
+                                        )),
+                                        //{"start":{"line":2,"column":11},"end":{"line":2,"column":3}}
+                                        value: Box::new(Expr::Lit(Lit::Num(Number {
+                                            span: DUMMY_SP,
+                                            value: value.start.line as f64,
+                                            raw: None,
+                                        }))),
+                                    }))),
+                                    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                                        key: PropName::Ident(Ident::new(
+                                            "column".to_string().into(),
+                                            DUMMY_SP,
+                                        )),
+                                        //{"start":{"line":2,"column":11},"end":{"line":2,"column":3}}
+                                        value: Box::new(Expr::Lit(Lit::Num(Number {
+                                            span: DUMMY_SP,
+                                            value: value.start.column as f64,
+                                            raw: None,
+                                        }))),
+                                    }))),
+                                ],
+                            })),
+                        }))),
+                        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                            key: PropName::Ident(Ident::new("end".to_string().into(), DUMMY_SP)),
+                            value: Box::new(Expr::Object(ObjectLit {
+                                span: DUMMY_SP,
+                                props: vec![
+                                    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                                        key: PropName::Ident(Ident::new(
+                                            "line".to_string().into(),
+                                            DUMMY_SP,
+                                        )),
+                                        value: Box::new(Expr::Lit(Lit::Num(Number {
+                                            span: DUMMY_SP,
+                                            value: value.end.line as f64,
+                                            raw: None,
+                                        }))),
+                                    }))),
+                                    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                                        key: PropName::Ident(Ident::new(
+                                            "column".to_string().into(),
+                                            DUMMY_SP,
+                                        )),
+                                        value: Box::new(Expr::Lit(Lit::Num(Number {
+                                            span: DUMMY_SP,
+                                            value: value.end.column as f64,
+                                            raw: None,
+                                        }))),
+                                    }))),
+                                ],
+                            })),
+                        }))),
+                    ],
+                })),
+            })))
+        })
+        .collect();
+
     let statement_map_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("statementMap".into(), DUMMY_SP)),
         value: Box::new(Expr::Object(ObjectLit {
@@ -56,7 +134,21 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     })));
     props.push(branch_map_prop);
 
-    let s_prop_values = vec![];
+    let s_prop_values = coverage_data
+        .s
+        .iter()
+        .map(|(key, value)| {
+            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
+                value: Box::new(Expr::Lit(Lit::Num(Number {
+                    span: DUMMY_SP,
+                    value: *value as f64,
+                    raw: None,
+                }))),
+            })))
+        })
+        .collect();
+
     let s_prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("s".into(), DUMMY_SP)),
         value: Box::new(Expr::Object(ObjectLit {
