@@ -82,7 +82,7 @@ impl SourceCoverage {
 
     pub fn new_branch(
         &mut self,
-        branch_type: &BranchType,
+        branch_type: BranchType,
         loc: &Range,
         is_report_logic: bool,
     ) -> u32 {
@@ -92,7 +92,7 @@ impl SourceCoverage {
             b,
             Branch {
                 loc: Some(loc.clone()),
-                branch_type: branch_type.clone(),
+                branch_type,
                 locations: vec![],
                 // DEPRECATED: some legacy reports require this info.
                 line: Some(loc.start.line),
@@ -100,11 +100,11 @@ impl SourceCoverage {
         );
 
         self.meta.last.b += 1;
-        self.maybe_new_branch_true(branch_type, b, is_report_logic);
+        self.maybe_new_branch_true(&branch_type, b, is_report_logic);
         b
     }
 
-    pub fn maybe_new_branch_true(
+    fn maybe_new_branch_true(
         &mut self,
         branch_type: &BranchType,
         name: u32,
@@ -153,7 +153,7 @@ impl SourceCoverage {
             - 1) as u32
     }
 
-    pub fn maybe_add_branch_true(&mut self, name: u32) {
+    fn maybe_add_branch_true(&mut self, name: u32) {
         if let Some(b_t) = &mut self.inner.b_t {
             let counts_true = b_t.get_mut(&name);
             if let Some(counts_true) = counts_true {
@@ -162,7 +162,7 @@ impl SourceCoverage {
         }
     }
 
-    pub fn set_input_source_map(&mut self, source_map: UnknownReserved) {
+    pub fn set_input_source_map(&mut self, _source_map: UnknownReserved) {
         todo!("Not implemented");
     }
 
@@ -183,5 +183,198 @@ impl SourceCoverage {
                 true
             }
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use istanbul_oxi_coverage::{Branch, BranchType, Function, Range};
+
+    use crate::SourceCoverage;
+
+    #[test]
+    fn should_insert_new_statement() {
+        let mut coverage = SourceCoverage::new("anon".to_string(), false);
+
+        assert_eq!(coverage.as_ref().s.len(), 0);
+        assert_eq!(coverage.as_ref().statement_map.len(), 0);
+
+        let dummy_range = Range::new(2, 3, 5, 2);
+        let stmt_count = coverage.new_statement(&dummy_range);
+        assert_eq!(stmt_count, 0);
+
+        let coverage_ref = coverage.as_ref();
+
+        assert_eq!(coverage_ref.s.len(), 1);
+        assert_eq!(coverage_ref.statement_map.len(), 1);
+
+        assert_eq!(coverage_ref.s.get(&0), Some(0).as_ref());
+        assert_eq!(
+            coverage.as_ref().statement_map.get(&0),
+            Some(dummy_range).as_ref()
+        );
+
+        assert_eq!(coverage.meta.last.s, 1);
+    }
+
+    #[test]
+    fn should_insert_new_function() {
+        let mut coverage = SourceCoverage::new("anon".to_string(), false);
+
+        assert_eq!(coverage.as_ref().f.len(), 0);
+        assert_eq!(coverage.as_ref().fn_map.len(), 0);
+
+        let dummy_range = Range::new(2, 3, 5, 2);
+        let dummy_decl_range = Range::new(3, 1, 4, 5);
+        let fn_count = coverage.new_function(&None, &dummy_decl_range, &dummy_range);
+
+        assert_eq!(fn_count, 0);
+
+        assert_eq!(coverage.as_ref().f.len(), 1);
+        assert_eq!(coverage.as_ref().fn_map.len(), 1);
+
+        let coverage_ref = coverage.as_ref();
+
+        assert_eq!(coverage_ref.f.get(&0), Some(0).as_ref());
+        assert_eq!(
+            coverage.as_ref().fn_map.get(&0),
+            Some(Function {
+                name: "(anonymous_0)".to_string(),
+                decl: dummy_decl_range.clone(),
+                loc: dummy_range.clone(),
+                line: dummy_range.start.line
+            })
+            .as_ref()
+        );
+
+        assert_eq!(coverage.meta.last.f, 1);
+
+        let fn_count =
+            coverage.new_function(&Some("dummy".to_string()), &dummy_decl_range, &dummy_range);
+
+        assert_eq!(fn_count, 1);
+
+        assert_eq!(coverage.as_ref().f.len(), 2);
+        assert_eq!(coverage.as_ref().fn_map.len(), 2);
+
+        let coverage_ref = coverage.as_ref();
+
+        assert_eq!(coverage_ref.f.get(&1), Some(0).as_ref());
+        assert_eq!(
+            coverage.as_ref().fn_map.get(&1),
+            Some(Function {
+                name: "dummy".to_string(),
+                decl: dummy_decl_range.clone(),
+                loc: dummy_range.clone(),
+                line: dummy_range.start.line
+            })
+            .as_ref()
+        );
+
+        assert_eq!(coverage.meta.last.f, 2);
+    }
+
+    #[test]
+    fn should_insert_new_branch() {
+        let mut coverage = SourceCoverage::new("anon".to_string(), false);
+
+        assert_eq!(coverage.as_ref().b.len(), 0);
+        assert_eq!(coverage.as_ref().branch_map.len(), 0);
+
+        let dummy_range = Range::new(2, 3, 5, 2);
+        let branch_count = coverage.new_branch(BranchType::CondExpr, &dummy_range, false);
+
+        assert_eq!(branch_count, 0);
+
+        assert_eq!(coverage.as_ref().b.len(), 1);
+        assert_eq!(coverage.as_ref().branch_map.len(), 1);
+
+        let coverage_ref = coverage.as_ref();
+
+        assert_eq!(coverage_ref.b.get(&0), Some(vec![]).as_ref());
+        assert_eq!(
+            coverage.as_ref().branch_map.get(&0),
+            Some(Branch {
+                loc: Some(dummy_range.clone()),
+                branch_type: BranchType::CondExpr,
+                locations: vec![],
+                line: Some(dummy_range.start.line)
+            })
+            .as_ref()
+        );
+
+        assert_eq!(coverage.meta.last.b, 1);
+
+        let branch_count = coverage.new_branch(BranchType::BinaryExpr, &dummy_range, true);
+
+        assert_eq!(branch_count, 1);
+
+        assert_eq!(coverage.as_ref().b.len(), 2);
+        assert_eq!(coverage.as_ref().branch_map.len(), 2);
+
+        let coverage_ref = coverage.as_ref();
+
+        assert_eq!(coverage_ref.b.get(&1), Some(vec![]).as_ref());
+        assert_eq!(
+            coverage.as_ref().branch_map.get(&1),
+            Some(Branch {
+                loc: Some(dummy_range.clone()),
+                branch_type: BranchType::BinaryExpr,
+                locations: vec![],
+                line: Some(dummy_range.start.line)
+            })
+            .as_ref()
+        );
+
+        assert_eq!(
+            coverage_ref.b_t.as_ref().unwrap().get(&1),
+            Some(vec![]).as_ref()
+        );
+
+        assert_eq!(coverage.meta.last.b, 2);
+    }
+
+    #[test]
+    fn should_add_branch_path() {
+        let mut coverage = SourceCoverage::new("anon".to_string(), false);
+
+        let dummy_range = Range::new(2, 3, 5, 2);
+        coverage.new_branch(BranchType::CondExpr, &dummy_range, true);
+        let branch_path_range = Range::new(3, 3, 4, 4);
+        let branch_path_count = coverage.add_branch_path(0, &branch_path_range);
+
+        assert_eq!(branch_path_count, 0);
+        let coverage_ref = coverage.as_ref();
+
+        assert_eq!(coverage_ref.b.get(&0), Some(vec![0]).as_ref());
+        assert_eq!(
+            coverage.as_ref().branch_map.get(&0),
+            Some(Branch {
+                loc: Some(dummy_range.clone()),
+                branch_type: BranchType::CondExpr,
+                locations: vec![branch_path_range.clone()],
+                line: Some(dummy_range.start.line)
+            })
+            .as_ref()
+        );
+    }
+
+    #[test]
+    fn should_freeze() {
+        let mut coverage = SourceCoverage::new("anon".to_string(), false);
+
+        let dummy_range = Range::new(2, 3, 5, 2);
+        coverage.new_branch(BranchType::CondExpr, &dummy_range, false);
+
+        coverage.new_branch(BranchType::Switch, &dummy_range, true);
+        let branch_path_range = Range::new(3, 3, 4, 4);
+        coverage.add_branch_path(0, &branch_path_range);
+
+        coverage.new_statement(&dummy_range);
+
+        coverage.freeze();
+
+        assert_eq!(coverage.as_ref().b.len(), 1);
+        assert_eq!(coverage.as_ref().branch_map.len(), 1);
     }
 }
