@@ -21,6 +21,18 @@ pub enum BranchType {
     CondExpr,
 }
 
+impl ToString for BranchType {
+    fn to_string(&self) -> String {
+        match self {
+            BranchType::BinaryExpr => "binary-expr".to_string(),
+            BranchType::DefaultArg => "default-arg".to_string(),
+            BranchType::If => "if".to_string(),
+            BranchType::Switch => "switch".to_string(),
+            BranchType::CondExpr => "cond-expr".to_string(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Branch {
     pub loc: Option<Range>,

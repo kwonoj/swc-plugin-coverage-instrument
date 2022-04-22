@@ -3,7 +3,7 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use istanbul_oxi_instrument::{FileCoverage, Range, COVERAGE_MAGIC_VALUE};
+use istanbul_oxi_instrument::{Branch, FileCoverage, Range, COVERAGE_MAGIC_VALUE};
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
 
 use crate::{
@@ -14,43 +14,41 @@ use crate::{
     },
 };
 
+fn create_range_object_prop(value: &Range) -> Vec<PropOrSpread> {
+    vec![
+        create_ident_key_value_prop(
+            &IDENT_START,
+            Expr::Object(ObjectLit {
+                span: DUMMY_SP,
+                props: vec![
+                    create_ident_key_value_prop(&IDENT_LINE, create_num_lit_expr(value.start.line)),
+                    create_ident_key_value_prop(
+                        &IDENT_COLUMN,
+                        create_num_lit_expr(value.start.column),
+                    ),
+                ],
+            }),
+        ),
+        create_ident_key_value_prop(
+            &IDENT_END,
+            Expr::Object(ObjectLit {
+                span: DUMMY_SP,
+                props: vec![
+                    create_ident_key_value_prop(&IDENT_LINE, create_num_lit_expr(value.end.line)),
+                    create_ident_key_value_prop(
+                        &IDENT_COLUMN,
+                        create_num_lit_expr(value.end.column),
+                    ),
+                ],
+            }),
+        ),
+    ]
+}
+
 fn create_range_object_lit(value: &Range) -> Expr {
     Expr::Object(ObjectLit {
         span: DUMMY_SP,
-        props: vec![
-            create_ident_key_value_prop(
-                &IDENT_START,
-                Expr::Object(ObjectLit {
-                    span: DUMMY_SP,
-                    props: vec![
-                        create_ident_key_value_prop(
-                            &IDENT_LINE,
-                            create_num_lit_expr(value.start.line),
-                        ),
-                        create_ident_key_value_prop(
-                            &IDENT_COLUMN,
-                            create_num_lit_expr(value.start.column),
-                        ),
-                    ],
-                }),
-            ),
-            create_ident_key_value_prop(
-                &IDENT_END,
-                Expr::Object(ObjectLit {
-                    span: DUMMY_SP,
-                    props: vec![
-                        create_ident_key_value_prop(
-                            &IDENT_LINE,
-                            create_num_lit_expr(value.end.line),
-                        ),
-                        create_ident_key_value_prop(
-                            &IDENT_COLUMN,
-                            create_num_lit_expr(value.end.column),
-                        ),
-                    ],
-                }),
-            ),
-        ],
+        props: create_range_object_prop(value),
     })
 }
 
@@ -65,6 +63,74 @@ fn create_fn_prop(key: &str, value: &istanbul_oxi_instrument::Function) -> PropO
                 create_ident_key_value_prop(&IDENT_LOC, create_range_object_lit(&value.loc)),
                 create_ident_key_value_prop(&IDENT_LINE, create_num_lit_expr(value.line)),
             ],
+        }),
+    )
+}
+
+fn create_branch_vec_prop(value: &Vec<u32>) -> Expr {
+    Expr::Array(ArrayLit {
+        span: DUMMY_SP,
+        elems: value
+            .iter()
+            .map(|v| {
+                Some(ExprOrSpread {
+                    spread: None,
+                    expr: Box::new(create_num_lit_expr(*v)),
+                })
+            })
+            .collect(),
+    })
+}
+
+fn create_branch_prop(key: &str, value: &Branch) -> PropOrSpread {
+    let mut props = vec![];
+
+    if let Some(loc) = value.loc {
+        props.push(create_ident_key_value_prop(
+            &IDENT_LOC,
+            create_range_object_lit(&loc),
+        ));
+    }
+
+    props.push(create_ident_key_value_prop(
+        &IDENT_TYPE,
+        create_str_lit_expr(&value.branch_type.to_string()),
+    ));
+
+    if value.locations.len() > 0 {
+        props.push(create_ident_key_value_prop(
+            &IDENT_LOCATIONS,
+            Expr::Array(ArrayLit {
+                span: DUMMY_SP,
+                elems: value
+                    .locations
+                    .iter()
+                    .map(|value| {
+                        Some(ExprOrSpread {
+                            spread: None,
+                            expr: Box::new(Expr::Object(ObjectLit {
+                                span: DUMMY_SP,
+                                props: create_range_object_prop(value),
+                            })),
+                        })
+                    })
+                    .collect(),
+            }),
+        ))
+    }
+
+    if let Some(line) = value.line {
+        props.push(create_ident_key_value_prop(
+            &IDENT_LINE,
+            create_num_lit_expr(line),
+        ));
+    }
+
+    create_str_key_value_prop(
+        key,
+        Expr::Object(ObjectLit {
+            span: DUMMY_SP,
+            props,
         }),
     )
 }
@@ -121,7 +187,12 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     );
     props.push(fn_map_prop);
 
-    let branch_map_prop_values = vec![];
+    // assign coverage['branchMap']
+    let branch_map_prop_values = coverage_data
+        .branch_map
+        .iter()
+        .map(|(key, value)| create_branch_prop(&key.to_string(), value))
+        .collect();
     let branch_map_prop = create_ident_key_value_prop(
         &IDENT_BRANCH_MAP,
         Expr::Object(ObjectLit {
@@ -165,7 +236,13 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     );
     props.push(f_prop);
 
-    let b_prop_values = vec![];
+    let b_prop_values = coverage_data
+        .b
+        .iter()
+        .map(|(key, value)| {
+            create_str_key_value_prop(&key.to_string(), create_branch_vec_prop(value))
+        })
+        .collect();
     let b_prop = create_ident_key_value_prop(
         &IDENT_B,
         Expr::Object(ObjectLit {
@@ -176,7 +253,12 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     props.push(b_prop);
 
     if let Some(b_t) = &coverage_data.b_t {
-        let b_t_prop_values = vec![];
+        let b_t_prop_values = b_t
+            .iter()
+            .map(|(key, value)| {
+                create_str_key_value_prop(&key.to_string(), create_branch_vec_prop(value))
+            })
+            .collect();
         let b_t_prop = create_ident_key_value_prop(
             &IDENT_BT,
             Expr::Object(ObjectLit {
@@ -522,4 +604,151 @@ mod tests {
         let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
         assert_eq!(expected, coverage_data_expr);
     }
+
+    #[test]
+    fn should_create_new_branch() {
+        let mut coverage_data = SourceCoverage::new("/test/src/branch.js".to_string(), false);
+
+        let dummy_range = Range::new(2, 3, 5, 2);
+        coverage_data.new_branch(BranchType::Switch, &dummy_range, false);
+
+        let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
+
+        let expected = quote!(
+            r#"
+        {
+          path: "/test/src/branch.js",
+          statementMap: {},
+          fnMap: {},
+          branchMap: {
+            "0": {
+              loc: { start: { line: 2, column: 3 }, end: { line: 5, column: 2 } },
+              type: "switch",
+              line: 2
+            }
+          },
+          s: {},
+          f: {},
+          b: { "0": [] },
+          _coverageSchema: "7101652470475984838",
+          hash: "16290170317654300968"
+        }
+        "# as Expr
+        );
+
+        assert_eq!(expected, coverage_data_expr);
+
+        let dummy_range = Range::new(6, 4, 2, 8);
+        coverage_data.new_branch(BranchType::BinaryExpr, &dummy_range, true);
+
+        let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
+
+        let expected = quote!(
+            r#"
+        {
+          path: "/test/src/branch.js",
+          statementMap: {},
+          fnMap: {},
+          branchMap: {
+            "0": {
+              loc: { start: { line: 2, column: 3 }, end: { line: 5, column: 2 } },
+              type: "switch",
+              line: 2
+            },
+            "1": {
+              loc: { start: { line: 6, column: 4 }, end: { line: 2, column: 8 } },
+              type: "binary-expr",
+              line: 6
+            }
+          },
+          s: {},
+          f: {},
+          b: { "0": [], "1": [] },
+          bT: { "1": [] },
+          _coverageSchema: "7101652470475984838",
+          hash: "394046461779423801"
+        }
+        "# as Expr
+        );
+
+        assert_eq!(expected, coverage_data_expr);
+    }
+
+    #[test]
+    fn should_add_branch_path() {
+        let mut coverage_data = SourceCoverage::new("/test/src/branch_path.js".to_string(), false);
+
+        let dummy_range = Range::new(2, 3, 5, 2);
+        let location_range = Range::new(3, 4, 5, 4);
+        let name = coverage_data.new_branch(BranchType::Switch, &dummy_range, false);
+        coverage_data.add_branch_path(name, &location_range);
+
+        let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
+
+        let expected = quote!(
+            r#"
+        {
+          path: "/test/src/branch_path.js",
+          statementMap: {},
+          fnMap: {},
+          branchMap: {
+            "0": {
+              loc: { start: { line: 2, column: 3 }, end: { line: 5, column: 2 } },
+              type: "switch",
+              locations: [{ start: { line: 3, column: 4 }, end: { line: 5, column: 4 } }],
+              line: 2
+            }
+          },
+          s: {},
+          f: {},
+          b: { "0": [0] },
+          _coverageSchema: "7101652470475984838",
+          hash: "1206056395566328244"
+        }
+        "# as Expr
+        );
+
+        assert_eq!(expected, coverage_data_expr);
+
+        let dummy_range = Range::new(6, 4, 2, 8);
+        let name = coverage_data.new_branch(BranchType::BinaryExpr, &dummy_range, true);
+        coverage_data.add_branch_path(name, &location_range);
+
+        let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
+
+        let expected = quote!(
+            r#"
+        {
+          path: "/test/src/branch_path.js",
+          statementMap: {},
+          fnMap: {},
+          branchMap: {
+            "0": {
+              loc: { start: { line: 2, column: 3 }, end: { line: 5, column: 2 } },
+              type: "switch",
+              locations: [{ start: { line: 3, column: 4 }, end: { line: 5, column: 4 } }],
+              line: 2
+            },
+            "1": {
+              loc: { start: { line: 6, column: 4 }, end: { line: 2, column: 8 } },
+              type: "binary-expr",
+              locations: [{ start: { line: 3, column: 4 }, end: { line: 5, column: 4 } }],
+              line: 6
+            }
+          },
+          s: {},
+          f: {},
+          b: { "0": [0], "1": [0] },
+          bT: { "1": [0] },
+          _coverageSchema: "7101652470475984838",
+          hash: "5849348874565150566"
+        }
+        "# as Expr
+        );
+
+        assert_eq!(expected, coverage_data_expr);
+    }
+
+    #[test]
+    fn should_add_branch_path_true() {}
 }
