@@ -311,6 +311,22 @@ impl VisitMut for CoverageVisitor<'_> {
         for_stmt.visit_mut_children_with(self);
     }
 
+    fn visit_mut_expr_stmt(&mut self, expr_stmt: &mut ExprStmt) {
+        // TODO: Consolidate logic between StmtVisitor
+        let stmt_range = get_range_from_span(self.source_map, &expr_stmt.span);
+
+        let idx = self.cov.new_statement(&stmt_range);
+        let increment_expr =
+            build_increase_expression_expr(&IDENT_S, idx, &self.var_name_ident, None);
+
+        self.before = vec![Stmt::Expr(ExprStmt {
+            span: DUMMY_SP,
+            expr: Box::new(increment_expr),
+        })];
+
+        expr_stmt.visit_mut_children_with(self);
+    }
+
     ///Visit statements, ask StmtVisitor to create a statement increasement counter.
     /// TODO: StmtVisitor seems not required
     fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
