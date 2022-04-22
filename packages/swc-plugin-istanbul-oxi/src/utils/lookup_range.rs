@@ -9,9 +9,9 @@ pub fn get_range_from_span(source_map: &PluginSourceMapProxy, span: &Span) -> Ra
     let span_lo_loc = source_map.lookup_char_pos(span.lo);
 
     Range::new(
-        span_hi_loc.line as u32,
-        span_hi_loc.col.to_u32(),
         span_lo_loc.line as u32,
         span_lo_loc.col.to_u32(),
+        span_hi_loc.line as u32,
+        span_hi_loc.col.to_u32(),
     )
 }
