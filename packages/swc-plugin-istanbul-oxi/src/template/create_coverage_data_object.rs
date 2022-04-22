@@ -748,7 +748,4 @@ mod tests {
 
         assert_eq!(expected, coverage_data_expr);
     }
-
-    #[test]
-    fn should_add_branch_path_true() {}
 }

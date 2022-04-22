@@ -68,3 +68,17 @@ pub type FunctionMap = IndexMap<u32, Function>;
 pub type BranchMap = IndexMap<u32, Branch>;
 pub type BranchHitMap = IndexMap<u32, Vec<u32>>;
 pub type BranchCoverageMap = IndexMap<u32, Coverage>;
+
+#[cfg(test)]
+mod tests {
+    use crate::BranchType;
+
+    #[test]
+    fn branch_type_should_return_kebab_string() {
+        assert_eq!(&BranchType::BinaryExpr.to_string(), "binary-expr");
+        assert_eq!(&BranchType::DefaultArg.to_string(), "default-arg");
+        assert_eq!(&BranchType::If.to_string(), "if");
+        assert_eq!(&BranchType::Switch.to_string(), "switch");
+        assert_eq!(&BranchType::CondExpr.to_string(), "cond-expr");
+    }
+}
