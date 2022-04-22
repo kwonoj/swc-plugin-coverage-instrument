@@ -3,13 +3,16 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use istanbul_oxi_instrument::SourceCoverage;
+use constants::idents::*;
+use istanbul_oxi_instrument::{Range, SourceCoverage};
 use once_cell::sync::Lazy;
 use serde_json::Value;
+use swc_ecma_quote::swc_common::source_map::Pos;
 use swc_plugin::{
     ast::*,
     comments::{Comment, CommentKind, Comments, PluginCommentsProxy},
     plugin_transform,
+    source_map::PluginSourceMapProxy,
     syntax_pos::DUMMY_SP,
     utils::take::Take,
     TransformPluginProgramMetadata,
@@ -38,10 +41,11 @@ impl Default for UnknownReserved {
     }
 }
 
-/// Internal visitor
 struct CoverageVisitor<'a> {
     comments: Option<&'a PluginCommentsProxy>,
+    source_map: &'a PluginSourceMapProxy,
     var_name: String,
+    var_name_ident: Ident,
     file_path: String,
     attrs: UnknownReserved,
     next_ignore: Option<UnknownReserved>,
@@ -55,6 +59,7 @@ struct CoverageVisitor<'a> {
 impl<'a> CoverageVisitor<'a> {
     pub fn new(
         comments: Option<&'a PluginCommentsProxy>,
+        source_map: &'a PluginSourceMapProxy,
         var_name: &str,
         attrs: UnknownReserved,
         next_ignore: Option<UnknownReserved>,
@@ -68,7 +73,9 @@ impl<'a> CoverageVisitor<'a> {
 
         CoverageVisitor {
             comments,
-            var_name: var_name_hash,
+            source_map,
+            var_name: var_name_hash.clone(),
+            var_name_ident: Ident::new(var_name_hash.into(), DUMMY_SP),
             file_path: var_name.to_string(),
             attrs,
             next_ignore,
@@ -95,6 +102,130 @@ impl<'a> CoverageVisitor<'a> {
     fn on_enter(&mut self) {}
 
     fn on_exit(&mut self) {}
+}
+
+/// Visit statements, create a call to increase statement counter.
+struct StmtVisitor<'a> {
+    pub source_map: &'a PluginSourceMapProxy,
+    pub cov: &'a mut SourceCoverage,
+    pub var_name: &'a Ident,
+    pub before_stmts: Vec<Stmt>,
+    pub after_stmts: Vec<Stmt>,
+    pub replace: bool,
+}
+
+impl<'a> StmtVisitor<'a> {
+    fn insert_statement_counter(&mut self, stmt: &mut Stmt) {
+        let stmt_span = match stmt {
+            Stmt::Block(BlockStmt { span, .. })
+            | Stmt::Empty(EmptyStmt { span, .. })
+            | Stmt::Debugger(DebuggerStmt { span, .. })
+            | Stmt::With(WithStmt { span, .. })
+            | Stmt::Return(ReturnStmt { span, .. })
+            | Stmt::Labeled(LabeledStmt { span, .. })
+            | Stmt::Break(BreakStmt { span, .. })
+            | Stmt::Continue(ContinueStmt { span, .. })
+            | Stmt::If(IfStmt { span, .. })
+            | Stmt::Switch(SwitchStmt { span, .. })
+            | Stmt::Throw(ThrowStmt { span, .. })
+            | Stmt::Try(TryStmt { span, .. })
+            | Stmt::While(WhileStmt { span, .. })
+            | Stmt::DoWhile(DoWhileStmt { span, .. })
+            | Stmt::For(ForStmt { span, .. })
+            | Stmt::ForIn(ForInStmt { span, .. })
+            | Stmt::ForOf(ForOfStmt { span, .. })
+            | Stmt::Decl(Decl::Class(ClassDecl { class: Class { span, .. }, ..}))
+            | Stmt::Decl(Decl::Fn(FnDecl { function: Function { span, .. }, ..}))
+            | Stmt::Decl(Decl::Var(VarDecl { span, ..}))
+            // TODO: need this?
+            | Stmt::Decl(Decl::TsInterface(TsInterfaceDecl { span, ..}))
+            | Stmt::Decl(Decl::TsTypeAlias(TsTypeAliasDecl { span, ..}))
+            | Stmt::Decl(Decl::TsEnum(TsEnumDecl { span, ..}))
+            | Stmt::Decl(Decl::TsModule(TsModuleDecl { span, ..}))
+            | Stmt::Expr(ExprStmt { span, .. })
+            => span,
+        };
+
+        let stmt_hi_loc = self.source_map.lookup_char_pos(stmt_span.hi);
+        let stmt_lo_loc = self.source_map.lookup_char_pos(stmt_span.lo);
+
+        let stmt_range = Range::new(
+            stmt_hi_loc.line as u32,
+            stmt_hi_loc.col.to_u32(),
+            stmt_lo_loc.line as u32,
+            stmt_lo_loc.col.to_u32(),
+        );
+
+        let idx = self.cov.new_statement(&stmt_range);
+        let increment_expr = self.build_increase_expression(&IDENT_S, idx, None);
+        self.insert_counter(stmt, increment_expr);
+    }
+
+    /// Creates a expr like `cov_17709493053001988098().s[0]++;`
+    fn build_increase_expression(
+        &mut self,
+        type_ident: &Ident,
+        id: u32,
+        i: Option<UnknownReserved>,
+    ) -> Stmt {
+        if let Some(_i) = i {
+            todo!("Not implemented yet!")
+        } else {
+            let call = CallExpr {
+                span: DUMMY_SP,
+                callee: Callee::Expr(Box::new(Expr::Ident(self.var_name.clone()))),
+                args: vec![],
+                type_args: None,
+            };
+
+            let c = MemberExpr {
+                span: DUMMY_SP,
+                obj: Box::new(Expr::Call(call)),
+                prop: MemberProp::Ident(type_ident.clone()),
+            };
+
+            let expr = MemberExpr {
+                span: DUMMY_SP,
+                obj: Box::new(Expr::Member(c)),
+                prop: MemberProp::Computed(ComputedPropName {
+                    span: DUMMY_SP,
+                    expr: Box::new(Expr::Lit(Lit::Num(Number {
+                        span: DUMMY_SP,
+                        value: id as f64,
+                        raw: None,
+                    }))),
+                }),
+            };
+
+            let expr_update = UpdateExpr {
+                span: DUMMY_SP,
+                op: UpdateOp::PlusPlus,
+                prefix: false,
+                arg: Box::new(Expr::Member(expr)),
+            };
+
+            Stmt::Expr(ExprStmt {
+                span: DUMMY_SP,
+                expr: Box::new(Expr::Update(expr_update)),
+            })
+        }
+    }
+
+    fn insert_counter(&mut self, current: &Stmt, increment_expr: Stmt) {
+        match current {
+            _ => {
+                self.before_stmts.push(increment_expr);
+            }
+        }
+    }
+}
+
+impl VisitMut for StmtVisitor<'_> {
+    fn visit_mut_stmt(&mut self, stmt: &mut Stmt) {
+        stmt.visit_mut_children_with(self);
+
+        self.insert_statement_counter(stmt);
+    }
 }
 
 impl VisitMut for CoverageVisitor<'_> {
@@ -130,20 +261,46 @@ impl VisitMut for CoverageVisitor<'_> {
         );
     }
 
-    fn visit_mut_stmt(&mut self, stmt: &mut Stmt) {
+    fn visit_mut_for_stmt(&mut self, for_stmt: &mut ForStmt) {
         self.on_enter();
-
-        match stmt {
-            Stmt::For(for_stmt) => {}
-            _ => {}
-        }
-        stmt.visit_mut_children_with(self);
+        for_stmt.visit_mut_children_with(self);
         self.on_exit();
+    }
+
+    fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
+        stmts.visit_mut_children_with(self);
+
+        let mut new_stmts: Vec<Stmt> = vec![];
+
+        for mut stmt in stmts.drain(..) {
+            let mut stmt_visitor = StmtVisitor {
+                source_map: self.source_map,
+                var_name: &self.var_name_ident,
+                cov: &mut self.cov,
+                before_stmts: vec![],
+                after_stmts: vec![],
+                replace: false,
+            };
+
+            stmt.visit_mut_with(&mut stmt_visitor);
+
+            new_stmts.extend(stmt_visitor.before_stmts);
+            if !stmt_visitor.replace {
+                new_stmts.push(stmt);
+            }
+            new_stmts.extend(stmt_visitor.after_stmts);
+        }
+
+        *stmts = new_stmts;
     }
 
     fn visit_mut_module_items(&mut self, items: &mut Vec<ModuleItem>) {
         if self.is_instrumented_already() {
             return;
+        }
+
+        for item in items.iter_mut() {
+            item.visit_mut_children_with(self);
         }
 
         self.cov.freeze();
@@ -194,10 +351,6 @@ impl VisitMut for CoverageVisitor<'_> {
                 ..CallExpr::dummy()
             })),
         }));
-
-        for item in items.iter_mut() {
-            item.visit_mut_children_with(self);
-        }
 
         // prepend template to the top of the code
         items.insert(0, coverage_template);
@@ -268,6 +421,7 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
 
     let visitor = CoverageVisitor::new(
         metadata.comments.as_ref(),
+        &metadata.source_map,
         filename,
         UnknownReserved,
         None,
