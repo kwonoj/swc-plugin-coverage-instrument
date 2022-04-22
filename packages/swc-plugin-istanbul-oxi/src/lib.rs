@@ -4,10 +4,10 @@ use std::{
 };
 
 use constants::idents::*;
-use istanbul_oxi_instrument::{Range, SourceCoverage};
+use instrument::build_increase_expression_expr;
+use istanbul_oxi_instrument::SourceCoverage;
 use once_cell::sync::Lazy;
 use serde_json::Value;
-use swc_ecma_quote::swc_common::source_map::Pos;
 use swc_plugin::{
     ast::*,
     comments::{Comment, CommentKind, Comments, PluginCommentsProxy},
@@ -19,6 +19,7 @@ use swc_plugin::{
 };
 
 mod constants;
+mod instrument;
 mod template;
 mod utils;
 
@@ -27,6 +28,8 @@ use template::{
     create_coverage_fn_decl::create_coverage_fn_decl,
     create_global_stmt_template::create_global_stmt_template,
 };
+
+use crate::utils::lookup_range::get_range_from_span;
 
 /// This is not fully identical to original file comments
 /// https://github.com/istanbuljs/istanbuljs/blob/6f45283feo31faaa066375528f6b68e3a9927b2d5/packages/istanbul-lib-instrument/src/visitor.js#L10=
@@ -146,69 +149,17 @@ impl<'a> StmtVisitor<'a> {
             => span,
         };
 
-        let stmt_hi_loc = self.source_map.lookup_char_pos(stmt_span.hi);
-        let stmt_lo_loc = self.source_map.lookup_char_pos(stmt_span.lo);
-
-        let stmt_range = Range::new(
-            stmt_hi_loc.line as u32,
-            stmt_hi_loc.col.to_u32(),
-            stmt_lo_loc.line as u32,
-            stmt_lo_loc.col.to_u32(),
-        );
+        let stmt_range = get_range_from_span(self.source_map, &stmt_span);
 
         let idx = self.cov.new_statement(&stmt_range);
-        let increment_expr = self.build_increase_expression(&IDENT_S, idx, None);
-        self.insert_counter(stmt, increment_expr);
-    }
-
-    /// Creates a expr like `cov_17709493053001988098().s[0]++;`
-    fn build_increase_expression(
-        &mut self,
-        type_ident: &Ident,
-        id: u32,
-        i: Option<UnknownReserved>,
-    ) -> Stmt {
-        if let Some(_i) = i {
-            todo!("Not implemented yet!")
-        } else {
-            let call = CallExpr {
-                span: DUMMY_SP,
-                callee: Callee::Expr(Box::new(Expr::Ident(self.var_name.clone()))),
-                args: vec![],
-                type_args: None,
-            };
-
-            let c = MemberExpr {
-                span: DUMMY_SP,
-                obj: Box::new(Expr::Call(call)),
-                prop: MemberProp::Ident(type_ident.clone()),
-            };
-
-            let expr = MemberExpr {
-                span: DUMMY_SP,
-                obj: Box::new(Expr::Member(c)),
-                prop: MemberProp::Computed(ComputedPropName {
-                    span: DUMMY_SP,
-                    expr: Box::new(Expr::Lit(Lit::Num(Number {
-                        span: DUMMY_SP,
-                        value: id as f64,
-                        raw: None,
-                    }))),
-                }),
-            };
-
-            let expr_update = UpdateExpr {
-                span: DUMMY_SP,
-                op: UpdateOp::PlusPlus,
-                prefix: false,
-                arg: Box::new(Expr::Member(expr)),
-            };
-
+        let increment_expr = build_increase_expression_expr(&IDENT_S, idx, self.var_name, None);
+        self.insert_counter(
+            stmt,
             Stmt::Expr(ExprStmt {
                 span: DUMMY_SP,
-                expr: Box::new(Expr::Update(expr_update)),
-            })
-        }
+                expr: Box::new(increment_expr),
+            }),
+        );
     }
 
     fn insert_counter(&mut self, current: &Stmt, increment_expr: Stmt) {
@@ -265,6 +216,41 @@ impl VisitMut for CoverageVisitor<'_> {
         self.on_enter();
         for_stmt.visit_mut_children_with(self);
         self.on_exit();
+    }
+
+    /// Visit variable declarator, inject a statement increase expr by wrapping declaration init with paren.
+    /// var x = 0
+    /// ->
+    /// var x = (cov_18biir0b3p().s[3]++, 0)
+    fn visit_mut_var_declarator(&mut self, declarator: &mut VarDeclarator) {
+        if let Some(init) = &mut declarator.init {
+            // TODO: this is not complete
+            let expr_span = match &mut **init {
+                Expr::Lit(Lit::Str(Str { span, .. }))
+                | Expr::Lit(Lit::Num(Number { span, .. })) => span,
+                Expr::Call(CallExpr { span, .. }) => span,
+                _ => {
+                    todo!("not implemented")
+                }
+            };
+
+            let init_range = get_range_from_span(self.source_map, expr_span);
+
+            let idx = self.cov.new_statement(&init_range);
+            let increment_expr =
+                build_increase_expression_expr(&IDENT_S, idx, &self.var_name_ident, None);
+
+            let paren_expr = Expr::Paren(ParenExpr {
+                span: expr_span.take(),
+                expr: Box::new(Expr::Seq(SeqExpr {
+                    span: DUMMY_SP,
+                    exprs: vec![Box::new(increment_expr), init.take()],
+                })),
+            });
+
+            // replace init with increase expr + init seq
+            **init = paren_expr;
+        }
     }
 
     fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
