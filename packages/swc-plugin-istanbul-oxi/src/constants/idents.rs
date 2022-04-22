@@ -109,3 +109,13 @@ pub static IDENT_LOC: Lazy<Ident> = Lazy::new(|| Ident {
     sym: "loc".into(),
     ..Ident::dummy()
 });
+
+pub static IDENT_TYPE: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "type".into(),
+    ..Ident::dummy()
+});
+
+pub static IDENT_LOCATIONS: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "locations".into(),
+    ..Ident::dummy()
+});
