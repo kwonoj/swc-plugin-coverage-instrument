@@ -57,6 +57,7 @@ struct CoverageVisitor<'a> {
     types: UnknownReserved,
     source_mapping_url: Option<UnknownReserved>,
     instrument_options: InstrumentOptions,
+    before: Vec<Stmt>,
 }
 
 impl<'a> CoverageVisitor<'a> {
@@ -87,6 +88,7 @@ impl<'a> CoverageVisitor<'a> {
             types,
             source_mapping_url,
             instrument_options,
+            before: vec![],
         }
     }
 
@@ -173,9 +175,9 @@ impl<'a> StmtVisitor<'a> {
 
 impl VisitMut for StmtVisitor<'_> {
     fn visit_mut_stmt(&mut self, stmt: &mut Stmt) {
-        stmt.visit_mut_children_with(self);
-
         self.insert_statement_counter(stmt);
+
+        //stmt.visit_mut_children_with(self);
     }
 }
 
@@ -241,12 +243,6 @@ impl VisitMut for CoverageVisitor<'_> {
         );
     }
 
-    fn visit_mut_for_stmt(&mut self, for_stmt: &mut ForStmt) {
-        self.on_enter();
-        for_stmt.visit_mut_children_with(self);
-        self.on_exit();
-    }
-
     fn visit_mut_fn_expr(&mut self, fn_expr: &mut FnExpr) {
         fn_expr.visit_mut_children_with(self);
 
@@ -296,9 +292,28 @@ impl VisitMut for CoverageVisitor<'_> {
         declarator.visit_mut_children_with(self);
     }
 
-    fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
-        stmts.visit_mut_children_with(self);
+    /// Create a call to increase statement counter for For statement.
+    /// It is not possible to prepend created statement to the For statement directly,
+    /// parent visitor (visit_module_items) deals with it instead.
+    fn visit_mut_for_stmt(&mut self, for_stmt: &mut ForStmt) {
+        // TODO: Consolidate logic between StmtVisitor
+        let stmt_range = get_range_from_span(self.source_map, &for_stmt.span);
 
+        let idx = self.cov.new_statement(&stmt_range);
+        let increment_expr =
+            build_increase_expression_expr(&IDENT_S, idx, &self.var_name_ident, None);
+
+        self.before = vec![Stmt::Expr(ExprStmt {
+            span: DUMMY_SP,
+            expr: Box::new(increment_expr),
+        })];
+
+        for_stmt.visit_mut_children_with(self);
+    }
+
+    ///Visit statements, ask StmtVisitor to create a statement increasement counter.
+    /// TODO: StmtVisitor seems not required
+    fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
         let mut new_stmts: Vec<Stmt> = vec![];
 
         for mut stmt in stmts.drain(..) {
@@ -328,9 +343,16 @@ impl VisitMut for CoverageVisitor<'_> {
             return;
         }
 
-        for item in items.iter_mut() {
+        let mut new_items = vec![];
+        for mut item in items.drain(..) {
             item.visit_mut_children_with(self);
+
+            if self.before.len() > 0 {
+                new_items.extend(self.before.drain(..).map(|v| ModuleItem::Stmt(v)));
+            }
+            new_items.push(item);
         }
+        *items = new_items;
 
         self.cov.freeze();
 
