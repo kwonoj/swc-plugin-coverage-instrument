@@ -4,7 +4,7 @@ use std::{
 };
 
 use istanbul_oxi_instrument::{Branch, FileCoverage, Range, COVERAGE_MAGIC_VALUE};
-use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
+use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
 
 use crate::{
     constants::idents::*,
@@ -151,7 +151,10 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     // assign coverage['path']
     props.push(create_ident_key_value_prop(
         &IDENT_PATH,
-        create_str_lit_expr(&coverage_data.path),
+        Expr::Lit(Lit::Str(Str {
+            value: coverage_data.path.clone().into(),
+            ..Str::dummy()
+        })),
     ));
 
     // assign coverage['statementMap']
@@ -302,18 +305,38 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
 mod tests {
     use istanbul_oxi_instrument::{BranchType, FileCoverage, Range, SourceCoverage};
     use swc_ecma_quote::quote;
-    use swc_plugin::ast::*;
+    use swc_plugin::{ast::*, utils::take::Take};
 
-    use crate::template::create_coverage_data_object::create_coverage_data_object;
+    use crate::{
+        constants::idents::IDENT_PATH,
+        template::create_coverage_data_object::create_coverage_data_object,
+        utils::ast_builder::create_ident_key_value_prop,
+    };
 
     use pretty_assertions::assert_eq;
 
+    fn adjust_expected_ast_path_raw(e: &mut Expr, idx: usize, value: &str) {
+        if let Expr::Object(lit) = e {
+            let _ = std::mem::replace(
+                &mut lit.props[idx],
+                create_ident_key_value_prop(
+                    &IDENT_PATH,
+                    Expr::Lit(Lit::Str(Str {
+                        value: value.into(),
+                        ..Str::dummy()
+                    })),
+                ),
+            );
+        }
+    }
+
     #[test]
     fn should_create_empty() {
-        let coverage_data = FileCoverage::empty("anon".to_string(), false);
+        let file_path = "anon";
+        let coverage_data = FileCoverage::empty(file_path.to_string(), false);
         let (_hash, coverage_data_expr) = create_coverage_data_object(&coverage_data);
 
-        let expected = quote!(
+        let mut expected = quote!(
             r#"
         {
             path: "anon",
@@ -328,17 +351,19 @@ mod tests {
         }
         "# as Expr
         );
+        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
 
         assert_eq!(expected, coverage_data_expr);
     }
 
     #[test]
     fn should_create_empty_all() {
-        let mut coverage_data = FileCoverage::empty("anon".to_string(), false);
+        let file_path = "anon";
+        let mut coverage_data = FileCoverage::empty(file_path.to_string(), false);
         coverage_data.all = true;
         let (_hash, coverage_data_expr) = create_coverage_data_object(&coverage_data);
 
-        let expected = quote!(
+        let mut expected = quote!(
             r#"
         {
             all: true,
@@ -354,16 +379,18 @@ mod tests {
         }
         "# as Expr
         );
+        adjust_expected_ast_path_raw(&mut expected, 1, file_path);
 
         assert_eq!(expected, coverage_data_expr);
     }
 
     #[test]
     fn should_create_empty_report_logic() {
-        let coverage_data = FileCoverage::empty("/test/src/file.js".to_string(), true);
+        let file_path = "/test/src/file.js";
+        let coverage_data = FileCoverage::empty(file_path.to_string(), true);
         let (_hash, coverage_data_expr) = create_coverage_data_object(&coverage_data);
 
-        let expected = quote!(
+        let mut expected = quote!(
             r#"
         {
             path: "/test/src/file.js",
@@ -379,20 +406,22 @@ mod tests {
         }
         "# as Expr
         );
+        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
 
         assert_eq!(expected, coverage_data_expr);
     }
 
     #[test]
     fn should_create_statement_map() {
-        let mut coverage_data = SourceCoverage::new("/test/src/statement.js".to_string(), false);
+        let file_path = "/test/src/statement.js";
+        let mut coverage_data = SourceCoverage::new(file_path.to_string(), false);
 
         let dummy_range = Range::new(2, 3, 5, 2);
         coverage_data.new_statement(&dummy_range);
 
         let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
 
-        let expected = quote!(
+        let mut expected = quote!(
             r#"
         {
             path: "/test/src/statement.js",
@@ -420,13 +449,14 @@ mod tests {
         }
         "# as Expr
         );
+        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
 
         assert_eq!(expected, coverage_data_expr);
 
         let dummy_range = Range::new(4, 9, 3, 6);
         coverage_data.new_statement(&dummy_range);
 
-        let expected = quote!(
+        let mut expected = quote!(
             r#"
         {
             path: "/test/src/statement.js",
@@ -465,6 +495,7 @@ mod tests {
         }
         "# as Expr
         );
+        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
 
         let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
         assert_eq!(expected, coverage_data_expr);
@@ -472,7 +503,8 @@ mod tests {
 
     #[test]
     fn should_create_fn_map() {
-        let mut coverage_data = SourceCoverage::new("/test/src/fn.js".to_string(), false);
+        let file_path = "/test/src/fn.js";
+        let mut coverage_data = SourceCoverage::new(file_path.to_string(), false);
 
         let dummy_range = Range::new(2, 3, 5, 2);
         let decl_range = Range::new(2, 3, 2, 10);
@@ -484,7 +516,7 @@ mod tests {
 
         let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
 
-        let expected = quote!(
+        let mut expected = quote!(
             r#"
         {
             path: "/test/src/fn.js",
@@ -526,6 +558,7 @@ mod tests {
         }
         "# as Expr
         );
+        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
 
         assert_eq!(expected, coverage_data_expr);
 
@@ -533,7 +566,7 @@ mod tests {
         let decl_range = Range::new(4, 9, 4, 25);
         coverage_data.new_function(&None, &decl_range, &dummy_range);
 
-        let expected = quote!(
+        let mut expected = quote!(
             r#"
         {
             path: "/test/src/fn.js",
@@ -600,6 +633,7 @@ mod tests {
         }
         "# as Expr
         );
+        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
 
         let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
         assert_eq!(expected, coverage_data_expr);
@@ -607,14 +641,15 @@ mod tests {
 
     #[test]
     fn should_create_new_branch() {
-        let mut coverage_data = SourceCoverage::new("/test/src/branch.js".to_string(), false);
+        let file_path = "/test/src/branch.js";
+        let mut coverage_data = SourceCoverage::new(file_path.to_string(), false);
 
         let dummy_range = Range::new(2, 3, 5, 2);
         coverage_data.new_branch(BranchType::Switch, &dummy_range, false);
 
         let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
 
-        let expected = quote!(
+        let mut expected = quote!(
             r#"
         {
           path: "/test/src/branch.js",
@@ -635,6 +670,7 @@ mod tests {
         }
         "# as Expr
         );
+        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
 
         assert_eq!(expected, coverage_data_expr);
 
@@ -643,7 +679,7 @@ mod tests {
 
         let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
 
-        let expected = quote!(
+        let mut expected = quote!(
             r#"
         {
           path: "/test/src/branch.js",
@@ -670,13 +706,15 @@ mod tests {
         }
         "# as Expr
         );
+        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
 
         assert_eq!(expected, coverage_data_expr);
     }
 
     #[test]
     fn should_add_branch_path() {
-        let mut coverage_data = SourceCoverage::new("/test/src/branch_path.js".to_string(), false);
+        let file_path = "/test/src/branch_path.js";
+        let mut coverage_data = SourceCoverage::new(file_path.to_string(), false);
 
         let dummy_range = Range::new(2, 3, 5, 2);
         let location_range = Range::new(3, 4, 5, 4);
@@ -685,7 +723,7 @@ mod tests {
 
         let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
 
-        let expected = quote!(
+        let mut expected = quote!(
             r#"
         {
           path: "/test/src/branch_path.js",
@@ -707,6 +745,7 @@ mod tests {
         }
         "# as Expr
         );
+        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
 
         assert_eq!(expected, coverage_data_expr);
 
@@ -716,7 +755,7 @@ mod tests {
 
         let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
 
-        let expected = quote!(
+        let mut expected = quote!(
             r#"
         {
           path: "/test/src/branch_path.js",
@@ -745,6 +784,7 @@ mod tests {
         }
         "# as Expr
         );
+        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
 
         assert_eq!(expected, coverage_data_expr);
     }
