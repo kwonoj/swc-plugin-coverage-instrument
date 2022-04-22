@@ -13,7 +13,7 @@ use swc_plugin::{
     comments::{Comment, CommentKind, Comments, PluginCommentsProxy},
     plugin_transform,
     source_map::PluginSourceMapProxy,
-    syntax_pos::DUMMY_SP,
+    syntax_pos::{Span, DUMMY_SP},
     utils::take::Take,
     TransformPluginProgramMetadata,
 };
@@ -179,6 +179,35 @@ impl VisitMut for StmtVisitor<'_> {
     }
 }
 
+impl<'a> CoverageVisitor<'a> {
+    fn visit_mut_fn(&mut self, ident: &Option<&Ident>, function: &mut Function) {
+        let (span, name) = if let Some(ident) = &ident {
+            (&ident.span, Some(ident.sym.to_string()))
+        } else {
+            (&function.span, None)
+        };
+
+        let range = get_range_from_span(self.source_map, span);
+        let body_range = get_range_from_span(self.source_map, &function.span);
+        let index = self.cov.new_function(&name, &range, &body_range);
+
+        match &mut function.body {
+            Some(blockstmt) => {
+                let b = build_increase_expression_expr(&IDENT_F, index, &self.var_name_ident, None);
+                let mut prepended_vec = vec![Stmt::Expr(ExprStmt {
+                    span: DUMMY_SP,
+                    expr: Box::new(b),
+                })];
+                prepended_vec.extend(blockstmt.stmts.take());
+                blockstmt.stmts = prepended_vec;
+            }
+            _ => {
+                unimplemented!("Unable to process function body node type")
+            }
+        }
+    }
+}
+
 impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_program(&mut self, program: &mut Program) {
         if should_ignore_file(&self.comments, program) {
@@ -218,6 +247,18 @@ impl VisitMut for CoverageVisitor<'_> {
         self.on_exit();
     }
 
+    fn visit_mut_fn_expr(&mut self, fn_expr: &mut FnExpr) {
+        fn_expr.visit_mut_children_with(self);
+
+        self.visit_mut_fn(&fn_expr.ident.as_ref(), &mut fn_expr.function);
+    }
+
+    fn visit_mut_fn_decl(&mut self, fn_decl: &mut FnDecl) {
+        fn_decl.visit_mut_children_with(self);
+
+        self.visit_mut_fn(&Some(&fn_decl.ident), &mut fn_decl.function);
+    }
+
     /// Visit variable declarator, inject a statement increase expr by wrapping declaration init with paren.
     /// var x = 0
     /// ->
@@ -251,6 +292,8 @@ impl VisitMut for CoverageVisitor<'_> {
             // replace init with increase expr + init seq
             **init = paren_expr;
         }
+
+        declarator.visit_mut_children_with(self);
     }
 
     fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
