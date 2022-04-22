@@ -81,22 +81,22 @@ class Verifier {
       "Line coverage mismatch"
     );
     assert.deepEqual(
-      cov.f,
+      Object.fromEntries(cov.f()),
       expectedCoverage.functions || {},
       "Function coverage mismatch"
     );
     assert.deepEqual(
-      cov.b,
+      Object.fromEntries(cov.b()),
       expectedCoverage.branches || {},
       "Branch coverage mismatch"
     );
     assert.deepEqual(
-      cov.bT || {},
+      Object.fromEntries(cov.bT() || new Map()),
       expectedCoverage.branchesTrue || {},
       "Branch truthiness coverage mismatch"
     );
     assert.deepEqual(
-      cov.s,
+      Object.fromEntries(cov.s()),
       expectedCoverage.statements || {},
       "Statement coverage mismatch"
     );

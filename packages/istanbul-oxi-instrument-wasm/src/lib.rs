@@ -19,7 +19,26 @@ impl FileCoverageInterop {
 
     #[wasm_bindgen(js_name = "getLineCoverage")]
     pub fn get_line_coverage(&self) -> JsValue {
-        let ret_index_map = self.inner.get_line_coverage();
-        serde_wasm_bindgen::to_value(&ret_index_map).unwrap()
+        serde_wasm_bindgen::to_value(&self.inner.get_line_coverage()).unwrap()
+    }
+
+    #[wasm_bindgen(js_name = "f")]
+    pub fn get_f(&self) -> JsValue {
+        serde_wasm_bindgen::to_value(&self.inner.f).unwrap()
+    }
+
+    #[wasm_bindgen(js_name = "b")]
+    pub fn get_b(&self) -> JsValue {
+        serde_wasm_bindgen::to_value(&self.inner.b).unwrap()
+    }
+
+    #[wasm_bindgen(js_name = "bT")]
+    pub fn get_b_t(&self) -> JsValue {
+        serde_wasm_bindgen::to_value(&self.inner.b_t).unwrap()
+    }
+
+    #[wasm_bindgen(js_name = "s")]
+    pub fn get_s(&self) -> JsValue {
+        serde_wasm_bindgen::to_value(&self.inner.s).unwrap()
     }
 }
