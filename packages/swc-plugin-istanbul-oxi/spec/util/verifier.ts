@@ -9,7 +9,7 @@ const clone: typeof import("lodash.clone") = require("lodash.clone");
 
 const pluginBinary = path.resolve(
   __dirname,
-  "../../../../target/wasm32-wasi/debug/swc_plugin_istanbul_oxi.wasm"
+  "../../../../target/wasm32-wasi/release/swc_plugin_istanbul_oxi.wasm"
 );
 
 /// Mimic instrumenter.

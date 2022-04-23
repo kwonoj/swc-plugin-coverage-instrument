@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build:inst:spec": "wasm-pack build packages/istanbul-oxi-instrument-wasm --target nodejs --dev",
-    "build:plugin": "cargo build -p swc-plugin-istanbul-oxi --target wasm32-wasi",
+    "build:inst:spec": "wasm-pack build packages/istanbul-oxi-instrument-wasm --target nodejs --release",
+    "build:plugin": "cargo build -p swc-plugin-istanbul-oxi --target wasm32-wasi --release",
     "test": "npm-run-all build:inst:spec build:plugin && cross-env FILTER=yield mocha",
     "test:debug": "npm-run-all test && cross-env FILTER=\"object-spread\" DEBUG=1 mocha",
     "prepare": "husky install"
