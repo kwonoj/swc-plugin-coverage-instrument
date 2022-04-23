@@ -4,6 +4,10 @@ import * as yaml from "js-yaml";
 import { create } from "./util/verifier";
 import * as guards from "./util/guards";
 import { assert } from "chai";
+import { getCoverageMagicConstants } from "../../istanbul-oxi-instrument-wasm/pkg";
+
+// dummy: initiate wasm compilation before any test runs
+getCoverageMagicConstants();
 
 const clone: typeof import("lodash.clone") = require("lodash.clone");
 

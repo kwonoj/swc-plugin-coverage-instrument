@@ -39,12 +39,11 @@ jobs:
         npm ci
         curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
         rustup target add wasm32-wasi
+    - name: test
+      run: npm test
     - name: build
       run: |
         cargo check
-        npm run build:inst:spec
-    - name: test
-      run: npm test
     - name: Generate code coverage
       run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
     - uses: codecov/codecov-action@v2

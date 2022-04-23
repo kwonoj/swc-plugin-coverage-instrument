@@ -118,16 +118,6 @@ export function readInitialCoverage(code: any) {
     }
 
     setPropertiesRecursive(result, valuePath, key);
-
-    /*
-    if (valuePath?.value) {
-      result[key] = valuePath?.value;
-    } else if (valuePath?.properties) {
-      result[key] = {};
-      valuePath?.properties.forEach((p) => {
-        result[key][p.key.value] = p.value.value;
-      });
-    }*/
   }
 
   delete result.coverageData[COVERAGE_MAGIC_KEY];
