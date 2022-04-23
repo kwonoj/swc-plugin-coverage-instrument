@@ -141,12 +141,10 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     let mut props = vec![];
 
     // assign coverage['all']
-    if coverage_data.all {
-        props.push(create_ident_key_value_prop(
-            &IDENT_ALL,
-            Expr::Lit(Lit::Bool(true.into())),
-        ));
-    }
+    props.push(create_ident_key_value_prop(
+        &IDENT_ALL,
+        Expr::Lit(Lit::Bool(coverage_data.all.into())),
+    ));
 
     // assign coverage['path']
     props.push(create_ident_key_value_prop(
@@ -339,6 +337,7 @@ mod tests {
         let mut expected = quote!(
             r#"
         {
+            all: false,
             path: "anon",
             statementMap: {},
             fnMap: {},
@@ -351,7 +350,7 @@ mod tests {
         }
         "# as Expr
         );
-        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
+        adjust_expected_ast_path_raw(&mut expected, 1, file_path);
 
         assert_eq!(expected, coverage_data_expr);
     }
@@ -393,6 +392,7 @@ mod tests {
         let mut expected = quote!(
             r#"
         {
+            all: false,
             path: "/test/src/file.js",
             statementMap: {},
             fnMap: {},
@@ -406,7 +406,7 @@ mod tests {
         }
         "# as Expr
         );
-        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
+        adjust_expected_ast_path_raw(&mut expected, 1, file_path);
 
         assert_eq!(expected, coverage_data_expr);
     }
@@ -424,6 +424,7 @@ mod tests {
         let mut expected = quote!(
             r#"
         {
+            all: false,
             path: "/test/src/statement.js",
             statementMap: {
                 "0": {
@@ -449,7 +450,7 @@ mod tests {
         }
         "# as Expr
         );
-        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
+        adjust_expected_ast_path_raw(&mut expected, 1, file_path);
 
         assert_eq!(expected, coverage_data_expr);
 
@@ -459,6 +460,7 @@ mod tests {
         let mut expected = quote!(
             r#"
         {
+            all: false,
             path: "/test/src/statement.js",
             statementMap: {
                 "0": {
@@ -495,7 +497,7 @@ mod tests {
         }
         "# as Expr
         );
-        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
+        adjust_expected_ast_path_raw(&mut expected, 1, file_path);
 
         let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
         assert_eq!(expected, coverage_data_expr);
@@ -519,6 +521,7 @@ mod tests {
         let mut expected = quote!(
             r#"
         {
+            all: false,
             path: "/test/src/fn.js",
             statementMap: {},
             fnMap: {
@@ -558,7 +561,7 @@ mod tests {
         }
         "# as Expr
         );
-        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
+        adjust_expected_ast_path_raw(&mut expected, 1, file_path);
 
         assert_eq!(expected, coverage_data_expr);
 
@@ -569,6 +572,7 @@ mod tests {
         let mut expected = quote!(
             r#"
         {
+            all: false,
             path: "/test/src/fn.js",
             statementMap: {},
             fnMap: {
@@ -633,7 +637,7 @@ mod tests {
         }
         "# as Expr
         );
-        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
+        adjust_expected_ast_path_raw(&mut expected, 1, file_path);
 
         let (_hash, coverage_data_expr) = create_coverage_data_object(coverage_data.as_ref());
         assert_eq!(expected, coverage_data_expr);
@@ -652,6 +656,7 @@ mod tests {
         let mut expected = quote!(
             r#"
         {
+          all: false,
           path: "/test/src/branch.js",
           statementMap: {},
           fnMap: {},
@@ -670,7 +675,7 @@ mod tests {
         }
         "# as Expr
         );
-        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
+        adjust_expected_ast_path_raw(&mut expected, 1, file_path);
 
         assert_eq!(expected, coverage_data_expr);
 
@@ -682,6 +687,7 @@ mod tests {
         let mut expected = quote!(
             r#"
         {
+          all: false,
           path: "/test/src/branch.js",
           statementMap: {},
           fnMap: {},
@@ -706,7 +712,7 @@ mod tests {
         }
         "# as Expr
         );
-        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
+        adjust_expected_ast_path_raw(&mut expected, 1, file_path);
 
         assert_eq!(expected, coverage_data_expr);
     }
@@ -726,6 +732,7 @@ mod tests {
         let mut expected = quote!(
             r#"
         {
+          all: false,
           path: "/test/src/branch_path.js",
           statementMap: {},
           fnMap: {},
@@ -745,7 +752,7 @@ mod tests {
         }
         "# as Expr
         );
-        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
+        adjust_expected_ast_path_raw(&mut expected, 1, file_path);
 
         assert_eq!(expected, coverage_data_expr);
 
@@ -758,6 +765,7 @@ mod tests {
         let mut expected = quote!(
             r#"
         {
+          all: false,
           path: "/test/src/branch_path.js",
           statementMap: {},
           fnMap: {},
@@ -784,7 +792,7 @@ mod tests {
         }
         "# as Expr
         );
-        adjust_expected_ast_path_raw(&mut expected, 0, file_path);
+        adjust_expected_ast_path_raw(&mut expected, 1, file_path);
 
         assert_eq!(expected, coverage_data_expr);
     }

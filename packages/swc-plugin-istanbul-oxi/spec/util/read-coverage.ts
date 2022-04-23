@@ -1,15 +1,18 @@
 const { defaults } = require("@istanbuljs/schema");
-import { COVERAGE_MAGIC_KEY, COVERAGE_MAGIC_VALUE } from "./constants";
 import {
-  Expression,
+  Declaration,
+  FunctionDeclaration,
   Module,
-  ObjectExpression,
   parseSync,
-  Program,
   Property,
   SpreadElement,
+  VariableDeclaration,
 } from "@swc/core";
 import { Visitor } from "@swc/core/Visitor";
+import { getCoverageMagicConstants } from "../../../istanbul-oxi-instrument-wasm/pkg";
+
+const { key: COVERAGE_MAGIC_KEY, value: COVERAGE_MAGIC_VALUE } =
+  getCoverageMagicConstants();
 
 function getAst(code: any): Module {
   if (typeof code === "object" && typeof code.type === "string") {
@@ -25,29 +28,34 @@ function getAst(code: any): Module {
 }
 
 class CoverageReadVisitor extends Visitor {
-  private coverageScope: any;
-  public getCoverageScope() {
+  private current: FunctionDeclaration | null = null;
+  private coverageScope: FunctionDeclaration | null = null;
+  public getCoverageScope(): FunctionDeclaration | null {
     return this.coverageScope;
+  }
+
+  public visitFunctionDeclaration(n: FunctionDeclaration): Declaration {
+    this.current = n;
+    super.visitFunctionDeclaration(n);
+    this.current = null;
+    return n;
   }
 
   public visitObjectProperty(
     n: Property | SpreadElement
   ): Property | SpreadElement {
-    /*
-    const { node } = path;
+    if (n.type !== "KeyValueProperty") {
+      return n;
+    }
+
+    if (n.key.type === "Identifier" && n.key.value === COVERAGE_MAGIC_KEY) {
       if (
-        !node.computed &&
-        path.get("key").isIdentifier() &&
-        node.key.name === COVERAGE_MAGIC_KEY
+        n.value.type === "StringLiteral" &&
+        n.value.value === COVERAGE_MAGIC_VALUE
       ) {
-        const magicValue = path.get("value").evaluate();
-        if (!magicValue.confident || magicValue.value !== COVERAGE_MAGIC_VALUE) {
-          return;
-        }
-        covScope =
-          path.scope.getFunctionParent() || path.scope.getProgramParent();
-        path.stop();
-      }*/
+        this.coverageScope = this.current;
+      }
+    }
     return n;
   }
 }
@@ -67,20 +75,62 @@ export function readInitialCoverage(code: any) {
 
   const result = {};
 
+  const declarations = covScope.body.stmts
+    .map(
+      (stmt) =>
+        (stmt.type === "VariableDeclaration"
+          ? stmt
+          : null) as any as VariableDeclaration
+    )
+    .filter(Boolean);
+
   for (const key of ["path", "hash", "gcv", "coverageData"]) {
-    const binding = covScope.getOwnBinding(key);
+    const binding = declarations.reduce((acc, value) => {
+      if (!acc) {
+        acc = value.declarations.find(
+          (decl) => decl.id.type === "Identifier" && decl.id.value === key
+        );
+      }
+
+      return acc;
+    }, null as any);
+
     if (!binding) {
       return null;
     }
-    const valuePath = binding.path.get("init");
-    const value = valuePath.evaluate();
-    if (!value.confident) {
-      return null;
+
+    const valuePath = binding.init;
+
+    function setPropertiesRecursive(
+      obj: Record<string, any>,
+      binding: any,
+      resultKey: string
+    ) {
+      if (binding?.value !== null && binding?.value !== undefined) {
+        obj[resultKey] = binding?.value;
+      } else if (binding?.properties) {
+        obj[resultKey] = {};
+
+        binding?.properties.forEach((p) => {
+          setPropertiesRecursive(obj[resultKey], p.value, p.key.value);
+        });
+      }
     }
-    result[key] = value.value;
+
+    setPropertiesRecursive(result, valuePath, key);
+
+    /*
+    if (valuePath?.value) {
+      result[key] = valuePath?.value;
+    } else if (valuePath?.properties) {
+      result[key] = {};
+      valuePath?.properties.forEach((p) => {
+        result[key][p.key.value] = p.value.value;
+      });
+    }*/
   }
 
-  delete result.coverageData[MAGIC_KEY];
+  delete result.coverageData[COVERAGE_MAGIC_KEY];
   delete result.coverageData.hash;
 
   return result;

@@ -101,7 +101,7 @@ class Verifier {
       "Statement coverage mismatch"
     );
     assert.deepEqual(
-      cov.data.inputSourceMap,
+      cov.inputSourceMap(),
       expectedCoverage.inputSourceMap || undefined,
       "Input source map mismatch"
     );
