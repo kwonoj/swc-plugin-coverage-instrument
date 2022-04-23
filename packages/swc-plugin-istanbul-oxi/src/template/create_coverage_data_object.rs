@@ -141,12 +141,10 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
     let mut props = vec![];
 
     // assign coverage['all']
-    if coverage_data.all {
-        props.push(create_ident_key_value_prop(
-            &IDENT_ALL,
-            Expr::Lit(Lit::Bool(true.into())),
-        ));
-    }
+    props.push(create_ident_key_value_prop(
+        &IDENT_ALL,
+        Expr::Lit(Lit::Bool(coverage_data.all.into())),
+    ));
 
     // assign coverage['path']
     props.push(create_ident_key_value_prop(
