@@ -13,7 +13,7 @@ use swc_plugin::{
     comments::{Comment, CommentKind, Comments, PluginCommentsProxy},
     plugin_transform,
     source_map::PluginSourceMapProxy,
-    syntax_pos::{Span, DUMMY_SP},
+    syntax_pos::DUMMY_SP,
     utils::take::Take,
     TransformPluginProgramMetadata,
 };
@@ -21,6 +21,7 @@ use swc_plugin::{
 mod constants;
 mod instrument;
 mod template;
+#[macro_use]
 mod utils;
 
 use regex::Regex as Regexp;
@@ -176,8 +177,6 @@ impl<'a> StmtVisitor<'a> {
 impl VisitMut for StmtVisitor<'_> {
     fn visit_mut_stmt(&mut self, stmt: &mut Stmt) {
         self.insert_statement_counter(stmt);
-
-        //stmt.visit_mut_children_with(self);
     }
 }
 
@@ -294,56 +293,10 @@ impl VisitMut for CoverageVisitor<'_> {
         declarator.visit_mut_children_with(self);
     }
 
-    /// Create a call to increase statement counter for For statement.
-    /// It is not possible to prepend created statement to the For statement directly,
-    /// parent visitor (visit_module_items) deals with it instead.
-    fn visit_mut_for_stmt(&mut self, for_stmt: &mut ForStmt) {
-        // TODO: Consolidate logic between StmtVisitor
-        let stmt_range = get_range_from_span(self.source_map, &for_stmt.span);
-
-        let idx = self.cov.new_statement(&stmt_range);
-        let increment_expr =
-            build_increase_expression_expr(&IDENT_S, idx, &self.var_name_ident, None);
-
-        self.before = vec![Stmt::Expr(ExprStmt {
-            span: DUMMY_SP,
-            expr: Box::new(increment_expr),
-        })];
-
-        for_stmt.visit_mut_children_with(self);
-    }
-
-    fn visit_mut_for_of_stmt(&mut self, for_of_stmt: &mut ForOfStmt) {
-        // TODO: Consolidate logic between StmtVisitor
-        let stmt_range = get_range_from_span(self.source_map, &for_of_stmt.span);
-
-        let idx = self.cov.new_statement(&stmt_range);
-        let increment_expr =
-            build_increase_expression_expr(&IDENT_S, idx, &self.var_name_ident, None);
-
-        self.before = vec![Stmt::Expr(ExprStmt {
-            span: DUMMY_SP,
-            expr: Box::new(increment_expr),
-        })];
-
-        for_of_stmt.visit_mut_children_with(self);
-    }
-
-    fn visit_mut_expr_stmt(&mut self, expr_stmt: &mut ExprStmt) {
-        // TODO: Consolidate logic between StmtVisitor
-        let stmt_range = get_range_from_span(self.source_map, &expr_stmt.span);
-
-        let idx = self.cov.new_statement(&stmt_range);
-        let increment_expr =
-            build_increase_expression_expr(&IDENT_S, idx, &self.var_name_ident, None);
-
-        self.before = vec![Stmt::Expr(ExprStmt {
-            span: DUMMY_SP,
-            expr: Box::new(increment_expr),
-        })];
-
-        expr_stmt.visit_mut_children_with(self);
-    }
+    // Insert statement counter for For(in, of)Stmt
+    visit_mut_prepend_statement_counter!(visit_mut_for_stmt, ForStmt);
+    visit_mut_prepend_statement_counter!(visit_mut_for_of_stmt, ForOfStmt);
+    visit_mut_prepend_statement_counter!(visit_mut_expr_stmt, ExprStmt);
 
     ///Visit statements, ask StmtVisitor to create a statement increasement counter.
     /// TODO: StmtVisitor seems not required
