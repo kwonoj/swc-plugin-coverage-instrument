@@ -264,8 +264,10 @@ impl VisitMut for CoverageVisitor<'_> {
             // TODO: this is not complete
             let expr_span = match &mut **init {
                 Expr::Lit(Lit::Str(Str { span, .. }))
-                | Expr::Lit(Lit::Num(Number { span, .. })) => span,
-                Expr::Call(CallExpr { span, .. }) => span,
+                | Expr::Lit(Lit::Num(Number { span, .. }))
+                | Expr::Call(CallExpr { span, .. })
+                | Expr::Assign(AssignExpr { span, .. })
+                | Expr::Object(ObjectLit { span, .. }) => span,
                 _ => {
                     todo!("not implemented")
                 }
