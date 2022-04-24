@@ -266,6 +266,10 @@ impl VisitMut for CoverageVisitor<'_> {
                 | Expr::Lit(Lit::Num(Number { span, .. }))
                 | Expr::Call(CallExpr { span, .. })
                 | Expr::Assign(AssignExpr { span, .. })
+                | Expr::Fn(FnExpr {
+                    function: Function { span, .. },
+                    ..
+                })
                 | Expr::Object(ObjectLit { span, .. }) => span,
                 _ => {
                     todo!("not implemented")
@@ -304,6 +308,8 @@ impl VisitMut for CoverageVisitor<'_> {
         let mut new_stmts: Vec<Stmt> = vec![];
 
         for mut stmt in stmts.drain(..) {
+            stmt.visit_mut_children_with(self);
+
             let mut stmt_visitor = StmtVisitor {
                 source_map: self.source_map,
                 var_name: &self.var_name_ident,
