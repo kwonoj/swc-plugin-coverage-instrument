@@ -19,28 +19,169 @@ tests:
     statements: {'0': 0, '1': 1, '2': 1, '3': 1}
     guard: isInferredFunctionNameAvailable
 
-# cov_qy2g7j67v();
-#
-# function a() {
-#   cov_qy2g7j67v().f[0]++;
-#   cov_qy2g7j67v().s[0]++;
-#
-#   const foo = function () {
-#     cov_qy2g7j67v().f[1]++;
+---
+name: simple function
+code: |
+  var x = args[0];
+  function foo() {
+     return 42;
+  }
+  output = x < 5 ? foo() : 15;
+tests:
+  - name: covers line and function
+    args: [2]
+    out: 42
+    lines: {'1': 1, '3': 1, '5': 1}
+    branches: {'0': [1, 0]}
+    functions: {'0': 1}
+    statements: {'0': 1, '1': 1, '2': 1 }
+
+  - name: does not cover function
+    args: [10]
+    out: 15
+    lines: {'1': 1, '3': 0, '5': 1}
+    branches: {'0': [0, 1]}
+    functions: {'0': 0}
+    statements: {'0': 1, '1': 0, '2': 1 }
+
+# function cov_18biir0b3p() {
+#   var path = "/Users/ojkwon/github/istanbuljs/packages/istanbul-lib-instrument/test/util/verifier.js";
+#   var hash = "8789c0cec147b504ee7311dd32f85f4c6e4e52ab";
+#   var global = new Function("return this")();
+#   var gcv = "__testing_coverage__";
+#   var coverageData = {
+#     path: "/Users/ojkwon/github/istanbuljs/packages/istanbul-lib-instrument/test/util/verifier.js",
+#     statementMap: {
+#       "0": {
+#         start: {
+#           line: 1,
+#           column: 8
+#         },
+#         end: {
+#           line: 1,
+#           column: 15
+#         }
+#       },
+#       "1": {
+#         start: {
+#           line: 3,
+#           column: 3
+#         },
+#         end: {
+#           line: 3,
+#           column: 13
+#         }
+#       },
+#       "2": {
+#         start: {
+#           line: 5,
+#           column: 0
+#         },
+#         end: {
+#           line: 5,
+#           column: 28
+#         }
+#       }
+#     },
+#     fnMap: {
+#       "0": {
+#         name: "foo",
+#         decl: {
+#           start: {
+#             line: 2,
+#             column: 9
+#           },
+#           end: {
+#             line: 2,
+#             column: 12
+#           }
+#         },
+#         loc: {
+#           start: {
+#             line: 2,
+#             column: 15
+#           },
+#           end: {
+#             line: 4,
+#             column: 1
+#           }
+#         },
+#         line: 2
+#       }
+#     },
+#     branchMap: {
+#       "0": {
+#         loc: {
+#           start: {
+#             line: 5,
+#             column: 9
+#           },
+#           end: {
+#             line: 5,
+#             column: 27
+#           }
+#         },
+#         type: "cond-expr",
+#         locations: [{
+#           start: {
+#             line: 5,
+#             column: 17
+#           },
+#           end: {
+#             line: 5,
+#             column: 22
+#           }
+#         }, {
+#           start: {
+#             line: 5,
+#             column: 25
+#           },
+#           end: {
+#             line: 5,
+#             column: 27
+#           }
+#         }],
+#         line: 5
+#       }
+#     },
+#     s: {
+#       "0": 0,
+#       "1": 0,
+#       "2": 0
+#     },
+#     f: {
+#       "0": 0
+#     },
+#     b: {
+#       "0": [0, 0]
+#     },
+#     _coverageSchema: "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+#     hash: "8789c0cec147b504ee7311dd32f85f4c6e4e52ab"
 #   };
+#   var coverage = global[gcv] || (global[gcv] = {});
+#
+#   if (!coverage[path] || coverage[path].hash !== hash) {
+#     coverage[path] = coverageData;
+#   }
+#
+#   var actualCoverage = coverage[path];
+#   {
+#     // @ts-ignore
+#     cov_18biir0b3p = function () {
+#       return actualCoverage;
+#     };
+#   }
+#   return actualCoverage;
 # }
 #
-# function b() {
-#   cov_qy2g7j67v().f[2]++;
-#   cov_qy2g7j67v().s[1]++;
+# cov_18biir0b3p();
+# var x = (cov_18biir0b3p().s[0]++, args[0]);
 #
-#   const bar = function () {
-#     cov_qy2g7j67v().f[3]++;
-#   };
-#
-#   cov_qy2g7j67v().s[2]++;
-#   return bar.name;
+# function foo() {
+#   cov_18biir0b3p().f[0]++;
+#   cov_18biir0b3p().s[1]++;
+#   return 42;
 # }
 #
-# cov_qy2g7j67v().s[3]++;
-# output = b();
+# cov_18biir0b3p().s[2]++;
+# output = x < 5 ? (cov_18biir0b3p().b[0][0]++, foo()) : (cov_18biir0b3p().b[0][1]++, 15);

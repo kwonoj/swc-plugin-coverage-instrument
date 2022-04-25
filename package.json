@@ -7,7 +7,7 @@
     "build:inst:spec": "wasm-pack build packages/istanbul-oxi-instrument-wasm --target nodejs",
     "build:plugin": "cargo build -p swc-plugin-istanbul-oxi --target wasm32-wasi",
     "test": "npm-run-all build:inst:spec build:plugin && cross-env FILTER=\"yield|object-spread|ignore|meta-property|for-of\" mocha",
-    "test:debug": "npm-run-all build:inst:spec build:plugin && cross-env FILTER=\"yield\" DEBUG=1 mocha",
+    "test:debug": "npm-run-all build:inst:spec build:plugin && cross-env FILTER=\"debug-test\" DEBUG=1 mocha",
     "prepare": "husky install"
   },
   "repository": {

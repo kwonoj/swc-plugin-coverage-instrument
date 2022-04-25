@@ -53,6 +53,7 @@ pub struct CoverageVisitor<'a> {
     source_mapping_url: Option<UnknownReserved>,
     instrument_options: InstrumentOptions,
     before: Vec<Stmt>,
+    in_stmt_visitor: bool,
 }
 
 impl<'a> CoverageVisitor<'a> {
@@ -84,6 +85,7 @@ impl<'a> CoverageVisitor<'a> {
             source_mapping_url,
             instrument_options,
             before: vec![],
+            in_stmt_visitor: false,
         }
     }
 
@@ -165,15 +167,13 @@ impl VisitMut for CoverageVisitor<'_> {
     }
 
     fn visit_mut_fn_expr(&mut self, fn_expr: &mut FnExpr) {
-        fn_expr.visit_mut_children_with(self);
-
         self.visit_mut_fn(&fn_expr.ident.as_ref(), &mut fn_expr.function);
+        fn_expr.visit_mut_children_with(self);
     }
 
     fn visit_mut_fn_decl(&mut self, fn_decl: &mut FnDecl) {
-        fn_decl.visit_mut_children_with(self);
-
         self.visit_mut_fn(&Some(&fn_decl.ident), &mut fn_decl.function);
+        fn_decl.visit_mut_children_with(self);
     }
 
     /// Visit variable declarator, inject a statement increase expr by wrapping declaration init with paren.
@@ -181,35 +181,38 @@ impl VisitMut for CoverageVisitor<'_> {
     /// ->
     /// var x = (cov_18biir0b3p().s[3]++, 0)
     fn visit_mut_var_declarator(&mut self, declarator: &mut VarDeclarator) {
+        // TODO: this is not complete
         if let Some(init) = &mut declarator.init {
-            // TODO: this is not complete
-            let expr_span = match &mut **init {
+            match &mut **init {
                 Expr::Lit(Lit::Str(Str { span, .. }))
                 | Expr::Lit(Lit::Num(Number { span, .. }))
                 | Expr::Call(CallExpr { span, .. })
                 | Expr::Assign(AssignExpr { span, .. })
-                | Expr::Object(ObjectLit { span, .. }) => span,
-                _ => {
-                    todo!("not implemented")
+                | Expr::Object(ObjectLit { span, .. }) => {
+                    let init_range = get_range_from_span(self.source_map, span);
+
+                    let idx = self.cov.new_statement(&init_range);
+                    let increment_expr =
+                        build_increase_expression_expr(&IDENT_S, idx, &self.var_name_ident, None);
+
+                    let paren_expr = Expr::Paren(ParenExpr {
+                        span: span.take(),
+                        expr: Box::new(Expr::Seq(SeqExpr {
+                            span: DUMMY_SP,
+                            exprs: vec![Box::new(increment_expr), init.take()],
+                        })),
+                    });
+
+                    // replace init with increase expr + init seq
+                    **init = paren_expr;
                 }
+                /*
+                Expr::Fn(FnExpr {
+                    ..
+                }) => {
+                }*/
+                _ => {}
             };
-
-            let init_range = get_range_from_span(self.source_map, expr_span);
-
-            let idx = self.cov.new_statement(&init_range);
-            let increment_expr =
-                build_increase_expression_expr(&IDENT_S, idx, &self.var_name_ident, None);
-
-            let paren_expr = Expr::Paren(ParenExpr {
-                span: expr_span.take(),
-                expr: Box::new(Expr::Seq(SeqExpr {
-                    span: DUMMY_SP,
-                    exprs: vec![Box::new(increment_expr), init.take()],
-                })),
-            });
-
-            // replace init with increase expr + init seq
-            **init = paren_expr;
         }
 
         declarator.visit_mut_children_with(self);
@@ -221,14 +224,16 @@ impl VisitMut for CoverageVisitor<'_> {
     visit_mut_prepend_statement_counter!(visit_mut_expr_stmt, ExprStmt);
 
     ///Visit statements, ask StmtVisitor to create a statement increasement counter.
-    /// TODO: StmtVisitor seems not required
     fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
         let mut new_stmts: Vec<Stmt> = vec![];
 
         for mut stmt in stmts.drain(..) {
+            self.in_stmt_visitor = true;
+            stmt.visit_mut_children_with(self);
+
             let mut stmt_visitor = StmtVisitor {
                 source_map: self.source_map,
-                var_name: &self.var_name_ident,
+                var_name: &self.var_name_ident.clone(),
                 cov: &mut self.cov,
                 before_stmts: vec![],
                 after_stmts: vec![],
@@ -237,11 +242,12 @@ impl VisitMut for CoverageVisitor<'_> {
 
             stmt.visit_mut_with(&mut stmt_visitor);
 
-            new_stmts.extend(stmt_visitor.before_stmts);
+            new_stmts.extend(&mut stmt_visitor.before_stmts.drain(..));
             if !stmt_visitor.replace {
                 new_stmts.push(stmt);
             }
-            new_stmts.extend(stmt_visitor.after_stmts);
+            new_stmts.extend(&mut stmt_visitor.after_stmts.drain(..));
+            self.in_stmt_visitor = false;
         }
 
         *stmts = new_stmts;

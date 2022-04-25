@@ -18,6 +18,13 @@ pub struct StmtVisitor<'a> {
 
 impl<'a> StmtVisitor<'a> {
     fn insert_statement_counter(&mut self, stmt: &mut Stmt) {
+        match stmt {
+            Stmt::Decl(Decl::Fn(_)) | Stmt::Decl(Decl::Var(_)) => {
+                return;
+            }
+            _ => {}
+        };
+
         let stmt_span = match stmt {
           Stmt::Block(BlockStmt { span, .. })
           | Stmt::Empty(EmptyStmt { span, .. })
@@ -37,8 +44,8 @@ impl<'a> StmtVisitor<'a> {
           | Stmt::ForIn(ForInStmt { span, .. })
           | Stmt::ForOf(ForOfStmt { span, .. })
           | Stmt::Decl(Decl::Class(ClassDecl { class: Class { span, .. }, ..}))
-          | Stmt::Decl(Decl::Fn(FnDecl { function: Function { span, .. }, ..}))
-          | Stmt::Decl(Decl::Var(VarDecl { span, ..}))
+          // | Stmt::Decl(Decl::Fn(FnDecl { function: Function { span, .. }, ..}))
+          // | Stmt::Decl(Decl::Var(VarDecl { span, ..}))
           // TODO: need this?
           | Stmt::Decl(Decl::TsInterface(TsInterfaceDecl { span, ..}))
           | Stmt::Decl(Decl::TsTypeAlias(TsTypeAliasDecl { span, ..}))
@@ -46,6 +53,7 @@ impl<'a> StmtVisitor<'a> {
           | Stmt::Decl(Decl::TsModule(TsModuleDecl { span, ..}))
           | Stmt::Expr(ExprStmt { span, .. })
           => span,
+          _ => {todo!()}
       };
 
         let stmt_range = get_range_from_span(self.source_map, &stmt_span);
@@ -72,6 +80,47 @@ impl<'a> StmtVisitor<'a> {
 
 impl VisitMut for StmtVisitor<'_> {
     fn visit_mut_stmt(&mut self, stmt: &mut Stmt) {
+        stmt.visit_mut_children_with(self);
+
+        // If given statement is coverage counter inserted by any other visitor, skip to insert statement counter.
+        // Currently this is required to visit counter in order of outer-to-inner like
+        // ```
+        // function a() {
+        //   f[0]++;
+        //   const x = function () { f[1]++ }
+        // }
+        // ```
+        //
+        if let Stmt::Expr(ExprStmt { expr, .. }) = stmt {
+            if let Expr::Update(UpdateExpr { arg, .. }) = &**expr {
+                if let Expr::Member(MemberExpr { obj, .. }) = &**arg {
+                    if let Expr::Member(MemberExpr { obj, .. }) = &**obj {
+                        if let Expr::Call(CallExpr { callee, .. }) = &**obj {
+                            if let Callee::Expr(expr) = callee {
+                                if let Expr::Ident(ident) = &**expr {
+                                    if ident == self.var_name {
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
         self.insert_statement_counter(stmt);
+    }
+
+    fn visit_mut_var_decl(&mut self, var_decl: &mut VarDecl) {
+        let stmt_range = get_range_from_span(self.source_map, &var_decl.span);
+
+        let idx = self.cov.new_statement(&stmt_range);
+        let increment_expr = build_increase_expression_expr(&IDENT_S, idx, self.var_name, None);
+
+        self.before_stmts.push(Stmt::Expr(ExprStmt {
+            span: DUMMY_SP,
+            expr: Box::new(increment_expr),
+        }));
     }
 }
