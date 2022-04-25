@@ -9,8 +9,12 @@ macro_rules! visit_mut_prepend_statement_counter {
             let stmt_range = get_range_from_span(self.source_map, &n.span);
 
             let idx = self.cov.new_statement(&stmt_range);
-            let increment_expr =
-                build_increase_expression_expr(&IDENT_S, idx, &self.var_name_ident, None);
+            let increment_expr = crate::instrument::build_increase_expression_expr(
+                &IDENT_S,
+                idx,
+                &self.var_name_ident,
+                None,
+            );
 
             self.before.push(Stmt::Expr(ExprStmt {
                 span: DUMMY_SP,

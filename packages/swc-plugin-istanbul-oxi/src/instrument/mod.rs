@@ -1,6 +1,6 @@
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
 
-use crate::UnknownReserved;
+use crate::coverage_visitor::UnknownReserved;
 
 /// Creates a expr like `cov_17709493053001988098().s[0]++;`
 pub(crate) fn build_increase_expression_expr(
