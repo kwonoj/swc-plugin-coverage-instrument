@@ -1,5 +1,6 @@
 use istanbul_oxi_coverage::{Branch, BranchType, FileCoverage, Function, Range};
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct SourceCoverageMetaHitCount {
     pub s: u32,
     pub f: u32,
@@ -12,6 +13,7 @@ impl Default for SourceCoverageMetaHitCount {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct SourceCoverageMeta {
     last: SourceCoverageMetaHitCount,
 }
@@ -27,6 +29,7 @@ impl Default for SourceCoverageMeta {
 /// SourceCoverage provides mutation methods to manipulate the structure of
 /// a file coverage object. Used by the instrumenter to create a full coverage
 /// object for a file incrementally.
+#[derive(Clone, Debug, PartialEq)]
 pub struct SourceCoverage {
     inner: FileCoverage,
     meta: SourceCoverageMeta,
