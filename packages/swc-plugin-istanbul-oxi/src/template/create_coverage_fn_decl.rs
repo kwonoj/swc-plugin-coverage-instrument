@@ -16,10 +16,10 @@ use super::{
 pub fn create_coverage_fn_decl(
     coverage_variable: &str,
     coverage_template: Stmt,
-    var_name: &str,
+    var_name_ident: &Ident,
     file_path: &str,
     coverage_data: &FileCoverage,
-) -> (Ident, ModuleItem) {
+) -> ModuleItem {
     // Actual fn body statements will be injected
     let mut stmts = vec![];
 
@@ -86,7 +86,6 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
         path = IDENT_PATH.clone()
     ));
 
-    let coverage_fn_ident = Ident::new(var_name.into(), DUMMY_SP);
     //
     //COVERAGE_FUNCTION = function () {
     //   return actualCoverage;
@@ -94,7 +93,7 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
     // TODO: need to add @ts-ignore leading comment
     let coverage_fn_assign_expr = Expr::Assign(AssignExpr {
         left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent::from(
-            coverage_fn_ident.clone(),
+            var_name_ident.clone(),
         )))),
         right: Box::new(Expr::Fn(FnExpr {
             ident: None,
@@ -126,8 +125,8 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
     }));
 
     // moduleitem for fn decl includes body defined above
-    let module_item = ModuleItem::Stmt(Stmt::Decl(Decl::Fn(FnDecl {
-        ident: coverage_fn_ident.clone(),
+    ModuleItem::Stmt(Stmt::Decl(Decl::Fn(FnDecl {
+        ident: var_name_ident.clone(),
         declare: false,
         function: Function {
             body: Some(BlockStmt {
@@ -136,7 +135,5 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
             }),
             ..Function::dummy()
         },
-    })));
-
-    (coverage_fn_ident, module_item)
+    })))
 }

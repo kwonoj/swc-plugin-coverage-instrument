@@ -47,7 +47,7 @@ static COMMENT_RE: Lazy<Regexp> =
 pub struct CoverageVisitor<'a> {
     comments: Option<&'a PluginCommentsProxy>,
     source_map: &'a PluginSourceMapProxy,
-    var_name: String,
+    // an identifier to the function name for coverage collection.
     var_name_ident: Ident,
     file_path: String,
     attrs: UnknownReserved,
@@ -79,7 +79,6 @@ impl<'a> CoverageVisitor<'a> {
         CoverageVisitor {
             comments,
             source_map,
-            var_name: var_name_hash.clone(),
             var_name_ident: Ident::new(var_name_hash.into(), DUMMY_SP),
             file_path: var_name.to_string(),
             attrs,
@@ -428,10 +427,10 @@ impl VisitMut for CoverageVisitor<'_> {
             */
         };
 
-        let (coverage_fn_ident, coverage_template) = create_coverage_fn_decl(
+        let coverage_template = create_coverage_fn_decl(
             &self.instrument_options.coverage_variable,
             gv_template,
-            &self.var_name,
+            &self.var_name_ident,
             &self.file_path,
             self.cov.as_ref(),
         );
@@ -440,7 +439,7 @@ impl VisitMut for CoverageVisitor<'_> {
         let m = ModuleItem::Stmt(Stmt::Expr(ExprStmt {
             span: DUMMY_SP,
             expr: Box::new(Expr::Call(CallExpr {
-                callee: Callee::Expr(Box::new(Expr::Ident(coverage_fn_ident))),
+                callee: Callee::Expr(Box::new(Expr::Ident(self.var_name_ident.clone()))),
                 ..CallExpr::dummy()
             })),
         }));
