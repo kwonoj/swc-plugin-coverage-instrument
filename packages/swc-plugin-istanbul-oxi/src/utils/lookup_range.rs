@@ -58,3 +58,36 @@ pub fn get_expr_span(expr: &Expr) -> Option<&Span> {
         _ => None,
     }
 }
+
+pub fn get_stmt_span(stmt: &Stmt) -> Option<&Span> {
+    match stmt {
+        Stmt::Block(BlockStmt { span, .. })
+        | Stmt::Empty(EmptyStmt { span, .. })
+        | Stmt::Debugger(DebuggerStmt { span, .. })
+        | Stmt::With(WithStmt { span, .. })
+        | Stmt::Return(ReturnStmt { span, .. })
+        | Stmt::Labeled(LabeledStmt { span, .. })
+        | Stmt::Break(BreakStmt { span, .. })
+        | Stmt::Continue(ContinueStmt { span, .. })
+        | Stmt::If(IfStmt { span, .. })
+        | Stmt::Switch(SwitchStmt { span, .. })
+        | Stmt::Throw(ThrowStmt { span, .. })
+        | Stmt::Try(TryStmt { span, .. })
+        | Stmt::While(WhileStmt { span, .. })
+        | Stmt::DoWhile(DoWhileStmt { span, .. })
+        | Stmt::For(ForStmt { span, .. })
+        | Stmt::ForIn(ForInStmt { span, .. })
+        | Stmt::ForOf(ForOfStmt { span, .. })
+        | Stmt::Decl(Decl::Class(ClassDecl { class: Class { span, .. }, ..}))
+        // | Stmt::Decl(Decl::Fn(FnDecl { function: Function { span, .. }, ..}))
+        // | Stmt::Decl(Decl::Var(VarDecl { span, ..}))
+        // TODO: need this?
+        | Stmt::Decl(Decl::TsInterface(TsInterfaceDecl { span, ..}))
+        | Stmt::Decl(Decl::TsTypeAlias(TsTypeAliasDecl { span, ..}))
+        | Stmt::Decl(Decl::TsEnum(TsEnumDecl { span, ..}))
+        | Stmt::Decl(Decl::TsModule(TsModuleDecl { span, ..}))
+        | Stmt::Expr(ExprStmt { span, .. })
+        => Some(span),
+        _ => {todo!()}
+    }
+}
