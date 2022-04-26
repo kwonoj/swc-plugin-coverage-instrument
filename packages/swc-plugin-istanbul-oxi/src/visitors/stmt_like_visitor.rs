@@ -17,6 +17,23 @@ pub struct StmtVisitor<'a> {
 }
 
 impl<'a> StmtVisitor<'a> {
+    pub fn new(
+        source_map: &'a PluginSourceMapProxy,
+        cov: &'a mut SourceCoverage,
+        var_name: &'a Ident,
+    ) -> StmtVisitor<'a> {
+        StmtVisitor {
+            source_map,
+            cov,
+            var_name,
+            before_stmts: vec![],
+            after_stmts: vec![],
+            replace: false,
+        }
+    }
+}
+
+impl<'a> StmtVisitor<'a> {
     fn insert_statement_counter(&mut self, stmt: &mut Stmt) {
         match stmt {
             Stmt::Decl(Decl::Fn(_)) | Stmt::Decl(Decl::Var(_)) => {

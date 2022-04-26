@@ -364,14 +364,8 @@ impl VisitMut for CoverageVisitor<'_> {
             self.in_stmt_visitor = true;
             stmt.visit_mut_children_with(self);
 
-            let mut stmt_visitor = StmtVisitor {
-                source_map: self.source_map,
-                var_name: &self.var_name_ident.clone(),
-                cov: &mut self.cov,
-                before_stmts: vec![],
-                after_stmts: vec![],
-                replace: false,
-            };
+            let mut stmt_visitor =
+                StmtVisitor::new(self.source_map, &mut self.cov, &self.var_name_ident);
 
             stmt.visit_mut_with(&mut stmt_visitor);
 
