@@ -110,9 +110,23 @@ export function readInitialCoverage(code: any) {
         obj[resultKey] = binding?.value;
       } else if (binding?.properties) {
         obj[resultKey] = {};
-
         binding?.properties.forEach((p) => {
           setPropertiesRecursive(obj[resultKey], p.value, p.key.value);
+        });
+      } else if (binding?.elements) {
+        binding?.elements.forEach((elem, idx) => {
+          if (!Array.isArray(obj[resultKey])) {
+            obj[resultKey] = [];
+          }
+
+          if (elem?.expression?.properties) {
+            setPropertiesRecursive(obj[resultKey], elem?.expression, idx);
+          } else if (
+            elem?.expression?.value !== null &&
+            elem?.expression?.value !== undefined
+          ) {
+            obj[resultKey].push(elem.expression?.value);
+          }
         });
       }
     }
