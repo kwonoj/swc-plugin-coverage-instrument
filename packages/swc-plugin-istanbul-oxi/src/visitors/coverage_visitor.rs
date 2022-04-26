@@ -335,20 +335,36 @@ impl CoverageVisitor<'_> {
     // if (path.isExpression()) {
     //    path.replaceWith(T.sequenceExpression([increment, path.node]));
     //}
-    fn replace_stmt_with_counter(&mut self, expr: &mut Expr) {
+    fn replace_expr_with_stmt_counter(&mut self, expr: &mut Expr) {
+        self.replace_expr_with_counter(expr, |cov, var_name_ident, range| {
+            let idx = cov.new_statement(&range);
+            create_increase_expression_expr(&IDENT_S, idx, var_name_ident, None)
+        });
+    }
+
+    fn replace_expr_with_branch_counter(&mut self, expr: &mut Expr, branch: u32) {
+        self.replace_expr_with_counter(expr, |cov, var_name_ident, range| {
+            let idx = cov.add_branch_path(branch, &range);
+
+            create_increase_expression_expr(&IDENT_B, branch, var_name_ident, Some(idx))
+        });
+    }
+
+    // Base wrapper fn to replace given expr to wrapped paren expr with counter
+    fn replace_expr_with_counter<F>(&mut self, expr: &mut Expr, get_counter: F)
+    where
+        F: core::ops::Fn(&mut SourceCoverage, &Ident, &istanbul_oxi_instrument::Range) -> Expr,
+    {
         let span = get_expr_span(expr);
         if let Some(span) = span {
             let init_range = get_range_from_span(self.source_map, span);
-
-            let idx = self.cov.new_statement(&init_range);
-            let increment_expr =
-                create_increase_expression_expr(&IDENT_S, idx, &self.var_name_ident, None);
+            let prepend_expr = get_counter(&mut self.cov, &self.var_name_ident, &init_range);
 
             let paren_expr = Expr::Paren(ParenExpr {
                 span: DUMMY_SP,
                 expr: Box::new(Expr::Seq(SeqExpr {
                     span: DUMMY_SP,
-                    exprs: vec![Box::new(increment_expr), Box::new(expr.take())],
+                    exprs: vec![Box::new(prepend_expr), Box::new(expr.take())],
                 })),
             });
 
@@ -647,7 +663,7 @@ impl VisitMut for CoverageVisitor<'_> {
             let init = &mut **init;
             let span = get_expr_span(init);
             if let Some(span) = span {
-                self.replace_stmt_with_counter(init);
+                self.replace_expr_with_stmt_counter(init);
             }
         }
 
@@ -818,6 +834,29 @@ impl VisitMut for CoverageVisitor<'_> {
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_cond_expr(&mut self, cond_expr: &mut CondExpr) {
         self.nodes.push(Node::CondExpr);
+
+        let range = get_range_from_span(self.source_map, &cond_expr.span);
+        let branch = self.cov.new_branch(BranchType::CondExpr, &range, false);
+
+        let c_hint = self.lookup_hint_comments(&*cond_expr.cons);
+        let a_hint = self.lookup_hint_comments(&*cond_expr.alt);
+
+        if c_hint.as_deref() != Some("next") {
+            // TODO: do we need this?
+            // cond_expr.cons.visit_mut_children_with(self);
+
+            // replace consequence to the paren for increase expr + expr itself
+            self.replace_expr_with_branch_counter(&mut *cond_expr.cons, branch);
+        }
+
+        if a_hint.as_deref() != Some("next") {
+            // TODO: do we need this?
+            // cond_expr.alt.visit_mut_children_with(self);
+
+            // replace consequence to the paren for increase expr + expr itself
+            self.replace_expr_with_branch_counter(&mut *cond_expr.alt, branch);
+        }
+
         cond_expr.visit_mut_children_with(self);
         self.nodes.pop();
     }
