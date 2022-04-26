@@ -237,7 +237,7 @@ impl VisitMut for CoverageVisitor<'_> {
         let a_hint = self.lookup_hint_comments(&*cond_expr.alt);
 
         if c_hint.as_deref() != Some("next") {
-            let expr = cond_expr.cons.take();
+            let mut expr = cond_expr.cons.take();
             let span = get_expr_span(&expr).expect("Should have span");
 
             let range = get_range_from_span(self.source_map, &span);
@@ -247,6 +247,7 @@ impl VisitMut for CoverageVisitor<'_> {
             let increment_expr =
                 build_increase_expression_expr(&IDENT_B, branch, &self.var_name_ident, Some(idx));
 
+            expr.visit_mut_children_with(self);
             let paren_expr = Expr::Paren(ParenExpr {
                 span: DUMMY_SP,
                 expr: Box::new(Expr::Seq(SeqExpr {
@@ -260,7 +261,7 @@ impl VisitMut for CoverageVisitor<'_> {
         }
 
         if a_hint.as_deref() != Some("next") {
-            let expr = cond_expr.alt.take();
+            let mut expr = cond_expr.alt.take();
             let span = get_expr_span(&expr).expect("Should have span");
 
             let range = get_range_from_span(self.source_map, &span);
@@ -270,6 +271,7 @@ impl VisitMut for CoverageVisitor<'_> {
             let increment_expr =
                 build_increase_expression_expr(&IDENT_B, branch, &self.var_name_ident, Some(idx));
 
+            expr.visit_mut_children_with(self);
             let paren_expr = Expr::Paren(ParenExpr {
                 span: DUMMY_SP,
                 expr: Box::new(Expr::Seq(SeqExpr {
