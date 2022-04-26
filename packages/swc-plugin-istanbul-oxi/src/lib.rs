@@ -12,6 +12,8 @@ mod visitors;
 pub use options::InstrumentOptions;
 pub use visitors::coverage_visitor;
 
+use tracing::Level;
+
 use visitors::coverage_visitor::CoverageVisitor;
 
 #[plugin_transform]
@@ -38,6 +40,12 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
             .as_bool()
             .unwrap_or(false),
     };
+
+    tracing_subscriber::fmt()
+        // TODO: runtime config
+        // filter spans/events with level TRACE or higher.
+        .with_max_level(Level::TRACE)
+        .init();
 
     let visitor = CoverageVisitor::new(
         metadata.comments.as_ref(),
