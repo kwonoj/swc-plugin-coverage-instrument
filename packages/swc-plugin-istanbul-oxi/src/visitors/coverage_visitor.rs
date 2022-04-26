@@ -1,4 +1,4 @@
-use istanbul_oxi_instrument::SourceCoverage;
+use istanbul_oxi_instrument::{BranchType, SourceCoverage};
 use once_cell::sync::Lazy;
 use regex::Regex as Regexp;
 use std::{
@@ -20,7 +20,7 @@ use crate::{
         create_coverage_fn_decl::create_coverage_fn_decl,
         create_global_stmt_template::create_global_stmt_template,
     },
-    utils::lookup_range::get_range_from_span,
+    utils::lookup_range::{get_expr_span, get_range_from_span},
     visit_mut_prepend_statement_counter, InstrumentOptions,
 };
 
@@ -33,11 +33,16 @@ impl Default for UnknownReserved {
     }
 }
 
+/// pattern for istanbul to ignore the whole file
 /// This is not fully identical to original file comments
 /// https://github.com/istanbuljs/istanbuljs/blob/6f45283feo31faaa066375528f6b68e3a9927b2d5/packages/istanbul-lib-instrument/src/visitor.js#L10=
 /// as regex package doesn't support lookaround
 static COMMENT_FILE_REGEX: Lazy<Regexp> =
     Lazy::new(|| Regexp::new(r"^\s*istanbul\s+ignore\s+(file)(\W|$)").unwrap());
+
+/// pattern for istanbul to ignore a section
+static COMMENT_RE: Lazy<Regexp> =
+    Lazy::new(|| Regexp::new(r"^\s*istanbul\s+ignore\s+(if|else|next)(\W|$)").unwrap());
 
 pub struct CoverageVisitor<'a> {
     comments: Option<&'a PluginCommentsProxy>,
@@ -113,7 +118,14 @@ impl<'a> CoverageVisitor<'a> {
         };
 
         let range = get_range_from_span(self.source_map, span);
-        let body_range = get_range_from_span(self.source_map, &function.span);
+        let body_span = if let Some(body) = &function.body {
+            body.span
+        } else {
+            // TODO: probably this should never occur
+            function.span
+        };
+
+        let body_range = get_range_from_span(self.source_map, &body_span);
         let index = self.cov.new_function(&name, &range, &body_range);
 
         match &mut function.body {
@@ -130,6 +142,44 @@ impl<'a> CoverageVisitor<'a> {
                 unimplemented!("Unable to process function body node type")
             }
         }
+    }
+
+    fn lookup_hint_comments(&mut self, expr: &Expr) -> Option<String> {
+        let span = get_expr_span(expr);
+        if let Some(span) = span {
+            let h = self.comments.get_leading(span.hi);
+            let l = self.comments.get_leading(span.lo);
+
+            if let Some(h) = h {
+                let h_value = h.iter().find_map(|c| {
+                    if let Some(re_match) = COMMENT_RE.find_at(&c.text, 0) {
+                        Some(re_match.as_str().to_string())
+                    } else {
+                        None
+                    }
+                });
+
+                if let Some(h_value) = h_value {
+                    return Some(h_value);
+                }
+            }
+
+            if let Some(l) = l {
+                let l_value = l.iter().find_map(|c| {
+                    if let Some(re_match) = COMMENT_RE.find_at(&c.text, 0) {
+                        Some(re_match.as_str().to_string())
+                    } else {
+                        None
+                    }
+                });
+
+                if let Some(l_value) = l_value {
+                    return Some(l_value);
+                }
+            }
+        }
+
+        return None;
     }
 }
 
@@ -167,6 +217,9 @@ impl VisitMut for CoverageVisitor<'_> {
     }
 
     fn visit_mut_fn_expr(&mut self, fn_expr: &mut FnExpr) {
+        // We do insert counter _first_, then iterate child:
+        // Otherwise inner stmt / fn will get the first idx to the each counter.
+        // StmtVisitor filters out injected counter internally.
         self.visit_mut_fn(&fn_expr.ident.as_ref(), &mut fn_expr.function);
         fn_expr.visit_mut_children_with(self);
     }
@@ -174,6 +227,60 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_fn_decl(&mut self, fn_decl: &mut FnDecl) {
         self.visit_mut_fn(&Some(&fn_decl.ident), &mut fn_decl.function);
         fn_decl.visit_mut_children_with(self);
+    }
+
+    fn visit_mut_cond_expr(&mut self, cond_expr: &mut CondExpr) {
+        let range = get_range_from_span(self.source_map, &cond_expr.span);
+        let branch = self.cov.new_branch(BranchType::CondExpr, &range, false);
+
+        let c_hint = self.lookup_hint_comments(&*cond_expr.cons);
+        let a_hint = self.lookup_hint_comments(&*cond_expr.alt);
+
+        if c_hint.as_deref() != Some("next") {
+            let expr = cond_expr.cons.take();
+            let span = get_expr_span(&expr).expect("Should have span");
+
+            let range = get_range_from_span(self.source_map, &span);
+
+            let idx = self.cov.add_branch_path(branch, &range);
+
+            let increment_expr =
+                build_increase_expression_expr(&IDENT_B, branch, &self.var_name_ident, Some(idx));
+
+            let paren_expr = Expr::Paren(ParenExpr {
+                span: DUMMY_SP,
+                expr: Box::new(Expr::Seq(SeqExpr {
+                    span: DUMMY_SP,
+                    exprs: vec![Box::new(increment_expr), expr],
+                })),
+            });
+
+            // replace consequence to the paren for increase expr + expr itself
+            *cond_expr.cons = paren_expr;
+        }
+
+        if a_hint.as_deref() != Some("next") {
+            let expr = cond_expr.alt.take();
+            let span = get_expr_span(&expr).expect("Should have span");
+
+            let range = get_range_from_span(self.source_map, &span);
+
+            let idx = self.cov.add_branch_path(branch, &range);
+
+            let increment_expr =
+                build_increase_expression_expr(&IDENT_B, branch, &self.var_name_ident, Some(idx));
+
+            let paren_expr = Expr::Paren(ParenExpr {
+                span: DUMMY_SP,
+                expr: Box::new(Expr::Seq(SeqExpr {
+                    span: DUMMY_SP,
+                    exprs: vec![Box::new(increment_expr), expr],
+                })),
+            });
+
+            // replace alternative to the paren for increase expr + expr itself
+            *cond_expr.alt = paren_expr;
+        }
     }
 
     /// Visit variable declarator, inject a statement increase expr by wrapping declaration init with paren.
@@ -188,7 +295,8 @@ impl VisitMut for CoverageVisitor<'_> {
                 | Expr::Lit(Lit::Num(Number { span, .. }))
                 | Expr::Call(CallExpr { span, .. })
                 | Expr::Assign(AssignExpr { span, .. })
-                | Expr::Object(ObjectLit { span, .. }) => {
+                | Expr::Object(ObjectLit { span, .. })
+                | Expr::Member(MemberExpr { span, .. }) => {
                     let init_range = get_range_from_span(self.source_map, span);
 
                     let idx = self.cov.new_statement(&init_range);
@@ -206,12 +314,35 @@ impl VisitMut for CoverageVisitor<'_> {
                     // replace init with increase expr + init seq
                     **init = paren_expr;
                 }
-                /*
-                Expr::Fn(FnExpr {
-                    ..
-                }) => {
-                }*/
-                _ => {}
+                Expr::This(_)
+                | Expr::Array(_)
+                | Expr::Fn(_)
+                | Expr::Unary(_)
+                | Expr::Update(_)
+                | Expr::Bin(_)
+                | Expr::SuperProp(_)
+                | Expr::Cond(_)
+                | Expr::New(_)
+                | Expr::Seq(_)
+                | Expr::Ident(_)
+                | Expr::Tpl(_)
+                | Expr::TaggedTpl(_)
+                | Expr::Arrow(_)
+                | Expr::Class(_)
+                | Expr::Yield(_)
+                | Expr::MetaProp(_)
+                | Expr::Await(_)
+                | Expr::Paren(_)
+                | Expr::JSXMember(_)
+                | Expr::JSXNamespacedName(_)
+                | Expr::JSXEmpty(_)
+                | Expr::JSXElement(_)
+                | Expr::JSXFragment(_) => {
+                    println!("p======================");
+                }
+                _ => {
+                    println!("r==========================");
+                }
             };
         }
 
