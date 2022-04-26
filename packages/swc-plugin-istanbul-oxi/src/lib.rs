@@ -10,6 +10,7 @@ mod utils;
 mod options;
 mod visitors;
 pub use options::InstrumentOptions;
+use tracing_subscriber::fmt::format::FmtSpan;
 pub use visitors::coverage_visitor;
 
 use tracing::Level;
@@ -43,8 +44,9 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
 
     tracing_subscriber::fmt()
         // TODO: runtime config
-        // filter spans/events with level TRACE or higher.
         .with_max_level(Level::TRACE)
+        .with_span_events(FmtSpan::FULL)
+        .event_format(tracing_subscriber::fmt::format().pretty())
         .init();
 
     let visitor = CoverageVisitor::new(
