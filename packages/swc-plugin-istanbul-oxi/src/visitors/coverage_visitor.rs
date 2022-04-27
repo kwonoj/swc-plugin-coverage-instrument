@@ -102,7 +102,7 @@ impl<'a> CoverageVisitor<'a> {
     fn print_node(&self) -> String {
         if self.nodes.len() > 0 {
             format!(
-                "ROOT::{}",
+                "{}",
                 self.nodes
                     .iter()
                     .map(|n| n.to_string())
@@ -110,7 +110,7 @@ impl<'a> CoverageVisitor<'a> {
                     .join(":")
             )
         } else {
-            "ROOT".to_string()
+            "unexpected".to_string()
         }
     }
 
