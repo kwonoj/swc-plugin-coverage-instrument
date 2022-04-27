@@ -236,6 +236,11 @@ impl<'a> CoverageVisitor<'a> {
                     // if given stmt is not a plain stmt and omit to insert stmt counter,
                     // visit it to collect inner stmt counters
                     stmt.visit_mut_with(self);
+                    // Once visit completes, pick up stmt counter immediately - otherwise parent visitor will
+                    // place this incorrect position outside of current scope.
+                    // TODO: should we use new visitor instead? or should we need different storage property
+                    // for better clarity?
+                    new_stmts.extend(self.before.drain(..));
                 }
             }
 
