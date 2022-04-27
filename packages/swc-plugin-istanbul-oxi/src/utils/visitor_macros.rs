@@ -207,28 +207,36 @@ macro_rules! insert_counter_helper {
             return None;
         }
 
-        /// Determine if given stmt is an injected counter by transform.
-        fn is_injected_counter_stmt(&self, stmt: &swc_plugin::ast::Stmt) -> bool {
+        fn is_injected_counter_expr(&self, expr: &swc_plugin::ast::Expr) -> bool {
             use swc_plugin::ast::*;
 
-            if let Stmt::Expr(ExprStmt { expr, .. }) = stmt {
-                if let Expr::Update(UpdateExpr { arg, .. }) = &**expr {
-                    if let Expr::Member(MemberExpr { obj, .. }) = &**arg {
-                        if let Expr::Member(MemberExpr { obj, .. }) = &**obj {
-                            if let Expr::Call(CallExpr { callee, .. }) = &**obj {
-                                if let Callee::Expr(expr) = callee {
-                                    if let Expr::Ident(ident) = &**expr {
-                                        if ident == &self.var_name_ident {
-                                            return true;
-                                        }
+            if let Expr::Update(UpdateExpr { arg, .. }) = expr {
+                if let Expr::Member(MemberExpr { obj, .. }) = &**arg {
+                    if let Expr::Member(MemberExpr { obj, .. }) = &**obj {
+                        if let Expr::Call(CallExpr { callee, .. }) = &**obj {
+                            if let Callee::Expr(expr) = callee {
+                                if let Expr::Ident(ident) = &**expr {
+                                    if ident == &self.var_name_ident {
+                                        return true;
                                     }
                                 }
                             }
                         }
                     }
-                };
-            }
+                }
+            };
             false
+        }
+
+        /// Determine if given stmt is an injected counter by transform.
+        fn is_injected_counter_stmt(&self, stmt: &swc_plugin::ast::Stmt) -> bool {
+            use swc_plugin::ast::*;
+
+            if let Stmt::Expr(ExprStmt { expr, .. }) = stmt {
+                self.is_injected_counter_expr(&**expr)
+            } else {
+                false
+            }
         }
     };
 }

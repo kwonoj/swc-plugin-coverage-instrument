@@ -168,6 +168,7 @@ impl<'a> CoverageVisitor<'a> {
     }
 
     /// Visit individual statements with stmt_visitor and update.
+    #[instrument(skip_all, fields(node = %self.print_node()))]
     fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
         let mut new_stmts = vec![];
 
@@ -175,13 +176,6 @@ impl<'a> CoverageVisitor<'a> {
             if !self.is_injected_counter_stmt(&stmt) {
                 let span = crate::utils::lookup_range::get_stmt_span(&stmt);
                 if let Some(span) = span {
-                    let increment_expr = self.create_stmt_increase_counter_expr(span, None);
-
-                    new_stmts.push(Stmt::Expr(ExprStmt {
-                        span: DUMMY_SP,
-                        expr: Box::new(increment_expr),
-                    }));
-                } else {
                     // if given stmt is not a plain stmt and omit to insert stmt counter,
                     // visit it to collect inner stmt counters
                     let mut visitor = StmtVisitor2::new(
@@ -193,8 +187,11 @@ impl<'a> CoverageVisitor<'a> {
                     );
 
                     stmt.visit_mut_with(&mut visitor);
-                    new_stmts.extend(visitor.before.drain(..))
+                    new_stmts.extend(visitor.before.drain(..));
+                } else {
+                    todo!("stmt does not have span?");
                 }
+                //stmt.visit_mut_children_with(self);
             }
 
             new_stmts.push(stmt);
@@ -284,8 +281,8 @@ impl VisitMut for CoverageVisitor<'_> {
         self.nodes.push(Node::BlockStmt);
 
         self.insert_stmts_counter(&mut block_stmt.stmts);
-
         //block_stmt.visit_mut_children_with(self);
+
         self.nodes.pop();
     }
 
@@ -343,8 +340,12 @@ impl VisitMut for CoverageVisitor<'_> {
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_expr_stmt(&mut self, expr_stmt: &mut ExprStmt) {
         self.nodes.push(Node::ExprStmt);
-        self.mark_prepend_stmt_counter(&expr_stmt.span);
+
+        if !self.is_injected_counter_expr(&*expr_stmt.expr) {
+            self.mark_prepend_stmt_counter(&expr_stmt.span);
+        }
         expr_stmt.visit_mut_children_with(self);
+
         self.nodes.pop();
     }
 

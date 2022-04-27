@@ -50,38 +50,19 @@ impl<'a> StmtVisitor2<'a> {
 
     /// Visit individual statements with stmt_visitor and update.
     fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
-        let mut new_stmts = vec![];
-
-        for mut stmt in stmts.drain(..) {
+        for stmt in stmts {
             if !self.is_injected_counter_stmt(&stmt) {
                 let span = crate::utils::lookup_range::get_stmt_span(&stmt);
                 if let Some(span) = span {
                     let increment_expr = self.create_stmt_increase_counter_expr(span, None);
 
-                    new_stmts.push(Stmt::Expr(ExprStmt {
+                    self.before.push(Stmt::Expr(ExprStmt {
                         span: DUMMY_SP,
                         expr: Box::new(increment_expr),
                     }));
-                } else {
-                    // if given stmt is not a plain stmt and omit to insert stmt counter,
-                    // visit it to collect inner stmt counters
-                    let mut visitor = StmtVisitor2::new(
-                        self.source_map,
-                        self.comments,
-                        &mut self.cov,
-                        &self.var_name_ident,
-                        self.nodes.last().expect("Should exist").clone(),
-                    );
-
-                    stmt.visit_mut_with(&mut visitor);
-                    new_stmts.extend(visitor.before.drain(..))
                 }
             }
-
-            new_stmts.push(stmt);
         }
-
-        *stmts = new_stmts;
     }
 }
 
@@ -95,6 +76,21 @@ impl VisitMut for StmtVisitor2<'_> {
 
         //block_stmt.visit_mut_children_with(self);
         self.nodes.pop();
+    }
+
+    #[instrument(skip_all, fields(node = %self.print_node()))]
+    fn visit_mut_stmt(&mut self, stmt: &mut Stmt) {
+        if !self.is_injected_counter_stmt(stmt) {
+            let span = crate::utils::lookup_range::get_stmt_span(&stmt);
+            if let Some(span) = span {
+                let increment_expr = self.create_stmt_increase_counter_expr(span, None);
+
+                self.before.push(Stmt::Expr(ExprStmt {
+                    span: DUMMY_SP,
+                    expr: Box::new(increment_expr),
+                }));
+            }
+        }
     }
 }
 
