@@ -3,6 +3,8 @@ use std::fmt::{Display, Formatter};
 #[derive(Copy, Debug, Clone, PartialEq)]
 pub enum Node {
     Root,
+    Stmt,
+    Stmts,
     VarDeclarator,
     ExprStmt,
     ModuleItems,
