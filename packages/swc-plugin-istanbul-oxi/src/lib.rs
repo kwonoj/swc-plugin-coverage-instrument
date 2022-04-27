@@ -45,7 +45,7 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
     tracing_subscriber::fmt()
         // TODO: runtime config
         .with_max_level(Level::TRACE)
-        .with_span_events(FmtSpan::FULL)
+        .with_span_events(FmtSpan::ENTER | FmtSpan::CLOSE)
         .with_ansi(false)
         .event_format(tracing_subscriber::fmt::format().pretty())
         .init();
