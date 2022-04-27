@@ -1,3 +1,10 @@
+use once_cell::sync::Lazy;
+use regex::Regex as Regexp;
+
+/// pattern for istanbul to ignore a section
+pub static COMMENT_RE: Lazy<Regexp> =
+    Lazy::new(|| Regexp::new(r"^\s*istanbul\s+ignore\s+(if|else|next)(\W|$)").unwrap());
+
 /// A macro wraps a visitor fn create a statement AST to increase statement counter.
 /// Created statement is stored in `before` property in the CoverageVisitor, will be prepended
 /// via visit_mut_module_items.
@@ -148,7 +155,7 @@ macro_rules! insert_counter_helper {
 
             for mut stmt in stmts.drain(..) {
                 if !self.is_injected_counter_stmt(&stmt) {
-                    let span = get_stmt_span(&stmt);
+                    let span = crate::utils::lookup_range::get_stmt_span(&stmt);
                     if let Some(span) = span {
                         let increment_expr = self.create_stmt_increase_counter_expr(span, None);
 
@@ -177,13 +184,17 @@ macro_rules! insert_counter_helper {
         }
 
         fn lookup_hint_comments(&mut self, span: Option<&Span>) -> Option<String> {
+            use swc_plugin::comments::Comments;
+
             if let Some(span) = span {
                 let h = self.comments.get_leading(span.hi);
                 let l = self.comments.get_leading(span.lo);
 
                 if let Some(h) = h {
                     let h_value = h.iter().find_map(|c| {
-                        if let Some(re_match) = COMMENT_RE.find_at(&c.text, 0) {
+                        if let Some(re_match) =
+                            crate::utils::visitor_macros::COMMENT_RE.find_at(&c.text, 0)
+                        {
                             Some(re_match.as_str().to_string())
                         } else {
                             None
@@ -197,7 +208,9 @@ macro_rules! insert_counter_helper {
 
                 if let Some(l) = l {
                     let l_value = l.iter().find_map(|c| {
-                        if let Some(re_match) = COMMENT_RE.find_at(&c.text, 0) {
+                        if let Some(re_match) =
+                            crate::utils::visitor_macros::COMMENT_RE.find_at(&c.text, 0)
+                        {
                             Some(re_match.as_str().to_string())
                         } else {
                             None
@@ -241,6 +254,6 @@ macro_rules! insert_counter_helper {
 
 /// Generate common visitors to visit stmt.
 #[macro_export]
-macro_rules! visit_mut_stmt_like {
+macro_rules! visit_mut_coverage {
     () => {};
 }
