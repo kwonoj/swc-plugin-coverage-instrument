@@ -59,6 +59,8 @@ pub fn get_expr_span(expr: &Expr) -> Option<&Span> {
     }
 }
 
+/// Determines span of the given stmt if given stmt can be treated as plain stmt
+/// with inserting stmt counter.
 pub fn get_stmt_span(stmt: &Stmt) -> Option<&Span> {
     match stmt {
         Stmt::Block(BlockStmt { span, .. })

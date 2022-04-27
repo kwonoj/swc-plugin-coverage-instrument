@@ -232,6 +232,10 @@ impl<'a> CoverageVisitor<'a> {
                         span: DUMMY_SP,
                         expr: Box::new(increment_expr),
                     }));
+                } else {
+                    // if given stmt is not a plain stmt and omit to insert stmt counter,
+                    // visit it to collect inner stmt counters
+                    stmt.visit_mut_with(self);
                 }
             }
 
