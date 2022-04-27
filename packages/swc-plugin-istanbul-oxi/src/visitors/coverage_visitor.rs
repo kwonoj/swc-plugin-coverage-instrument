@@ -65,6 +65,8 @@ pub struct CoverageVisitor<'a> {
 }
 
 impl<'a> CoverageVisitor<'a> {
+    insert_counter_helper!();
+
     pub fn new(
         comments: Option<&'a PluginCommentsProxy>,
         source_map: &'a PluginSourceMapProxy,
@@ -93,21 +95,6 @@ impl<'a> CoverageVisitor<'a> {
             instrument_options,
             before: vec![],
             nodes: vec![Node::Root],
-        }
-    }
-
-    fn print_node(&self) -> String {
-        if self.nodes.len() > 0 {
-            format!(
-                "{}",
-                self.nodes
-                    .iter()
-                    .map(|n| n.to_string())
-                    .collect::<Vec<String>>()
-                    .join(":")
-            )
-        } else {
-            "unexpected".to_string()
         }
     }
 
@@ -180,10 +167,46 @@ impl<'a> CoverageVisitor<'a> {
         module_items.insert(1, m);
     }
 
-    insert_counter_helper!();
+    /// Visit individual statements with stmt_visitor and update.
+    fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
+        let mut new_stmts = vec![];
+
+        for mut stmt in stmts.drain(..) {
+            if !self.is_injected_counter_stmt(&stmt) {
+                let span = crate::utils::lookup_range::get_stmt_span(&stmt);
+                if let Some(span) = span {
+                    let increment_expr = self.create_stmt_increase_counter_expr(span, None);
+
+                    new_stmts.push(Stmt::Expr(ExprStmt {
+                        span: DUMMY_SP,
+                        expr: Box::new(increment_expr),
+                    }));
+                } else {
+                    // if given stmt is not a plain stmt and omit to insert stmt counter,
+                    // visit it to collect inner stmt counters
+                    let mut visitor = StmtVisitor2::new(
+                        self.source_map,
+                        self.comments,
+                        &mut self.cov,
+                        &self.var_name_ident,
+                        self.nodes.last().expect("Should exist").clone(),
+                    );
+
+                    stmt.visit_mut_with(&mut visitor);
+                    new_stmts.extend(visitor.before.drain(..))
+                }
+            }
+
+            new_stmts.push(stmt);
+        }
+
+        *stmts = new_stmts;
+    }
 }
 
 impl VisitMut for CoverageVisitor<'_> {
+    visit_mut_coverage!();
+
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_program(&mut self, program: &mut Program) {
         if should_ignore_file(&self.comments, program) {
@@ -238,8 +261,6 @@ impl VisitMut for CoverageVisitor<'_> {
 
         self.on_exit(items);
     }
-
-    visit_mut_coverage!();
 
     // ArrowFunctionExpression: entries(convertArrowExpression, coverFunction),
     #[instrument(skip_all, fields(node = %self.print_node()))]

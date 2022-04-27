@@ -6,12 +6,16 @@ use swc_plugin::{
     syntax_pos::{Span, DUMMY_SP},
     utils::take::Take,
 };
+use tracing::instrument;
 
 use crate::{
     constants::idents::*,
     insert_counter_helper,
     instrument::create_increase_expression_expr,
-    utils::lookup_range::{get_expr_span, get_range_from_span},
+    utils::{
+        lookup_range::{get_expr_span, get_range_from_span},
+        node::Node,
+    },
 };
 
 pub struct StmtVisitor2<'a> {
@@ -20,6 +24,7 @@ pub struct StmtVisitor2<'a> {
     pub cov: &'a mut SourceCoverage,
     pub var_name_ident: Ident,
     pub before: Vec<Stmt>,
+    pub nodes: Vec<Node>,
 }
 
 // TODO: duplicated path between CoverageVisitor
@@ -29,6 +34,7 @@ impl<'a> StmtVisitor2<'a> {
         comments: Option<&'a PluginCommentsProxy>,
         cov: &'a mut SourceCoverage,
         var_name_ident: &'a Ident,
+        current_node: Node,
     ) -> StmtVisitor2<'a> {
         StmtVisitor2 {
             source_map,
@@ -36,13 +42,61 @@ impl<'a> StmtVisitor2<'a> {
             cov,
             var_name_ident: var_name_ident.clone(),
             before: vec![],
+            nodes: vec![current_node],
         }
     }
 
     insert_counter_helper!();
+
+    /// Visit individual statements with stmt_visitor and update.
+    fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
+        let mut new_stmts = vec![];
+
+        for mut stmt in stmts.drain(..) {
+            if !self.is_injected_counter_stmt(&stmt) {
+                let span = crate::utils::lookup_range::get_stmt_span(&stmt);
+                if let Some(span) = span {
+                    let increment_expr = self.create_stmt_increase_counter_expr(span, None);
+
+                    new_stmts.push(Stmt::Expr(ExprStmt {
+                        span: DUMMY_SP,
+                        expr: Box::new(increment_expr),
+                    }));
+                } else {
+                    // if given stmt is not a plain stmt and omit to insert stmt counter,
+                    // visit it to collect inner stmt counters
+                    let mut visitor = StmtVisitor2::new(
+                        self.source_map,
+                        self.comments,
+                        &mut self.cov,
+                        &self.var_name_ident,
+                        self.nodes.last().expect("Should exist").clone(),
+                    );
+
+                    stmt.visit_mut_with(&mut visitor);
+                    new_stmts.extend(visitor.before.drain(..))
+                }
+            }
+
+            new_stmts.push(stmt);
+        }
+
+        *stmts = new_stmts;
+    }
 }
 
-impl VisitMut for StmtVisitor2<'_> {}
+impl VisitMut for StmtVisitor2<'_> {
+    // BlockStatement: entries(), // ignore processing only
+    #[instrument(skip_all, fields(node = %self.print_node()))]
+    fn visit_mut_block_stmt(&mut self, block_stmt: &mut BlockStmt) {
+        self.nodes.push(Node::BlockStmt);
+
+        self.insert_stmts_counter(&mut block_stmt.stmts);
+
+        //block_stmt.visit_mut_children_with(self);
+        self.nodes.pop();
+    }
+}
 
 /// Visit statements, create a call to increase statement counter.
 pub struct StmtVisitor<'a> {

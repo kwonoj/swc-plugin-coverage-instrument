@@ -27,6 +27,21 @@ macro_rules! visit_mut_prepend_statement_counter {
 #[macro_export]
 macro_rules! insert_counter_helper {
     () => {
+        fn print_node(&self) -> String {
+            if self.nodes.len() > 0 {
+                format!(
+                    "{}",
+                    self.nodes
+                        .iter()
+                        .map(|n| n.to_string())
+                        .collect::<Vec<String>>()
+                        .join(":")
+                )
+            } else {
+                "unexpected".to_string()
+            }
+        }
+
         #[tracing::instrument(skip(self, span, idx), fields(stmt_id))]
         fn create_stmt_increase_counter_expr(&mut self, span: &Span, idx: Option<u32>) -> Expr {
             let stmt_range = get_range_from_span(self.source_map, span);
@@ -147,40 +162,6 @@ macro_rules! insert_counter_helper {
                     unimplemented!("Unable to process function body node type")
                 }
             }
-        }
-
-        /// Visit individual statements with stmt_visitor and update.
-        fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
-            let mut new_stmts = vec![];
-
-            for mut stmt in stmts.drain(..) {
-                if !self.is_injected_counter_stmt(&stmt) {
-                    let span = crate::utils::lookup_range::get_stmt_span(&stmt);
-                    if let Some(span) = span {
-                        let increment_expr = self.create_stmt_increase_counter_expr(span, None);
-
-                        new_stmts.push(Stmt::Expr(ExprStmt {
-                            span: DUMMY_SP,
-                            expr: Box::new(increment_expr),
-                        }));
-                    } else {
-                        // if given stmt is not a plain stmt and omit to insert stmt counter,
-                        // visit it to collect inner stmt counters
-                        stmt.visit_mut_with(self);
-                        // Once visit completes, pick up stmt counter immediately - otherwise parent visitor will
-                        // place this incorrect position outside of current scope.
-                        // TODO: should we use new visitor instead? or should we need different storage property
-                        // for better clarity?
-                        if let Some(last) = self.before.pop() {
-                            new_stmts.push(last);
-                        }
-                    }
-                }
-
-                new_stmts.push(stmt);
-            }
-
-            *stmts = new_stmts;
         }
 
         fn lookup_hint_comments(&mut self, span: Option<&Span>) -> Option<String> {
