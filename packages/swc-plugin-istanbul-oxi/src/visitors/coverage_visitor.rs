@@ -219,14 +219,14 @@ impl<'a> CoverageVisitor<'a> {
     }
 
     /// Visit individual statements with stmt_visitor and update.
-    fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
+    fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
         let mut new_stmts = vec![];
 
         for mut stmt in stmts.drain(..) {
             if !self.is_injected_counter_stmt(&stmt) {
                 let span = get_stmt_span(&stmt);
                 if let Some(span) = span {
-                    let increment_expr = self.create_increase_expr(&IDENT_S, span, None);
+                    let increment_expr = self.create_stmt_increase_counter_expr(span, None);
 
                     new_stmts.push(Stmt::Expr(ExprStmt {
                         span: DUMMY_SP,
@@ -307,12 +307,16 @@ impl<'a> CoverageVisitor<'a> {
 /// Interfaces to mark counters. Parent node visitor should pick up and insert marked counter accordingly.
 /// Unlike istanbul we can't have single insert logic to be called in any arbitary child node.
 impl CoverageVisitor<'_> {
-    fn create_increase_expr(&mut self, type_ident: &Ident, span: &Span, idx: Option<u32>) -> Expr {
+    #[tracing::instrument(skip(self, span, idx), fields(stmt_id))]
+    fn create_stmt_increase_counter_expr(&mut self, span: &Span, idx: Option<u32>) -> Expr {
         let stmt_range = get_range_from_span(self.source_map, span);
 
         let stmt_id = self.cov.new_statement(&stmt_range);
+
+        tracing::Span::current().record("stmt_id", &stmt_id);
+
         crate::instrument::create_increase_expression_expr(
-            type_ident,
+            &IDENT_S,
             stmt_id,
             &self.var_name_ident,
             idx,
@@ -323,9 +327,9 @@ impl CoverageVisitor<'_> {
     // if (path.isStatement()) {
     //    path.insertBefore(T.expressionStatement(increment));
     // }
+    #[tracing::instrument(skip_all)]
     fn mark_prepend_stmt_counter(&mut self, span: &Span) {
-        let increment_expr = self.create_increase_expr(&IDENT_S, span, None);
-
+        let increment_expr = self.create_stmt_increase_counter_expr(span, None);
         self.before.push(Stmt::Expr(ExprStmt {
             span: DUMMY_SP,
             expr: Box::new(increment_expr),
@@ -335,6 +339,7 @@ impl CoverageVisitor<'_> {
     // if (path.isExpression()) {
     //    path.replaceWith(T.sequenceExpression([increment, path.node]));
     //}
+    #[tracing::instrument(skip_all)]
     fn replace_expr_with_stmt_counter(&mut self, expr: &mut Expr) {
         self.replace_expr_with_counter(expr, |cov, var_name_ident, range| {
             let idx = cov.new_statement(&range);
@@ -342,6 +347,7 @@ impl CoverageVisitor<'_> {
         });
     }
 
+    #[tracing::instrument(skip_all)]
     fn replace_expr_with_branch_counter(&mut self, expr: &mut Expr, branch: u32) {
         self.replace_expr_with_counter(expr, |cov, var_name_ident, range| {
             let idx = cov.add_branch_path(branch, &range);
@@ -404,54 +410,6 @@ impl CoverageVisitor<'_> {
     }
     */
     fn mark_prepend_stmt_counter_for_hoisted(&mut self) {}
-
-    fn insert_stmt_counter_willnot_this_work(&mut self, span: &Span) {
-        let current_node = self.nodes.last().unwrap();
-
-        match current_node {
-            Node::ExprStmt | Node::DebuggerStmt => {
-                self.mark_prepend_stmt_counter(span);
-            }
-            _ => {}
-        }
-
-        /*
-        if (path.isBlockStatement()) {
-            path.node.body.unshift(T.expressionStatement(increment));
-        } else if (path.isStatement()) {
-            path.insertBefore(T.expressionStatement(increment));
-        } else if (
-            this.counterNeedsHoisting(path) &&
-            T.isVariableDeclarator(path.parentPath)
-        ) {
-            // make an attempt to hoist the statement counter, so that
-            // function names are maintained.
-            const parent = path.parentPath.parentPath;
-            if (parent && T.isExportNamedDeclaration(parent.parentPath)) {
-                parent.parentPath.insertBefore(
-                    T.expressionStatement(increment)
-                );
-            } else if (
-                parent &&
-                (T.isProgram(parent.parentPath) ||
-                    T.isBlockStatement(parent.parentPath))
-            ) {
-                parent.insertBefore(T.expressionStatement(increment));
-            } else {
-                path.replaceWith(T.sequenceExpression([increment, path.node]));
-            }
-        } /* istanbul ignore else: not expected */ else if (
-            path.isExpression()
-        ) {
-            path.replaceWith(T.sequenceExpression([increment, path.node]));
-        } else {
-            console.error(
-                'Unable to insert counter for node type:',
-                path.node.type
-            );
-        }
-         */
-    }
 }
 
 impl VisitMut for CoverageVisitor<'_> {
@@ -531,7 +489,7 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_block_stmt(&mut self, block_stmt: &mut BlockStmt) {
         self.nodes.push(Node::BlockStmt);
 
-        self.visit_mut_stmts(&mut block_stmt.stmts);
+        self.insert_stmts_counter(&mut block_stmt.stmts);
 
         //block_stmt.visit_mut_children_with(self);
         self.nodes.pop();
@@ -695,7 +653,7 @@ impl VisitMut for CoverageVisitor<'_> {
             body
         } else {
             let mut stmts = vec![body];
-            self.visit_mut_stmts(&mut stmts);
+            self.insert_stmts_counter(&mut stmts);
 
             BlockStmt {
                 span: DUMMY_SP,
@@ -723,7 +681,7 @@ impl VisitMut for CoverageVisitor<'_> {
             body
         } else {
             let mut stmts = vec![body];
-            self.visit_mut_stmts(&mut stmts);
+            self.insert_stmts_counter(&mut stmts);
 
             BlockStmt {
                 span: DUMMY_SP,
@@ -750,7 +708,7 @@ impl VisitMut for CoverageVisitor<'_> {
             body
         } else {
             let mut stmts = vec![body];
-            self.visit_mut_stmts(&mut stmts);
+            self.insert_stmts_counter(&mut stmts);
 
             BlockStmt {
                 span: DUMMY_SP,

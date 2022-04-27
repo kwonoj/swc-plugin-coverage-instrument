@@ -78,7 +78,7 @@ pub fn get_stmt_span(stmt: &Stmt) -> Option<&Span> {
         | Stmt::For(ForStmt { span, .. })
         | Stmt::ForIn(ForInStmt { span, .. })
         | Stmt::ForOf(ForOfStmt { span, .. })
-        | Stmt::Decl(Decl::Class(ClassDecl { class: Class { span, .. }, ..}))
+        // | Stmt::Decl(Decl::Class(ClassDecl { class: Class { span, .. }, ..}))
         // | Stmt::Decl(Decl::Fn(FnDecl { function: Function { span, .. }, ..}))
         // | Stmt::Decl(Decl::Var(VarDecl { span, ..}))
         // TODO: need this?
@@ -88,6 +88,8 @@ pub fn get_stmt_span(stmt: &Stmt) -> Option<&Span> {
         | Stmt::Decl(Decl::TsModule(TsModuleDecl { span, ..}))
         | Stmt::Expr(ExprStmt { span, .. })
         => Some(span),
-        _ => {todo!()}
+        _ => {
+            None
+        }
     }
 }
