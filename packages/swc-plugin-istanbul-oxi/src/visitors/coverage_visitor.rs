@@ -618,14 +618,26 @@ impl VisitMut for CoverageVisitor<'_> {
     // VariableDeclarator: entries(coverVariableDeclarator),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_var_declarator(&mut self, declarator: &mut VarDeclarator) {
+        let parent = self.nodes.last().unwrap().clone();
+        let parent_parent = self.nodes[self.nodes.len() - 2];
         self.nodes.push(Node::VarDeclarator);
 
-        println!("{:#?}", declarator.init);
         if let Some(init) = &mut declarator.init {
             let init = &mut **init;
             let span = get_expr_span(init);
             if let Some(span) = span {
-                self.replace_expr_with_stmt_counter(init);
+                // This is ugly, poor man's substitute to istanbul's `insertCounter` to determine
+                // when to replace givn expr to wrapped Paren or prepend stmt counter.
+                // We can't do insert parent node's sibling in downstream's child node.
+                // TODO: there should be a better way.
+                match parent_parent {
+                    Node::BlockStmt | Node::ModuleItems => {
+                        self.mark_prepend_stmt_counter(span);
+                    }
+                    _ => {
+                        self.replace_expr_with_stmt_counter(init);
+                    }
+                }
             }
         }
 
