@@ -1,6 +1,7 @@
 use istanbul_oxi_instrument::SourceCoverage;
 use swc_plugin::{
     ast::*,
+    comments::PluginCommentsProxy,
     source_map::PluginSourceMapProxy,
     syntax_pos::{Span, DUMMY_SP},
     utils::take::Take,
@@ -8,14 +9,16 @@ use swc_plugin::{
 
 use crate::{
     constants::idents::*,
+    insert_counter_helper,
     instrument::create_increase_expression_expr,
     utils::lookup_range::{get_expr_span, get_range_from_span},
 };
 
 pub struct StmtVisitor2<'a> {
     pub source_map: &'a PluginSourceMapProxy,
+    pub comments: Option<&'a PluginCommentsProxy>,
     pub cov: &'a mut SourceCoverage,
-    pub var_name_ident: &'a Ident,
+    pub var_name_ident: Ident,
     pub before: Vec<Stmt>,
 }
 
@@ -23,110 +26,23 @@ pub struct StmtVisitor2<'a> {
 impl<'a> StmtVisitor2<'a> {
     pub fn new(
         source_map: &'a PluginSourceMapProxy,
+        comments: Option<&'a PluginCommentsProxy>,
         cov: &'a mut SourceCoverage,
         var_name_ident: &'a Ident,
     ) -> StmtVisitor2<'a> {
         StmtVisitor2 {
             source_map,
+            comments,
             cov,
-            var_name_ident,
+            var_name_ident: var_name_ident.clone(),
             before: vec![],
         }
     }
 
-    fn create_increase_expr(&mut self, type_ident: &Ident, span: &Span, idx: Option<u32>) -> Expr {
-        let stmt_range = get_range_from_span(self.source_map, span);
-
-        let stmt_id = self.cov.new_statement(&stmt_range);
-        crate::instrument::create_increase_expression_expr(
-            type_ident,
-            stmt_id,
-            &self.var_name_ident,
-            idx,
-        )
-    }
-
-    // Mark to prepend statement increase counter to current stmt.
-    // if (path.isStatement()) {
-    //    path.insertBefore(T.expressionStatement(increment));
-    // }
-    fn mark_prepend_stmt_counter(&mut self, span: &Span) {
-        let increment_expr = self.create_increase_expr(&IDENT_S, span, None);
-
-        self.before.push(Stmt::Expr(ExprStmt {
-            span: DUMMY_SP,
-            expr: Box::new(increment_expr),
-        }));
-    }
-
-    // if (path.isExpression()) {
-    //    path.replaceWith(T.sequenceExpression([increment, path.node]));
-    //}
-    fn replace_stmt_with_counter(&mut self, expr: &mut Expr) {
-        let span = get_expr_span(expr);
-        if let Some(span) = span {
-            let init_range = get_range_from_span(self.source_map, span);
-
-            let idx = self.cov.new_statement(&init_range);
-            let increment_expr =
-                create_increase_expression_expr(&IDENT_S, idx, &self.var_name_ident, None);
-
-            let paren_expr = Expr::Paren(ParenExpr {
-                span: DUMMY_SP,
-                expr: Box::new(Expr::Seq(SeqExpr {
-                    span: DUMMY_SP,
-                    exprs: vec![Box::new(increment_expr), Box::new(expr.take())],
-                })),
-            });
-
-            // replace init with increase expr + init seq
-            *expr = paren_expr;
-        }
-    }
-
-    // if (path.isBlockStatement()) {
-    //    path.node.body.unshift(T.expressionStatement(increment));
-    // }
-    fn mark_prepend_stmt_counter_for_body(&mut self) {
-        todo!("not implemented");
-    }
-
-    /*
-     if (
-        this.counterNeedsHoisting(path) &&
-        T.isVariableDeclarator(path.parentPath)
-    ) {
-        // make an attempt to hoist the statement counter, so that
-        // function names are maintained.
-        const parent = path.parentPath.parentPath;
-        if (parent && T.isExportNamedDeclaration(parent.parentPath)) {
-            parent.parentPath.insertBefore(
-                T.expressionStatement(increment)
-            );
-        } else if (
-            parent &&
-            (T.isProgram(parent.parentPath) ||
-                T.isBlockStatement(parent.parentPath))
-        ) {
-            parent.insertBefore(T.expressionStatement(increment));
-        } else {
-            path.replaceWith(T.sequenceExpression([increment, path.node]));
-        }
-    }
-    */
-    fn mark_prepend_stmt_counter_for_hoisted(&mut self) {}
+    insert_counter_helper!();
 }
 
-// TODO: duplicated path between CoverageVisitor
-impl VisitMut for StmtVisitor2<'_> {
-    // VariableDeclarator: entries(coverVariableDeclarator),
-    fn visit_mut_var_declarator(&mut self, declarator: &mut VarDeclarator) {
-        if let Some(init) = &mut declarator.init {
-            let init = &mut **init;
-            self.replace_stmt_with_counter(init);
-        }
-    }
-}
+impl VisitMut for StmtVisitor2<'_> {}
 
 /// Visit statements, create a call to increase statement counter.
 pub struct StmtVisitor<'a> {

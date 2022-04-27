@@ -28,7 +28,7 @@ use crate::{
         lookup_range::{get_expr_span, get_range_from_span, get_stmt_span},
         node::Node,
     },
-    visit_mut_prepend_statement_counter, visit_mut_stmt_like, InstrumentOptions,
+    visit_mut_coverage, visit_mut_prepend_statement_counter, InstrumentOptions,
 };
 
 use super::stmt_like_visitor::{StmtVisitor, StmtVisitor2};
@@ -46,10 +46,6 @@ impl Default for UnknownReserved {
 /// as regex package doesn't support lookaround
 static COMMENT_FILE_REGEX: Lazy<Regexp> =
     Lazy::new(|| Regexp::new(r"^\s*istanbul\s+ignore\s+(file)(\W|$)").unwrap());
-
-/// pattern for istanbul to ignore a section
-static COMMENT_RE: Lazy<Regexp> =
-    Lazy::new(|| Regexp::new(r"^\s*istanbul\s+ignore\s+(if|else|next)(\W|$)").unwrap());
 
 pub struct CoverageVisitor<'a> {
     comments: Option<&'a PluginCommentsProxy>,
@@ -242,6 +238,8 @@ impl VisitMut for CoverageVisitor<'_> {
 
         self.on_exit(items);
     }
+
+    visit_mut_coverage!();
 
     // ArrowFunctionExpression: entries(convertArrowExpression, coverFunction),
     #[instrument(skip_all, fields(node = %self.print_node()))]
