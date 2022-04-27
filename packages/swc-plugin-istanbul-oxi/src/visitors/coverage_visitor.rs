@@ -240,7 +240,9 @@ impl<'a> CoverageVisitor<'a> {
                     // place this incorrect position outside of current scope.
                     // TODO: should we use new visitor instead? or should we need different storage property
                     // for better clarity?
-                    new_stmts.extend(self.before.drain(..));
+                    if let Some(last) = self.before.pop() {
+                        new_stmts.push(last);
+                    }
                 }
             }
 
@@ -250,8 +252,7 @@ impl<'a> CoverageVisitor<'a> {
         *stmts = new_stmts;
     }
 
-    fn lookup_hint_comments(&mut self, expr: &Expr) -> Option<String> {
-        let span = get_expr_span(expr);
+    fn lookup_hint_comments(&mut self, span: Option<&Span>) -> Option<String> {
         if let Some(span) = span {
             let h = self.comments.get_leading(span.hi);
             let l = self.comments.get_leading(span.lo);
@@ -366,6 +367,7 @@ impl CoverageVisitor<'_> {
     }
 
     // Base wrapper fn to replace given expr to wrapped paren expr with counter
+    #[tracing::instrument(skip_all)]
     fn replace_expr_with_counter<F>(&mut self, expr: &mut Expr, get_counter: F)
     where
         F: core::ops::Fn(&mut SourceCoverage, &Ident, &istanbul_oxi_instrument::Range) -> Expr,
@@ -654,6 +656,77 @@ impl VisitMut for CoverageVisitor<'_> {
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_if_stmt(&mut self, if_stmt: &mut IfStmt) {
         self.nodes.push(Node::IfStmt);
+
+        let hint = self.lookup_hint_comments(Some(if_stmt.span).as_ref());
+        let (ignore_if, ignore_else) = if let Some(hint) = hint {
+            (&hint == "if", &hint == "else")
+        } else {
+            (false, false)
+        };
+
+        let range = get_range_from_span(self.source_map, &if_stmt.span);
+        let branch = self.cov.new_branch(BranchType::If, &range, false);
+
+        let mut wrap_with_counter = |stmt: &mut Box<Stmt>| {
+            let stmt_body = *stmt.take();
+            let body = if let Stmt::Block(mut block_stmt) = stmt_body {
+                let mut new_stmts = vec![];
+                //insert branch counter first
+                let idx = self.cov.add_branch_path(branch, &range);
+                let expr = create_increase_expression_expr(
+                    &IDENT_B,
+                    branch,
+                    &self.var_name_ident,
+                    Some(idx),
+                );
+                new_stmts.push(Stmt::Expr(ExprStmt {
+                    span: DUMMY_SP,
+                    expr: Box::new(expr),
+                }));
+
+                new_stmts.extend(block_stmt.stmts.drain(..));
+
+                /*
+                // Iterate each stmt, insert stmt counter if needed
+                for mut stmt in block_stmt.stmts.drain(..) {
+                    stmt.visit_mut_with(self);
+                    new_stmts.extend(self.before.drain(..));
+                    new_stmts.push(stmt);
+                } */
+
+                block_stmt.stmts = new_stmts;
+                block_stmt
+            } else {
+                let mut stmts = vec![stmt_body];
+
+                BlockStmt {
+                    span: DUMMY_SP,
+                    stmts,
+                }
+            };
+
+            *stmt = Box::new(Stmt::Block(body));
+        };
+
+        if ignore_if {
+            //setAttr(if_stmt.cons, 'skip-all', true);
+        } else {
+            //if_stmt.cons.visit_mut_with(self);
+            //self.replace_expr_with_branch_counter(&mut *if_stmt.cons, branch);
+            //wrap_with_counter(&mut if_stmt.cons);
+        }
+
+        if ignore_else {
+            //setAttr(if_stmt.alt, 'skip-all', true);
+        } else {
+            //self.replace_expr_with_branch_counter(&mut *if_stmt.alt, branch);
+        }
+
+        /*
+        if_stmt.cons;
+        if_stmt.alt;
+        if_stmt.test; */
+
         if_stmt.visit_mut_children_with(self);
         self.nodes.pop();
     }
@@ -817,8 +890,8 @@ impl VisitMut for CoverageVisitor<'_> {
         let range = get_range_from_span(self.source_map, &cond_expr.span);
         let branch = self.cov.new_branch(BranchType::CondExpr, &range, false);
 
-        let c_hint = self.lookup_hint_comments(&*cond_expr.cons);
-        let a_hint = self.lookup_hint_comments(&*cond_expr.alt);
+        let c_hint = self.lookup_hint_comments(get_expr_span(&*cond_expr.cons));
+        let a_hint = self.lookup_hint_comments(get_expr_span(&*cond_expr.alt));
 
         if c_hint.as_deref() != Some("next") {
             // TODO: do we need this?
