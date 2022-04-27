@@ -20,10 +20,7 @@ pub fn get_expr_span(expr: &Expr) -> Option<&Span> {
         Expr::This(ThisExpr { span, .. })
         | Expr::Array(ArrayLit { span, .. })
         | Expr::Object(ObjectLit { span, .. })
-        | Expr::Fn(FnExpr {
-            function: Function { span, .. },
-            ..
-        })
+        //| Expr::Fn(FnExpr { function: Function { span, .. }, .. })
         | Expr::Unary(UnaryExpr { span, .. })
         | Expr::Update(UpdateExpr { span, .. })
         | Expr::Bin(BinExpr { span, .. })
