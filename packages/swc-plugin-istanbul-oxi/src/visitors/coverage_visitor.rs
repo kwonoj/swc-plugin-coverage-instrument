@@ -463,6 +463,7 @@ impl VisitMut for CoverageVisitor<'_> {
         self.nodes.pop();
     }
 
+    /*
     // ForStatement: entries(blockProp('body'), coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_for_stmt(&mut self, for_stmt: &mut ForStmt) {
@@ -489,7 +490,7 @@ impl VisitMut for CoverageVisitor<'_> {
         for_stmt.body = Box::new(Stmt::Block(body));
 
         self.nodes.pop();
-    }
+    } */
 
     // ForInStatement: entries(blockProp('body'), coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
@@ -955,6 +956,8 @@ fn should_ignore_file(comments: &Option<&PluginCommentsProxy>, program: &Program
                 false
             }
         };
+
+        let x = vec![0];
 
         vec![
             comments.get_leading(pos.lo),
