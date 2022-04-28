@@ -65,6 +65,8 @@ pub struct CoverageVisitor<'a> {
 }
 
 impl<'a> CoverageVisitor<'a> {
+    insert_counter_helper!();
+
     pub fn new(
         comments: Option<&'a PluginCommentsProxy>,
         source_map: &'a PluginSourceMapProxy,
@@ -93,21 +95,6 @@ impl<'a> CoverageVisitor<'a> {
             instrument_options,
             before: vec![],
             nodes: vec![Node::Root],
-        }
-    }
-
-    fn print_node(&self) -> String {
-        if self.nodes.len() > 0 {
-            format!(
-                "{}",
-                self.nodes
-                    .iter()
-                    .map(|n| n.to_string())
-                    .collect::<Vec<String>>()
-                    .join(":")
-            )
-        } else {
-            "unexpected".to_string()
         }
     }
 
@@ -180,10 +167,51 @@ impl<'a> CoverageVisitor<'a> {
         module_items.insert(1, m);
     }
 
-    insert_counter_helper!();
+    /// Visit individual statements with stmt_visitor and update.
+    #[instrument(skip_all, fields(node = %self.print_node()))]
+    fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
+        let mut new_stmts = vec![];
+
+        for mut stmt in stmts.drain(..) {
+            if !self.is_injected_counter_stmt(&stmt) {
+                let span = crate::utils::lookup_range::get_stmt_span(&stmt);
+                let mut visitor = StmtVisitor2::new(
+                    self.source_map,
+                    self.comments,
+                    &mut self.cov,
+                    &self.var_name_ident,
+                    &self.nodes,
+                );
+                stmt.visit_mut_children_with(&mut visitor);
+
+                if visitor.before.len() == 0 {
+                    //println!("{:#?}", stmt);
+                }
+
+                new_stmts.extend(visitor.before.drain(..));
+
+                /*
+                if let Some(span) = span {
+                    // if given stmt is not a plain stmt and omit to insert stmt counter,
+                    // visit it to collect inner stmt counters
+
+
+                } else {
+                    //stmt.visit_mut_children_with(self);
+                    //new_stmts.extend(visitor.before.drain(..));
+                } */
+            }
+
+            new_stmts.push(stmt);
+        }
+
+        *stmts = new_stmts;
+    }
 }
 
 impl VisitMut for CoverageVisitor<'_> {
+    visit_mut_coverage!();
+
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_program(&mut self, program: &mut Program) {
         if should_ignore_file(&self.comments, program) {
@@ -239,8 +267,6 @@ impl VisitMut for CoverageVisitor<'_> {
         self.on_exit(items);
     }
 
-    visit_mut_coverage!();
-
     // ArrowFunctionExpression: entries(convertArrowExpression, coverFunction),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_arrow_expr(&mut self, arrow_expr: &mut ArrowExpr) {
@@ -254,17 +280,6 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_assign_pat(&mut self, assign_pat: &mut AssignPat) {
         self.nodes.push(Node::AssignPat);
         assign_pat.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
-    // BlockStatement: entries(), // ignore processing only
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_block_stmt(&mut self, block_stmt: &mut BlockStmt) {
-        self.nodes.push(Node::BlockStmt);
-
-        self.insert_stmts_counter(&mut block_stmt.stmts);
-
-        //block_stmt.visit_mut_children_with(self);
         self.nodes.pop();
     }
 
@@ -318,15 +333,6 @@ impl VisitMut for CoverageVisitor<'_> {
         self.nodes.pop();
     }
 
-    // ExpressionStatement: entries(coverStatement),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_expr_stmt(&mut self, expr_stmt: &mut ExprStmt) {
-        self.nodes.push(Node::ExprStmt);
-        self.mark_prepend_stmt_counter(&expr_stmt.span);
-        expr_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
     // BreakStatement: entries(coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_break_stmt(&mut self, break_stmt: &mut BreakStmt) {
@@ -348,14 +354,6 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_debugger_stmt(&mut self, debugger_stmt: &mut DebuggerStmt) {
         self.nodes.push(Node::DebuggerStmt);
         debugger_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
-    // ReturnStatement: entries(coverStatement),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_return_stmt(&mut self, return_stmt: &mut ReturnStmt) {
-        self.nodes.push(Node::ReturnStmt);
-        return_stmt.visit_mut_children_with(self);
         self.nodes.pop();
     }
 
@@ -381,36 +379,6 @@ impl VisitMut for CoverageVisitor<'_> {
         self.nodes.push(Node::VarDecl);
         //noop?
         var_decl.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
-    // VariableDeclarator: entries(coverVariableDeclarator),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_var_declarator(&mut self, declarator: &mut VarDeclarator) {
-        let parent = self.nodes.last().unwrap().clone();
-        let parent_parent = self.nodes[self.nodes.len() - 2];
-        self.nodes.push(Node::VarDeclarator);
-
-        if let Some(init) = &mut declarator.init {
-            let init = &mut **init;
-            let span = get_expr_span(init);
-            if let Some(span) = span {
-                // This is ugly, poor man's substitute to istanbul's `insertCounter` to determine
-                // when to replace givn expr to wrapped Paren or prepend stmt counter.
-                // We can't do insert parent node's sibling in downstream's child node.
-                // TODO: there should be a better way.
-                match parent_parent {
-                    Node::BlockStmt | Node::ModuleItems => {
-                        self.mark_prepend_stmt_counter(span);
-                    }
-                    _ => {
-                        self.replace_expr_with_stmt_counter(init);
-                    }
-                }
-            }
-        }
-
-        declarator.visit_mut_children_with(self);
         self.nodes.pop();
     }
 
@@ -612,27 +580,6 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_with_stmt(&mut self, with_stmt: &mut WithStmt) {
         self.nodes.push(Node::WithStmt);
         with_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
-    // FunctionDeclaration: entries(coverFunction),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_fn_decl(&mut self, fn_decl: &mut FnDecl) {
-        self.nodes.push(Node::FnDecl);
-        self.visit_mut_fn(&Some(&fn_decl.ident), &mut fn_decl.function);
-        fn_decl.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
-    // FunctionExpression: entries(coverFunction),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_fn_expr(&mut self, fn_expr: &mut FnExpr) {
-        self.nodes.push(Node::FnExpr);
-        // We do insert counter _first_, then iterate child:
-        // Otherwise inner stmt / fn will get the first idx to the each counter.
-        // StmtVisitor filters out injected counter internally.
-        self.visit_mut_fn(&fn_expr.ident.as_ref(), &mut fn_expr.function);
-        fn_expr.visit_mut_children_with(self);
         self.nodes.pop();
     }
 

@@ -27,6 +27,21 @@ macro_rules! visit_mut_prepend_statement_counter {
 #[macro_export]
 macro_rules! insert_counter_helper {
     () => {
+        fn print_node(&self) -> String {
+            if self.nodes.len() > 0 {
+                format!(
+                    "{}",
+                    self.nodes
+                        .iter()
+                        .map(|n| n.to_string())
+                        .collect::<Vec<String>>()
+                        .join(":")
+                )
+            } else {
+                "unexpected".to_string()
+            }
+        }
+
         #[tracing::instrument(skip(self, span, idx), fields(stmt_id))]
         fn create_stmt_increase_counter_expr(&mut self, span: &Span, idx: Option<u32>) -> Expr {
             let stmt_range = get_range_from_span(self.source_map, span);
@@ -149,40 +164,6 @@ macro_rules! insert_counter_helper {
             }
         }
 
-        /// Visit individual statements with stmt_visitor and update.
-        fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
-            let mut new_stmts = vec![];
-
-            for mut stmt in stmts.drain(..) {
-                if !self.is_injected_counter_stmt(&stmt) {
-                    let span = crate::utils::lookup_range::get_stmt_span(&stmt);
-                    if let Some(span) = span {
-                        let increment_expr = self.create_stmt_increase_counter_expr(span, None);
-
-                        new_stmts.push(Stmt::Expr(ExprStmt {
-                            span: DUMMY_SP,
-                            expr: Box::new(increment_expr),
-                        }));
-                    } else {
-                        // if given stmt is not a plain stmt and omit to insert stmt counter,
-                        // visit it to collect inner stmt counters
-                        stmt.visit_mut_with(self);
-                        // Once visit completes, pick up stmt counter immediately - otherwise parent visitor will
-                        // place this incorrect position outside of current scope.
-                        // TODO: should we use new visitor instead? or should we need different storage property
-                        // for better clarity?
-                        if let Some(last) = self.before.pop() {
-                            new_stmts.push(last);
-                        }
-                    }
-                }
-
-                new_stmts.push(stmt);
-            }
-
-            *stmts = new_stmts;
-        }
-
         fn lookup_hint_comments(&mut self, span: Option<&Span>) -> Option<String> {
             use swc_plugin::comments::Comments;
 
@@ -226,28 +207,36 @@ macro_rules! insert_counter_helper {
             return None;
         }
 
-        /// Determine if given stmt is an injected counter by transform.
-        fn is_injected_counter_stmt(&self, stmt: &swc_plugin::ast::Stmt) -> bool {
+        fn is_injected_counter_expr(&self, expr: &swc_plugin::ast::Expr) -> bool {
             use swc_plugin::ast::*;
 
-            if let Stmt::Expr(ExprStmt { expr, .. }) = stmt {
-                if let Expr::Update(UpdateExpr { arg, .. }) = &**expr {
-                    if let Expr::Member(MemberExpr { obj, .. }) = &**arg {
-                        if let Expr::Member(MemberExpr { obj, .. }) = &**obj {
-                            if let Expr::Call(CallExpr { callee, .. }) = &**obj {
-                                if let Callee::Expr(expr) = callee {
-                                    if let Expr::Ident(ident) = &**expr {
-                                        if ident == &self.var_name_ident {
-                                            return true;
-                                        }
+            if let Expr::Update(UpdateExpr { arg, .. }) = expr {
+                if let Expr::Member(MemberExpr { obj, .. }) = &**arg {
+                    if let Expr::Member(MemberExpr { obj, .. }) = &**obj {
+                        if let Expr::Call(CallExpr { callee, .. }) = &**obj {
+                            if let Callee::Expr(expr) = callee {
+                                if let Expr::Ident(ident) = &**expr {
+                                    if ident == &self.var_name_ident {
+                                        return true;
                                     }
                                 }
                             }
                         }
                     }
-                };
-            }
+                }
+            };
             false
+        }
+
+        /// Determine if given stmt is an injected counter by transform.
+        fn is_injected_counter_stmt(&self, stmt: &swc_plugin::ast::Stmt) -> bool {
+            use swc_plugin::ast::*;
+
+            if let Stmt::Expr(ExprStmt { expr, .. }) = stmt {
+                self.is_injected_counter_expr(&**expr)
+            } else {
+                false
+            }
         }
     };
 }
@@ -255,5 +244,99 @@ macro_rules! insert_counter_helper {
 /// Generate common visitors to visit stmt.
 #[macro_export]
 macro_rules! visit_mut_coverage {
-    () => {};
+    () => {
+        // BlockStatement: entries(), // ignore processing only
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_block_stmt(&mut self, block_stmt: &mut BlockStmt) {
+            self.nodes.push(Node::BlockStmt);
+
+            //self.insert_stmts_counter(&mut block_stmt.stmts);
+            block_stmt.visit_mut_children_with(self);
+            self.nodes.pop();
+        }
+
+        // FunctionDeclaration: entries(coverFunction),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_fn_decl(&mut self, fn_decl: &mut FnDecl) {
+            self.nodes.push(Node::FnDecl);
+            self.visit_mut_fn(&Some(&fn_decl.ident), &mut fn_decl.function);
+            fn_decl.visit_mut_children_with(self);
+            self.nodes.pop();
+        }
+
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
+            self.nodes.push(Node::Stmts);
+            self.insert_stmts_counter(stmts);
+            self.nodes.pop();
+        }
+
+        // FunctionExpression: entries(coverFunction),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_fn_expr(&mut self, fn_expr: &mut FnExpr) {
+            self.nodes.push(Node::FnExpr);
+            // We do insert counter _first_, then iterate child:
+            // Otherwise inner stmt / fn will get the first idx to the each counter.
+            // StmtVisitor filters out injected counter internally.
+            self.visit_mut_fn(&fn_expr.ident.as_ref(), &mut fn_expr.function);
+            fn_expr.visit_mut_children_with(self);
+            self.nodes.pop();
+        }
+
+        // ExpressionStatement: entries(coverStatement),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_expr_stmt(&mut self, expr_stmt: &mut ExprStmt) {
+            self.nodes.push(Node::ExprStmt);
+
+            if !self.is_injected_counter_expr(&*expr_stmt.expr) {
+                self.mark_prepend_stmt_counter(&expr_stmt.span);
+            }
+            expr_stmt.visit_mut_children_with(self);
+
+            self.nodes.pop();
+        }
+
+        // ReturnStatement: entries(coverStatement),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_return_stmt(&mut self, return_stmt: &mut ReturnStmt) {
+            self.nodes.push(Node::ReturnStmt);
+            self.mark_prepend_stmt_counter(&return_stmt.span);
+            return_stmt.visit_mut_children_with(self);
+            self.nodes.pop();
+        }
+
+        // VariableDeclarator: entries(coverVariableDeclarator),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_var_declarator(&mut self, declarator: &mut VarDeclarator) {
+            let parent = self.nodes.last().unwrap().clone();
+            let parent_parent = if self.nodes.len() >= 2 {
+                self.nodes[self.nodes.len() - 2]
+            } else {
+                parent
+            };
+            self.nodes.push(Node::VarDeclarator);
+
+            if let Some(init) = &mut declarator.init {
+                let init = &mut **init;
+                let span = get_expr_span(init);
+                if let Some(span) = span {
+                    // This is ugly, poor man's substitute to istanbul's `insertCounter` to determine
+                    // when to replace givn expr to wrapped Paren or prepend stmt counter.
+                    // We can't do insert parent node's sibling in downstream's child node.
+                    // TODO: there should be a better way.
+                    match parent_parent {
+                        Node::BlockStmt | Node::ModuleItems => {
+                            self.mark_prepend_stmt_counter(span);
+                        }
+                        _ => {
+                            self.replace_expr_with_stmt_counter(init);
+                        }
+                    }
+                }
+            }
+
+            declarator.visit_mut_children_with(self);
+            self.nodes.pop();
+        }
+    };
 }
