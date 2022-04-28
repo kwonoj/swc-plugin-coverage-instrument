@@ -94,7 +94,7 @@ impl<'a> CoverageVisitor<'a> {
             source_mapping_url,
             instrument_options,
             before: vec![],
-            nodes: vec![Node::Root],
+            nodes: vec![],
         }
     }
 
@@ -214,6 +214,7 @@ impl VisitMut for CoverageVisitor<'_> {
 
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_program(&mut self, program: &mut Program) {
+        self.nodes.push(Node::Program);
         if should_ignore_file(&self.comments, program) {
             return;
         }
@@ -243,6 +244,7 @@ impl VisitMut for CoverageVisitor<'_> {
                 text: format!("__coverage_data_json_comment__::{}", coverage_data_json_str).into(),
             },
         );
+        self.nodes.pop();
     }
 
     #[instrument(skip_all, fields(node = %self.print_node()))]
