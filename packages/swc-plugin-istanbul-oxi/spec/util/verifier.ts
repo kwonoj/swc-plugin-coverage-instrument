@@ -1,4 +1,4 @@
-import { transformSync } from "@swc/core";
+import { Options, transformSync } from "@swc/core";
 import * as path from "path";
 import { assert } from "chai";
 import { readInitialCoverage } from "./read-coverage";
@@ -17,7 +17,8 @@ const instrumentSync = (
   code: string,
   filename: string,
   inputSourceMap?: unknown,
-  instrumentOptions?: Record<string, any>
+  instrumentOptions?: Record<string, any>,
+  transformOptions?: Options
 ) => {
   const ret = transformSync(code, {
     filename: filename ?? "unknown",
@@ -32,6 +33,7 @@ const instrumentSync = (
       },
       preserveAllComments: true,
     },
+    isModule: transformOptions?.isModule ?? true,
   });
 
   return ret;
@@ -191,7 +193,13 @@ const create = (code, options = {}, instrumentOptions = {}, inputSourceMap) => {
   }
 
   try {
-    let out = instrumentSync(code, file, inputSourceMap, instrumentOptions);
+    let out = instrumentSync(
+      code,
+      file,
+      inputSourceMap,
+      instrumentOptions,
+      options.transformOptions
+    );
     instrumenterOutput = out.code;
 
     if (debug) {
