@@ -239,6 +239,63 @@ macro_rules! insert_counter_helper {
                 false
             }
         }
+
+        fn cover_statement(&mut self, expr: &mut Expr) {
+            let span = get_expr_span(expr);
+            // This is ugly, poor man's substitute to istanbul's `insertCounter` to determine
+            // when to replace givn expr to wrapped Paren or prepend stmt counter.
+            // We can't do insert parent node's sibling in downstream's child node.
+            // TODO: there should be a better way.
+            if let Some(span) = span {
+                let mut block = crate::utils::visitor_macros::BlockStmtFinder::new();
+                expr.visit_with(&mut block);
+                if block.0 {
+                    //path.node.body.unshift(T.expressionStatement(increment));
+                    self.mark_prepend_stmt_counter(span);
+                    return;
+                }
+
+                let mut stmt = crate::utils::visitor_macros::StmtFinder::new();
+                expr.visit_with(&mut stmt);
+                if stmt.0 {
+                    //path.insertBefore(T.expressionStatement(increment));
+                    self.mark_prepend_stmt_counter(span);
+                }
+
+                let mut hoist = crate::utils::visitor_macros::HoistingFinder::new();
+                expr.visit_with(&mut hoist);
+                let parent = self.nodes.last().unwrap().clone();
+                if hoist.0 && parent == Node::VarDeclarator {
+                    let parent = self.nodes.get(self.nodes.len() - 3);
+                    if let Some(parent) = parent {
+                        /*if (parent && T.isExportNamedDeclaration(parent.parentPath)) {
+                            parent.parentPath.insertBefore(
+                                T.expressionStatement(increment)
+                            );
+                        }  */
+                        let parent = self.nodes.get(self.nodes.len() - 4);
+                        if let Some(parent) = parent {
+                            match parent {
+                                Node::BlockStmt | Node::Program => {
+                                    self.mark_prepend_stmt_counter(span);
+                                }
+                                _ => {}
+                            }
+                        }
+                    } else {
+                        self.replace_expr_with_stmt_counter(expr);
+                    }
+
+                    return;
+                }
+
+                let mut expr_finder = crate::utils::visitor_macros::ExprFinder::new();
+                expr.visit_with(&mut expr_finder);
+                if expr_finder.0 {
+                    self.replace_expr_with_stmt_counter(expr);
+                }
+            }
+        }
     };
 }
 
@@ -309,75 +366,11 @@ macro_rules! visit_mut_coverage {
         // VariableDeclarator: entries(coverVariableDeclarator),
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_var_declarator(&mut self, declarator: &mut VarDeclarator) {
-            let parent = self.nodes.last().unwrap().clone();
-            let parent_parent = if self.nodes.len() >= 2 {
-                self.nodes[self.nodes.len() - 2]
-            } else {
-                parent
-            };
-            let parent_parent_parent = if self.nodes.len() >= 2 {
-                self.nodes[self.nodes.len() - 2]
-            } else {
-                parent
-            };
-
             self.nodes.push(Node::VarDeclarator);
 
             if let Some(init) = &mut declarator.init {
                 let init = &mut **init;
-                let span = get_expr_span(init);
-                /*
-
-
-                    match parent_parent {
-                        Node::BlockStmt | Node::ModuleItems => {
-                            self.mark_prepend_stmt_counter(span);
-                        }
-                        _ => {
-                            self.replace_expr_with_stmt_counter(init);
-                        }
-                    }
-                }*/
-                // This is ugly, poor man's substitute to istanbul's `insertCounter` to determine
-                // when to replace givn expr to wrapped Paren or prepend stmt counter.
-                // We can't do insert parent node's sibling in downstream's child node.
-                // TODO: there should be a better way.
-                if let Some(span) = span {
-                    let mut hoist = crate::utils::visitor_macros::HoistingFinder::new();
-                    let mut block = crate::utils::visitor_macros::BlockStmtFinder::new();
-                    let mut stmt = crate::utils::visitor_macros::StmtFinder::new();
-                    let mut expr = crate::utils::visitor_macros::ExprFinder::new();
-
-                    init.visit_with(&mut hoist);
-                    init.visit_with(&mut block);
-                    init.visit_with(&mut stmt);
-                    init.visit_with(&mut expr);
-                    println!("{:#?} {:#?} {:#?} {:#?}", hoist, block, stmt, expr);
-
-                    if block.0 {
-                        //path.node.body.unshift(T.expressionStatement(increment));
-                        self.mark_prepend_stmt_counter(span);
-                    } else if stmt.0 {
-                        //path.insertBefore(T.expressionStatement(increment));
-                        self.mark_prepend_stmt_counter(span);
-                    } else if hoist.0 {
-                        /*if (parent && T.isExportNamedDeclaration(parent.parentPath)) {
-                            parent.parentPath.insertBefore(
-                                T.expressionStatement(increment)
-                            );
-                        }  */
-                        match parent_parent_parent {
-                            Node::BlockStmt | Node::Program => {
-                                self.mark_prepend_stmt_counter(span);
-                            }
-                            _ => {
-                                self.replace_expr_with_stmt_counter(init);
-                            }
-                        }
-                    } else if expr.0 {
-                        self.replace_expr_with_stmt_counter(init);
-                    }
-                }
+                self.cover_statement(init);
             }
 
             declarator.visit_mut_children_with(self);
