@@ -8,7 +8,7 @@ import { getCoverageMagicConstants } from "../../istanbul-oxi-instrument-wasm/pk
 
 // dummy: initiate wasm compilation before any test runs
 getCoverageMagicConstants();
-instrumentSync(`console.log('boo')`, 'anon');
+instrumentSync(`console.log('boo')`, "anon");
 
 const clone: typeof import("lodash.clone") = require("lodash.clone");
 
@@ -66,9 +66,14 @@ function generateTests(docs) {
           const fn = async function () {
             const genOnly = (doc.opts || {}).generateOnly;
             const noCoverage = (doc.opts || {}).noCoverage;
+            const opts = doc.opts || {};
+            opts.filename = path.resolve(__dirname, doc.file);
+            opts.transformOptions = {
+              isModule: doc.file !== "with.yaml" || !process.env.TEST_SCRIPT
+            };
             const v = create(
               doc.code,
-              doc.opts || {},
+              opts,
               doc.instrumentOpts,
               doc.inputSourceMap
             );
