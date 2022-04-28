@@ -384,85 +384,6 @@ impl VisitMut for CoverageVisitor<'_> {
         self.nodes.pop();
     }
 
-    // IfStatement: entries(blockProp('consequent'), blockProp('alternate'), coverStatement, coverIfBranches)
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_if_stmt(&mut self, if_stmt: &mut IfStmt) {
-        self.nodes.push(Node::IfStmt);
-
-        let hint = self.lookup_hint_comments(Some(if_stmt.span).as_ref());
-        let (ignore_if, ignore_else) = if let Some(hint) = hint {
-            (&hint == "if", &hint == "else")
-        } else {
-            (false, false)
-        };
-
-        let range = get_range_from_span(self.source_map, &if_stmt.span);
-        let branch = self.cov.new_branch(BranchType::If, &range, false);
-
-        let mut wrap_with_counter = |stmt: &mut Box<Stmt>| {
-            let stmt_body = *stmt.take();
-            let body = if let Stmt::Block(mut block_stmt) = stmt_body {
-                let mut new_stmts = vec![];
-                //insert branch counter first
-                let idx = self.cov.add_branch_path(branch, &range);
-                let expr = create_increase_expression_expr(
-                    &IDENT_B,
-                    branch,
-                    &self.var_name_ident,
-                    Some(idx),
-                );
-                new_stmts.push(Stmt::Expr(ExprStmt {
-                    span: DUMMY_SP,
-                    expr: Box::new(expr),
-                }));
-
-                new_stmts.extend(block_stmt.stmts.drain(..));
-
-                /*
-                // Iterate each stmt, insert stmt counter if needed
-                for mut stmt in block_stmt.stmts.drain(..) {
-                    stmt.visit_mut_with(self);
-                    new_stmts.extend(self.before.drain(..));
-                    new_stmts.push(stmt);
-                } */
-
-                block_stmt.stmts = new_stmts;
-                block_stmt
-            } else {
-                let mut stmts = vec![stmt_body];
-
-                BlockStmt {
-                    span: DUMMY_SP,
-                    stmts,
-                }
-            };
-
-            *stmt = Box::new(Stmt::Block(body));
-        };
-
-        if ignore_if {
-            //setAttr(if_stmt.cons, 'skip-all', true);
-        } else {
-            //if_stmt.cons.visit_mut_with(self);
-            //self.replace_expr_with_branch_counter(&mut *if_stmt.cons, branch);
-            //wrap_with_counter(&mut if_stmt.cons);
-        }
-
-        if ignore_else {
-            //setAttr(if_stmt.alt, 'skip-all', true);
-        } else {
-            //self.replace_expr_with_branch_counter(&mut *if_stmt.alt, branch);
-        }
-
-        /*
-        if_stmt.cons;
-        if_stmt.alt;
-        if_stmt.test; */
-
-        if_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
     /*
     // ForStatement: entries(blockProp('body'), coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
@@ -583,14 +504,6 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_with_stmt(&mut self, with_stmt: &mut WithStmt) {
         self.nodes.push(Node::WithStmt);
         with_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
-    // FunctionExpression: entries(coverFunction),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_labeled_stmt(&mut self, labeled_stmt: &mut LabeledStmt) {
-        self.nodes.push(Node::LabeledStmt);
-        labeled_stmt.visit_mut_children_with(self);
         self.nodes.pop();
     }
 
