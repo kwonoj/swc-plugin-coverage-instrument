@@ -180,6 +180,7 @@ impl<'a> CoverageVisitor<'a> {
                     self.comments,
                     &mut self.cov,
                     &self.var_name_ident,
+                    &self.instrument_options,
                     &self.nodes,
                 );
                 stmt.visit_mut_children_with(&mut visitor);
@@ -536,24 +537,6 @@ impl VisitMut for CoverageVisitor<'_> {
 
         cond_expr.visit_mut_children_with(self);
         self.nodes.pop();
-    }
-
-    // LogicalExpression: entries(coverLogicalExpression)
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_bin_expr(&mut self, bin_expr: &mut BinExpr) {
-        self.nodes.push(Node::BinExpr);
-        bin_expr.visit_mut_children_with(self);
-        self.nodes.pop();
-        /*
-        BinaryOp::LogicalOr | BinaryOp::LogicalAnd | BinaryOp::NullishCoalescing => {
-                BinaryOrLogicalExpr::Logical(LogicalExpression {
-                    base: ctx.base(self.span),
-                    operator: self.op.babelify(ctx).into(),
-                    left: Box::alloc().init(self.left.babelify(ctx).into()),
-                    right: Box::alloc().init(self.right.babelify(ctx).into()),
-                })
-            }
-        */
     }
 
     // ObjectMethod: entries(coverFunction),

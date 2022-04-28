@@ -527,11 +527,93 @@ macro_rules! visit_mut_coverage {
                     wrap_with_counter(&mut alt);
                     if_stmt.alt = Some(alt);
 
+                    // We visit individual cons / alt depends on its state, need to run visitor for the `test` as well
+                    if_stmt.test.visit_mut_with(self);
                     self.nodes.pop();
                     return;
                 }
             }
 
+            // We visit individual cons / alt depends on its state, need to run visitor for the `test` as well
+            if_stmt.test.visit_mut_with(self);
+
+            self.nodes.pop();
+        }
+
+        // LogicalExpression: entries(coverLogicalExpression)
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_bin_expr(&mut self, bin_expr: &mut BinExpr) {
+            println!("{:#?}", bin_expr.op);
+            match &bin_expr.op {
+                BinaryOp::LogicalOr | BinaryOp::LogicalAnd | BinaryOp::NullishCoalescing => {
+                    let parent = self.nodes.last().unwrap().clone();
+                    self.nodes.push(Node::LogicalExpr);
+
+                    // escape if there's ignore comments
+                    let hint = self.lookup_hint_comments(Some(bin_expr.span).as_ref());
+                    if hint.as_deref() == Some("next") {
+                        bin_expr.visit_mut_children_with(self);
+                        self.nodes.pop();
+                        return;
+                    }
+
+                    // Determine if given expr is logicalExpr.
+                    let is_logical_expr = |e: &mut Expr| {
+                        if let Expr::Bin(BinExpr { op, .. }) = e {
+                            match op {
+                                BinaryOp::LogicalOr
+                                | BinaryOp::LogicalAnd
+                                | BinaryOp::NullishCoalescing => true,
+                                _ => false,
+                            }
+                        } else {
+                            false
+                        }
+                    };
+
+                    let range = get_range_from_span(self.source_map, &bin_expr.span);
+                    let branch = self.cov.new_branch(
+                        istanbul_oxi_instrument::BranchType::BinaryExpr,
+                        &range,
+                        self.instrument_options.report_logic,
+                    );
+
+                    let mut wrap_logical_expr = |expr: &mut Expr| {
+                        if is_logical_expr(expr) {
+                            // recursively run visitor down to the bottom of logical expr
+                            expr.visit_mut_children_with(self);
+                        } else {
+                            // we think this is end of the inner logicalExpr chain, wrap expr with branch counter
+                            if self.instrument_options.report_logic {
+                                /*
+                                // TODO
+                                const increment = this.getBranchLogicIncrement(
+                                    leaf,
+                                    b,
+                                    leaf.node.loc
+                                );
+                                if (!increment[0]) {
+                                    continue;
+                                }
+                                leaf.parent[leaf.property] = T.sequenceExpression([
+                                    increment[0],
+                                    increment[1]
+                                ]);
+                                */
+                            } else {
+                                self.replace_expr_with_branch_counter(expr, branch);
+                            }
+                        }
+                    };
+
+                    wrap_logical_expr(&mut *bin_expr.left);
+                    wrap_logical_expr(&mut *bin_expr.right);
+                }
+                _ => {
+                    self.nodes.push(Node::BinExpr);
+                    bin_expr.visit_mut_children_with(self);
+                }
+            }
             self.nodes.pop();
         }
     };

@@ -13,6 +13,7 @@ pub enum Node {
     GetterProp,
     MethodProp,
     BinExpr,
+    LogicalExpr,
     CondExpr,
     LabeledStmt,
     FnExpr,

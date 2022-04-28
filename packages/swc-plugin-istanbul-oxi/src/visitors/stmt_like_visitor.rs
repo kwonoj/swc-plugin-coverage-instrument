@@ -16,7 +16,7 @@ use crate::{
         lookup_range::{get_expr_span, get_range_from_span},
         node::Node,
     },
-    visit_mut_coverage,
+    visit_mut_coverage, InstrumentOptions,
 };
 
 pub struct StmtVisitor2<'a> {
@@ -24,6 +24,7 @@ pub struct StmtVisitor2<'a> {
     pub comments: Option<&'a PluginCommentsProxy>,
     pub cov: &'a mut SourceCoverage,
     pub var_name_ident: Ident,
+    pub instrument_options: InstrumentOptions,
     pub before: Vec<Stmt>,
     pub nodes: Vec<Node>,
 }
@@ -35,6 +36,7 @@ impl<'a> StmtVisitor2<'a> {
         comments: Option<&'a PluginCommentsProxy>,
         cov: &'a mut SourceCoverage,
         var_name_ident: &'a Ident,
+        instrument_options: &InstrumentOptions,
         current_node: &[Node],
     ) -> StmtVisitor2<'a> {
         StmtVisitor2 {
@@ -42,6 +44,7 @@ impl<'a> StmtVisitor2<'a> {
             comments,
             cov,
             var_name_ident: var_name_ident.clone(),
+            instrument_options: instrument_options.clone(),
             before: vec![],
             nodes: current_node.to_vec(),
         }
@@ -74,6 +77,7 @@ impl<'a> StmtVisitor2<'a> {
                     self.comments,
                     &mut self.cov,
                     &self.var_name_ident,
+                    &self.instrument_options,
                     &self.nodes,
                 );
                 stmt.visit_mut_children_with(&mut visitor);
