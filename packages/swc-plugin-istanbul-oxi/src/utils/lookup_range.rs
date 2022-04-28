@@ -80,14 +80,14 @@ pub fn get_stmt_span(stmt: &Stmt) -> Option<&Span> {
         | Stmt::ForIn(ForInStmt { span, .. })
         | Stmt::ForOf(ForOfStmt { span, .. })
         | Stmt::If(IfStmt { span, .. })
-        | Stmt::Decl(Decl::Class(ClassDecl { class: Class { span, .. }, ..}))
-        | Stmt::Decl(Decl::Fn(FnDecl { function: Function { span, .. }, ..}))
-        | Stmt::Decl(Decl::Var(VarDecl { span, ..}))
+        // | Stmt::Decl(Decl::Class(ClassDecl { class: Class { span, .. }, ..}))
+        // | Stmt::Decl(Decl::Fn(FnDecl { function: Function { span, .. }, ..}))
+        // | Stmt::Decl(Decl::Var(VarDecl { span, ..}))
         // TODO: need this?
-        | Stmt::Decl(Decl::TsInterface(TsInterfaceDecl { span, ..}))
-        | Stmt::Decl(Decl::TsTypeAlias(TsTypeAliasDecl { span, ..}))
-        | Stmt::Decl(Decl::TsEnum(TsEnumDecl { span, ..}))
-        | Stmt::Decl(Decl::TsModule(TsModuleDecl { span, ..}))
+        // | Stmt::Decl(Decl::TsInterface(TsInterfaceDecl { span, ..}))
+        // | Stmt::Decl(Decl::TsTypeAlias(TsTypeAliasDecl { span, ..}))
+        // | Stmt::Decl(Decl::TsEnum(TsEnumDecl { span, ..}))
+        // | Stmt::Decl(Decl::TsModule(TsModuleDecl { span, ..}))
         | Stmt::Expr(ExprStmt { span, .. })
         => Some(span),
         _ => {

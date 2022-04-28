@@ -1,16 +1,24 @@
 ---
-name: simple for-of
-guard: isForOfAvailable
+name: function decl in unreachable place
 code: |
-  function *x() { yield 1; yield 2; };
-  var k;
-  output = 0;
-  for (k of x()) {
-     output += k;
+  function foo(x) {
+     return bar(x);
+     function bar(y) { return y * 2 }
   }
+  output = args[0] < 2 ? 2: foo(args[0]);
 tests:
-  - args: []
-    out: 3
-    lines: {'1': 1, '3': 1, '4': 1, '5': 2}
-    functions: {'0': 1}
-    statements: {'0': 1, '1': 1, '2': 1, '3': 1, '4': 2}
+  - name: covers declaration but not function
+    args: [1]
+    out: 2
+    lines: { '2': 0, '3': 0, '5': 1}
+    branches: {'0': [1, 0]}
+    functions: {'0': 0, '1': 0}
+    statements: {'0': 0, '1': 0, '2': 1}
+
+  - name: covers declaration and function
+    args: [10]
+    out: 20
+    lines: { '2': 1, '3': 1, '5': 1}
+    branches: {'0': [0, 1]}
+    functions: {'0': 1, '1': 1}
+    statements: {'0': 1, '1': 1, '2': 1 }
