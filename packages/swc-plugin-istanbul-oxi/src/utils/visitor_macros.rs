@@ -249,6 +249,7 @@ macro_rules! insert_counter_helper {
             if let Some(span) = span {
                 let mut block = crate::utils::visitor_macros::BlockStmtFinder::new();
                 expr.visit_with(&mut block);
+                // TODO: this may not required as visit_mut_block_stmt recursively visits inner instead.
                 if block.0 {
                     //path.node.body.unshift(T.expressionStatement(increment));
                     self.mark_prepend_stmt_counter(span);
@@ -308,7 +309,7 @@ macro_rules! visit_mut_coverage {
         fn visit_mut_block_stmt(&mut self, block_stmt: &mut BlockStmt) {
             self.nodes.push(Node::BlockStmt);
 
-            //self.insert_stmts_counter(&mut block_stmt.stmts);
+            // Recursively visit inner for the blockstmt
             block_stmt.visit_mut_children_with(self);
             self.nodes.pop();
         }
@@ -321,6 +322,22 @@ macro_rules! visit_mut_coverage {
             fn_decl.visit_mut_children_with(self);
             self.nodes.pop();
         }
+
+        /*
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_stmt(&mut self, stmt: &mut Stmt) {
+            if !self.is_injected_counter_stmt(stmt) {
+                let span = crate::utils::lookup_range::get_stmt_span(&stmt);
+                if let Some(span) = span {
+                    let increment_expr = self.create_stmt_increase_counter_expr(span, None);
+
+                    self.before.push(Stmt::Expr(ExprStmt {
+                        span: DUMMY_SP,
+                        expr: Box::new(increment_expr),
+                    }));
+                }
+            }
+        } */
 
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
@@ -382,15 +399,16 @@ macro_rules! visit_mut_coverage {
         fn visit_mut_for_stmt(&mut self, for_stmt: &mut ForStmt) {
             self.nodes.push(Node::ForStmt);
 
+            // cover_statement's is_stmt prepend logic for individual child stmt visitor
             self.mark_prepend_stmt_counter(&for_stmt.span);
 
-            let mut body = *for_stmt.body.take();
+            let body = *for_stmt.body.take();
             // if for stmt body is not block, wrap it before insert statement counter
-            let body = if let Stmt::Block(mut body) = body {
+            let body = if let Stmt::Block(body) = body {
                 //self.insert_stmts_counter(&mut body.stmts);
                 body
             } else {
-                let mut stmts = vec![body];
+                let stmts = vec![body];
                 //self.insert_stmts_counter(&mut stmts);
 
                 BlockStmt {
@@ -399,8 +417,120 @@ macro_rules! visit_mut_coverage {
                 }
             };
 
+            //self.insert_stmts_counter(&mut body.stmts);
+
             for_stmt.body = Box::new(Stmt::Block(body));
             for_stmt.visit_mut_children_with(self);
+
+            self.nodes.pop();
+        }
+
+        // FunctionExpression: entries(coverStatement),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_labeled_stmt(&mut self, labeled_stmt: &mut LabeledStmt) {
+            self.nodes.push(Node::LabeledStmt);
+
+            // cover_statement's is_stmt prepend logic for individual child stmt visitor
+            self.mark_prepend_stmt_counter(&labeled_stmt.span);
+            labeled_stmt.visit_mut_children_with(self);
+            self.nodes.pop();
+        }
+
+        // IfStatement: entries(blockProp('consequent'), blockProp('alternate'), coverStatement, coverIfBranches)
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_if_stmt(&mut self, if_stmt: &mut IfStmt) {
+            self.nodes.push(Node::IfStmt);
+
+            // cover_statement's is_stmt prepend logic for individual child stmt visitor
+            self.mark_prepend_stmt_counter(&if_stmt.span);
+
+            let hint = self.lookup_hint_comments(Some(if_stmt.span).as_ref());
+            let (ignore_if, ignore_else) = if let Some(hint) = hint {
+                (&hint == "if", &hint == "else")
+            } else {
+                (false, false)
+            };
+
+            let range = get_range_from_span(self.source_map, &if_stmt.span);
+            let branch =
+                self.cov
+                    .new_branch(istanbul_oxi_instrument::BranchType::If, &range, false);
+
+            let mut wrap_with_counter = |stmt: &mut Box<Stmt>| {
+                let stmt_body = *stmt.take();
+
+                // create a branch path counter
+                let idx = self.cov.add_branch_path(branch, &range);
+                let expr = create_increase_expression_expr(
+                    &IDENT_B,
+                    branch,
+                    &self.var_name_ident,
+                    Some(idx),
+                );
+
+                let expr = Stmt::Expr(ExprStmt {
+                    span: DUMMY_SP,
+                    expr: Box::new(expr),
+                });
+
+                let body = if let Stmt::Block(mut block_stmt) = stmt_body {
+                    // if cons / alt is already blockstmt, insert stmt counter for each
+                    self.insert_stmts_counter(&mut block_stmt.stmts);
+
+                    let mut new_stmts = vec![expr];
+                    new_stmts.extend(block_stmt.stmts.drain(..));
+
+                    block_stmt.stmts = new_stmts;
+                    block_stmt
+                } else {
+                    // if cons / alt is not a blockstmt, manually create stmt increase counter
+                    // for the stmt then wrap it with blockstmt
+                    let span = crate::utils::lookup_range::get_stmt_span(&stmt_body);
+                    let stmts = if let Some(span) = span {
+                        let increment_expr = self.create_stmt_increase_counter_expr(span, None);
+                        vec![
+                            expr,
+                            Stmt::Expr(ExprStmt {
+                                span: DUMMY_SP,
+                                expr: Box::new(increment_expr),
+                            }),
+                            stmt_body,
+                        ]
+                    } else {
+                        vec![expr, stmt_body]
+                    };
+
+                    BlockStmt {
+                        span: DUMMY_SP,
+                        stmts,
+                    }
+                };
+
+                *stmt = Box::new(Stmt::Block(body));
+            };
+
+            if ignore_if {
+                //setAttr(if_stmt.cons, 'skip-all', true);
+            } else {
+                wrap_with_counter(&mut if_stmt.cons);
+            }
+
+            if ignore_else {
+                //setAttr(if_stmt.alt, 'skip-all', true);
+            } else {
+                if let Some(alt) = &mut if_stmt.alt {
+                    wrap_with_counter(alt);
+                } else {
+                    // alt can be none (`if some {}` without else).
+                    // Inject empty blockstmt then insert branch counters
+                    let mut alt = Box::new(Stmt::Block(BlockStmt::dummy()));
+                    wrap_with_counter(&mut alt);
+                    if_stmt.alt = Some(alt);
+
+                    self.nodes.pop();
+                    return;
+                }
+            }
 
             self.nodes.pop();
         }

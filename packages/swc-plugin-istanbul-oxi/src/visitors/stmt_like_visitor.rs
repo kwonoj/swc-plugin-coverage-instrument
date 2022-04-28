@@ -105,21 +105,6 @@ impl<'a> StmtVisitor2<'a> {
 
 impl VisitMut for StmtVisitor2<'_> {
     visit_mut_coverage!();
-
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_stmt(&mut self, stmt: &mut Stmt) {
-        if !self.is_injected_counter_stmt(stmt) {
-            let span = crate::utils::lookup_range::get_stmt_span(&stmt);
-            if let Some(span) = span {
-                let increment_expr = self.create_stmt_increase_counter_expr(span, None);
-
-                self.before.push(Stmt::Expr(ExprStmt {
-                    span: DUMMY_SP,
-                    expr: Box::new(increment_expr),
-                }));
-            }
-        }
-    }
 }
 
 /// Visit statements, create a call to increase statement counter.
