@@ -31,7 +31,7 @@ use crate::{
     visit_mut_coverage, visit_mut_prepend_statement_counter, InstrumentOptions,
 };
 
-use super::stmt_like_visitor::{StmtVisitor, StmtVisitor2};
+use super::stmt_like_visitor::StmtVisitor;
 
 pub struct UnknownReserved;
 impl Default for UnknownReserved {
@@ -175,7 +175,7 @@ impl<'a> CoverageVisitor<'a> {
         for mut stmt in stmts.drain(..) {
             if !self.is_injected_counter_stmt(&stmt) {
                 let span = crate::utils::lookup_range::get_stmt_span(&stmt);
-                let mut visitor = StmtVisitor2::new(
+                let mut visitor = StmtVisitor::new(
                     self.source_map,
                     self.comments,
                     &mut self.cov,
