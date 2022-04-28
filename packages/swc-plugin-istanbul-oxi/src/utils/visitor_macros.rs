@@ -1,5 +1,6 @@
 use once_cell::sync::Lazy;
 use regex::Regex as Regexp;
+use swc_plugin::ast::*;
 
 /// pattern for istanbul to ignore a section
 pub static COMMENT_RE: Lazy<Regexp> =
@@ -314,16 +315,20 @@ macro_rules! visit_mut_coverage {
             } else {
                 parent
             };
+            let parent_parent_parent = if self.nodes.len() >= 2 {
+                self.nodes[self.nodes.len() - 2]
+            } else {
+                parent
+            };
+
             self.nodes.push(Node::VarDeclarator);
 
             if let Some(init) = &mut declarator.init {
                 let init = &mut **init;
                 let span = get_expr_span(init);
-                if let Some(span) = span {
-                    // This is ugly, poor man's substitute to istanbul's `insertCounter` to determine
-                    // when to replace givn expr to wrapped Paren or prepend stmt counter.
-                    // We can't do insert parent node's sibling in downstream's child node.
-                    // TODO: there should be a better way.
+                /*
+
+
                     match parent_parent {
                         Node::BlockStmt | Node::ModuleItems => {
                             self.mark_prepend_stmt_counter(span);
@@ -332,6 +337,46 @@ macro_rules! visit_mut_coverage {
                             self.replace_expr_with_stmt_counter(init);
                         }
                     }
+                }*/
+                // This is ugly, poor man's substitute to istanbul's `insertCounter` to determine
+                // when to replace givn expr to wrapped Paren or prepend stmt counter.
+                // We can't do insert parent node's sibling in downstream's child node.
+                // TODO: there should be a better way.
+                if let Some(span) = span {
+                    let mut hoist = crate::utils::visitor_macros::HoistingFinder::new();
+                    let mut block = crate::utils::visitor_macros::BlockStmtFinder::new();
+                    let mut stmt = crate::utils::visitor_macros::StmtFinder::new();
+                    let mut expr = crate::utils::visitor_macros::ExprFinder::new();
+
+                    init.visit_with(&mut hoist);
+                    init.visit_with(&mut block);
+                    init.visit_with(&mut stmt);
+                    init.visit_with(&mut expr);
+                    println!("{:#?} {:#?} {:#?} {:#?}", hoist, block, stmt, expr);
+
+                    if block.0 {
+                        //path.node.body.unshift(T.expressionStatement(increment));
+                        self.mark_prepend_stmt_counter(span);
+                    } else if stmt.0 {
+                        //path.insertBefore(T.expressionStatement(increment));
+                        self.mark_prepend_stmt_counter(span);
+                    } else if hoist.0 {
+                        /*if (parent && T.isExportNamedDeclaration(parent.parentPath)) {
+                            parent.parentPath.insertBefore(
+                                T.expressionStatement(increment)
+                            );
+                        }  */
+                        match parent_parent_parent {
+                            Node::BlockStmt | Node::Program => {
+                                self.mark_prepend_stmt_counter(span);
+                            }
+                            _ => {
+                                self.replace_expr_with_stmt_counter(init);
+                            }
+                        }
+                    } else if expr.0 {
+                        self.replace_expr_with_stmt_counter(init);
+                    }
                 }
             }
 
@@ -339,4 +384,72 @@ macro_rules! visit_mut_coverage {
             self.nodes.pop();
         }
     };
+}
+
+#[derive(Debug)]
+pub struct HoistingFinder(pub bool);
+
+impl HoistingFinder {
+    pub fn new() -> HoistingFinder {
+        HoistingFinder(false)
+    }
+}
+
+impl Visit for HoistingFinder {
+    fn visit_fn_expr(&mut self, fn_expr: &FnExpr) {
+        self.0 = true;
+    }
+
+    fn visit_arrow_expr(&mut self, arrow_expr: &ArrowExpr) {
+        self.0 = true;
+    }
+
+    fn visit_class_expr(&mut self, class_expr: &ClassExpr) {
+        self.0 = true;
+    }
+}
+
+#[derive(Debug)]
+pub struct BlockStmtFinder(pub bool);
+
+impl BlockStmtFinder {
+    pub fn new() -> BlockStmtFinder {
+        BlockStmtFinder(false)
+    }
+}
+
+impl Visit for BlockStmtFinder {
+    fn visit_block_stmt(&mut self, block: &BlockStmt) {
+        self.0 = true;
+    }
+}
+
+#[derive(Debug)]
+pub struct StmtFinder(pub bool);
+
+impl StmtFinder {
+    pub fn new() -> StmtFinder {
+        StmtFinder(false)
+    }
+}
+
+impl Visit for StmtFinder {
+    fn visit_stmt(&mut self, block: &Stmt) {
+        self.0 = true;
+    }
+}
+
+#[derive(Debug)]
+pub struct ExprFinder(pub bool);
+
+impl ExprFinder {
+    pub fn new() -> ExprFinder {
+        ExprFinder(false)
+    }
+}
+
+impl Visit for ExprFinder {
+    fn visit_expr(&mut self, block: &Expr) {
+        self.0 = true;
+    }
 }

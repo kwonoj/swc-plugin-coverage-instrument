@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Copy, Debug, Clone, PartialEq)]
 pub enum Node {
-    Root,
+    Program,
     Stmt,
     Stmts,
     VarDeclarator,
