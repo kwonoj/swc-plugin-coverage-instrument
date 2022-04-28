@@ -376,6 +376,34 @@ macro_rules! visit_mut_coverage {
             declarator.visit_mut_children_with(self);
             self.nodes.pop();
         }
+
+        // ForStatement: entries(blockProp('body'), coverStatement),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_for_stmt(&mut self, for_stmt: &mut ForStmt) {
+            self.nodes.push(Node::ForStmt);
+
+            self.mark_prepend_stmt_counter(&for_stmt.span);
+
+            let mut body = *for_stmt.body.take();
+            // if for stmt body is not block, wrap it before insert statement counter
+            let body = if let Stmt::Block(mut body) = body {
+                //self.insert_stmts_counter(&mut body.stmts);
+                body
+            } else {
+                let mut stmts = vec![body];
+                //self.insert_stmts_counter(&mut stmts);
+
+                BlockStmt {
+                    span: DUMMY_SP,
+                    stmts,
+                }
+            };
+
+            for_stmt.body = Box::new(Stmt::Block(body));
+            for_stmt.visit_mut_children_with(self);
+
+            self.nodes.pop();
+        }
     };
 }
 
