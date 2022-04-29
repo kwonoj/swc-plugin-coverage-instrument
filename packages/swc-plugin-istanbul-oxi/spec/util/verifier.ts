@@ -25,7 +25,7 @@ const instrumentSync = (
     jsc: {
       parser: {
         syntax: "ecmascript",
-        jsx: false,
+        jsx: true,
       },
       target: "es2022",
       experimental: {

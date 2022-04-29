@@ -38,15 +38,16 @@ code: |
 opts:
   generateOnly: true
 
----
-name: mainline return
-instrumentOpts:
-  autoWrap: true
-code: |
-  return 10;
-tests:
-  - name: coverage for mainline return
-    args: []
-    out: 10
-    lines: {'1': 1 }
-    statements: { '0': 1 }
+# NOTE: SWC does not support mainline return syntax
+# ---
+# name: mainline return
+# instrumentOpts:
+#   autoWrap: true
+# code: |
+#   return 10;
+# tests:
+#   - name: coverage for mainline return
+#     args: []
+#     out: 10
+#     lines: {'1': 1 }
+#     statements: { '0': 1 }
