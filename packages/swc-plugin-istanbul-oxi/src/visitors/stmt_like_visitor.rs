@@ -27,6 +27,7 @@ pub struct StmtVisitor<'a> {
     pub instrument_options: InstrumentOptions,
     pub before: Vec<Stmt>,
     pub nodes: Vec<Node>,
+    should_ignore_child: bool,
 }
 
 // TODO: duplicated path between CoverageVisitor
@@ -50,6 +51,7 @@ impl<'a> StmtVisitor<'a> {
             instrument_options: instrument_options.clone(),
             before: vec![],
             nodes: current_node.to_vec(),
+            should_ignore_child: false,
         }
     }
 

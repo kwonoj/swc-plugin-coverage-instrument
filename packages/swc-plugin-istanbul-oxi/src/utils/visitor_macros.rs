@@ -1,5 +1,74 @@
 use swc_plugin::ast::*;
 
+/// Expand given struct to contain necessary common filed for the coverage visitor
+/// with common utility functions.
+///
+/// This does not impl actual visitors (VisitMut) as each visitor may have different
+/// visitor logics.
+#[macro_export]
+macro_rules! create_coverage_visitor {
+    ($name:ident {$($field:ident: $t:ty)*}) => {
+        create_coverage_visitor!($name {$($field: $t,)*});
+    };
+    ($name:ident {$($field:ident: $t:ty,)*}) => {
+        #[allow(unused)]
+        #[derive(Debug)]
+        pub struct $name<'a> {
+            source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
+            comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
+            cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
+            var_name_ident: swc_plugin::ast::Ident,
+            instrument_options: crate::InstrumentOptions,
+            before: Vec<swc_plugin::ast::Stmt>,
+            should_ignore_child: bool,
+            nodes: Vec<Node>,
+            $(pub $field: $t,)*
+        }
+
+        impl<'a> $name<'a> {
+            pub fn new(
+                source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
+                comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
+                cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
+                var_name_ident: &'a swc_plugin::ast::Ident,
+                instrument_options: &'a crate::InstrumentOptions,
+                nodes: &'a Vec<Node>,
+                should_ignore_child: bool,
+                $($field: $t,)*
+            ) -> $name<'a> {
+                $name {
+                    source_map,
+                    comments,
+                    cov,
+                    var_name_ident:var_name_ident.clone(),
+                    instrument_options: instrument_options.clone(),
+                    before: vec![],
+                    nodes: nodes.clone(),
+                    should_ignore_child,
+                    $($field,)*
+                }
+            }
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! enter_visitor {
+    ($self:ident, $name:ident, $v: expr) => {
+        if $self.should_ignore_child {
+            $name.visit_mut_children_with($self);
+            return;
+        }
+
+        let old = $self.should_ignore_child;
+        $self.should_ignore_child =
+            crate::utils::hint_comments::should_ignore_child(&$self.comments, get_expr_span($name));
+
+        $v();
+        $self.should_ignore_child = old;
+    };
+}
+
 /// A macro wraps a visitor fn create a statement AST to increase statement counter.
 /// Created statement is stored in `before` property in the CoverageVisitor, will be prepended
 /// via visit_mut_module_items.
@@ -38,6 +107,7 @@ macro_rules! insert_logical_expr_helper {
                     &self.var_name_ident,
                     &self.instrument_options,
                     &self.nodes,
+                    false, // TODO
                     branch,
                 );
 
