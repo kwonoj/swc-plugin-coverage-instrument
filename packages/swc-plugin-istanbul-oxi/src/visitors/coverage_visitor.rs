@@ -98,7 +98,7 @@ impl<'a> CoverageVisitor<'a> {
         let coverage_template = create_coverage_fn_decl(
             &self.instrument_options.coverage_variable,
             gv_template,
-            &self.var_name_ident,
+            &self.cov_fn_ident,
             &self.file_path,
             self.cov.as_ref(),
         );
@@ -107,7 +107,7 @@ impl<'a> CoverageVisitor<'a> {
         let m = ModuleItem::Stmt(Stmt::Expr(ExprStmt {
             span: DUMMY_SP,
             expr: Box::new(Expr::Call(CallExpr {
-                callee: Callee::Expr(Box::new(Expr::Ident(self.var_name_ident.clone()))),
+                callee: Callee::Expr(Box::new(Expr::Ident(self.cov_fn_ident.clone()))),
                 ..CallExpr::dummy()
             })),
         }));
@@ -129,7 +129,6 @@ impl<'a> CoverageVisitor<'a> {
                     self.source_map,
                     self.comments,
                     &mut self.cov,
-                    &self.var_name_ident,
                     &self.instrument_options,
                     &self.nodes,
                     false,

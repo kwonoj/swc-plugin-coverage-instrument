@@ -4,6 +4,7 @@ use std::{
 };
 
 use istanbul_oxi_instrument::FileCoverage;
+use once_cell::sync::OnceCell;
 use swc_plugin::{
     ast::*,
     syntax_pos::DUMMY_SP,
@@ -17,20 +18,28 @@ use super::{
     create_coverage_data_object::create_coverage_data_object,
 };
 
-/// Create a unique ident for the injected coverage counter fn.
-pub fn create_coverage_fn_ident(value: &str) -> Ident {
-    let mut s = DefaultHasher::new();
-    value.hash(&mut s);
-    let var_name_hash = format!("cov_{}", s.finish());
+pub static COVERAGE_FN_IDENT: OnceCell<Ident> = OnceCell::new();
 
-    Ident::new(var_name_hash.into(), DUMMY_SP)
+/// Create a unique ident for the injected coverage counter fn,
+/// Stores it into a global scope.
+///
+/// Do not use static value directly - create_coverage_visitor macro
+/// should inject this into a struct accordingly.
+pub fn create_coverage_fn_ident(value: &str) {
+    COVERAGE_FN_IDENT.get_or_init(|| {
+        let mut s = DefaultHasher::new();
+        value.hash(&mut s);
+        let var_name_hash = format!("cov_{}", s.finish());
+
+        Ident::new(var_name_hash.into(), DUMMY_SP)
+    });
 }
 
 /// Creates a function declaration for actual coverage collection.
 pub fn create_coverage_fn_decl(
     coverage_variable: &str,
     coverage_template: Stmt,
-    var_name_ident: &Ident,
+    cov_fn_ident: &Ident,
     file_path: &str,
     coverage_data: &FileCoverage,
 ) -> ModuleItem {
@@ -107,7 +116,7 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
     // TODO: need to add @ts-ignore leading comment
     let coverage_fn_assign_expr = Expr::Assign(AssignExpr {
         left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent::from(
-            var_name_ident.clone(),
+            cov_fn_ident.clone(),
         )))),
         right: Box::new(Expr::Fn(FnExpr {
             ident: None,
@@ -140,7 +149,7 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
 
     // moduleitem for fn decl includes body defined above
     ModuleItem::Stmt(Stmt::Decl(Decl::Fn(FnDecl {
-        ident: var_name_ident.clone(),
+        ident: cov_fn_ident.clone(),
         declare: false,
         function: Function {
             body: Some(BlockStmt {

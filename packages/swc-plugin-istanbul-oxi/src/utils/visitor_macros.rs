@@ -23,8 +23,7 @@ macro_rules! create_coverage_visitor {
             pub source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
             pub comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
             pub cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
-            // an identifier to the function name for coverage collection.
-            pub var_name_ident: swc_plugin::ast::Ident,
+            pub cov_fn_ident: swc_plugin::ast::Ident,
             pub instrument_options: crate::InstrumentOptions,
             pub before: Vec<swc_plugin::ast::Stmt>,
             pub nodes: Vec<Node>,
@@ -36,7 +35,6 @@ macro_rules! create_coverage_visitor {
                 source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
                 comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
                 cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
-                var_name_ident: &'a swc_plugin::ast::Ident,
                 instrument_options: &'a crate::InstrumentOptions,
                 nodes: &'a Vec<Node>,
                 should_ignore_child: bool,
@@ -45,7 +43,7 @@ macro_rules! create_coverage_visitor {
                     source_map,
                     comments,
                     cov,
-                    var_name_ident:var_name_ident.clone(),
+                    cov_fn_ident: crate::COVERAGE_FN_IDENT.get().expect("Coverage fn Ident should be initialized already").clone(),
                     instrument_options: instrument_options.clone(),
                     before: vec![],
                     nodes: nodes.clone(),
@@ -64,8 +62,7 @@ macro_rules! create_coverage_visitor {
             source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
             comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
             cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
-            // an identifier to the function name for coverage collection.
-            var_name_ident: swc_plugin::ast::Ident,
+            cov_fn_ident: swc_plugin::ast::Ident,
             instrument_options: crate::InstrumentOptions,
             before: Vec<swc_plugin::ast::Stmt>,
             nodes: Vec<Node>,
@@ -78,7 +75,6 @@ macro_rules! create_coverage_visitor {
                 source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
                 comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
                 cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
-                var_name_ident: &'a swc_plugin::ast::Ident,
                 instrument_options: &'a crate::InstrumentOptions,
                 nodes: &'a Vec<Node>,
                 should_ignore_child: bool,
@@ -88,7 +84,7 @@ macro_rules! create_coverage_visitor {
                     source_map,
                     comments,
                     cov,
-                    var_name_ident:var_name_ident.clone(),
+                    cov_fn_ident: crate::COVERAGE_FN_IDENT.get().expect("Coverage fn Ident should be initialized already").clone(),
                     instrument_options: instrument_options.clone(),
                     before: vec![],
                     nodes: nodes.clone(),
@@ -152,7 +148,6 @@ macro_rules! insert_logical_expr_helper {
                     self.source_map,
                     self.comments,
                     &mut self.cov,
-                    &self.var_name_ident,
                     &self.instrument_options,
                     &self.nodes,
                     false, // TODO
@@ -218,7 +213,7 @@ macro_rules! insert_counter_helper {
             crate::instrument::create_increase_expression_expr(
                 &IDENT_S,
                 stmt_id,
-                &self.var_name_ident,
+                &self.cov_fn_ident,
                 idx,
             )
         }
@@ -241,18 +236,18 @@ macro_rules! insert_counter_helper {
         //}
         #[tracing::instrument(skip_all)]
         fn replace_expr_with_stmt_counter(&mut self, expr: &mut Expr) {
-            self.replace_expr_with_counter(expr, |cov, var_name_ident, range| {
+            self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {
                 let idx = cov.new_statement(&range);
-                create_increase_expression_expr(&IDENT_S, idx, var_name_ident, None)
+                create_increase_expression_expr(&IDENT_S, idx, cov_fn_ident, None)
             });
         }
 
         #[tracing::instrument(skip_all)]
         fn replace_expr_with_branch_counter(&mut self, expr: &mut Expr, branch: u32) {
-            self.replace_expr_with_counter(expr, |cov, var_name_ident, range| {
+            self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {
                 let idx = cov.add_branch_path(branch, &range);
 
-                create_increase_expression_expr(&IDENT_B, branch, var_name_ident, Some(idx))
+                create_increase_expression_expr(&IDENT_B, branch, cov_fn_ident, Some(idx))
             });
         }
 
@@ -265,7 +260,7 @@ macro_rules! insert_counter_helper {
             let span = get_expr_span(expr);
             if let Some(span) = span {
                 let init_range = get_range_from_span(self.source_map, span);
-                let prepend_expr = get_counter(&mut self.cov, &self.var_name_ident, &init_range);
+                let prepend_expr = get_counter(&mut self.cov, &self.cov_fn_ident, &init_range);
 
                 let paren_expr = Expr::Paren(ParenExpr {
                     span: DUMMY_SP,
@@ -310,12 +305,8 @@ macro_rules! insert_counter_helper {
 
             match &mut function.body {
                 Some(blockstmt) => {
-                    let b = create_increase_expression_expr(
-                        &IDENT_F,
-                        index,
-                        &self.var_name_ident,
-                        None,
-                    );
+                    let b =
+                        create_increase_expression_expr(&IDENT_F, index, &self.cov_fn_ident, None);
                     let mut prepended_vec = vec![Stmt::Expr(ExprStmt {
                         span: DUMMY_SP,
                         expr: Box::new(b),
@@ -338,7 +329,7 @@ macro_rules! insert_counter_helper {
                         if let Expr::Call(CallExpr { callee, .. }) = &**obj {
                             if let Callee::Expr(expr) = callee {
                                 if let Expr::Ident(ident) = &**expr {
-                                    if ident == &self.var_name_ident {
+                                    if ident == &self.cov_fn_ident {
                                         return true;
                                     }
                                 }
@@ -588,7 +579,7 @@ macro_rules! visit_mut_coverage {
                 let expr = create_increase_expression_expr(
                     &IDENT_B,
                     branch,
-                    &self.var_name_ident,
+                    &self.cov_fn_ident,
                     Some(idx),
                 );
 

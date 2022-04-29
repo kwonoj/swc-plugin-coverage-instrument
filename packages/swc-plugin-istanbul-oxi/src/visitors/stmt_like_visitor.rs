@@ -48,7 +48,6 @@ impl<'a> StmtVisitor<'a> {
                     self.source_map,
                     self.comments,
                     &mut self.cov,
-                    &self.var_name_ident,
                     &self.instrument_options,
                     &self.nodes,
                     false,
