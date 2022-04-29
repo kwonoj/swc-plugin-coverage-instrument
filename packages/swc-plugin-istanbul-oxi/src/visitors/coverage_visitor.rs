@@ -132,6 +132,7 @@ impl<'a> CoverageVisitor<'a> {
                     &self.var_name_ident,
                     &self.instrument_options,
                     &self.nodes,
+                    false,
                 );
                 stmt.visit_mut_children_with(&mut visitor);
 

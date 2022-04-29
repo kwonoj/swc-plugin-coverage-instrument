@@ -15,6 +15,45 @@ impl Default for UnknownReserved {
 /// visitor logics.
 #[macro_export]
 macro_rules! create_coverage_visitor {
+    ($name:ident {}) => {
+        // TODO: naive, ugly hack - need to refactor to properly expand regardless of having addtional field.
+        #[allow(unused)]
+        #[derive(Debug)]
+        pub struct $name<'a> {
+            pub source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
+            pub comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
+            pub cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
+            // an identifier to the function name for coverage collection.
+            pub var_name_ident: swc_plugin::ast::Ident,
+            pub instrument_options: crate::InstrumentOptions,
+            pub before: Vec<swc_plugin::ast::Stmt>,
+            pub nodes: Vec<Node>,
+            pub should_ignore_child: bool,
+        }
+
+        impl<'a> $name<'a> {
+            pub fn new(
+                source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
+                comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
+                cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
+                var_name_ident: &'a swc_plugin::ast::Ident,
+                instrument_options: &'a crate::InstrumentOptions,
+                nodes: &'a Vec<Node>,
+                should_ignore_child: bool,
+            ) -> $name<'a> {
+                $name {
+                    source_map,
+                    comments,
+                    cov,
+                    var_name_ident:var_name_ident.clone(),
+                    instrument_options: instrument_options.clone(),
+                    before: vec![],
+                    nodes: nodes.clone(),
+                    should_ignore_child,
+                }
+            }
+        }
+    };
     ($name:ident {$($field:ident: $t:ty)*}) => {
         create_coverage_visitor!($name {$($field: $t,)*});
     };
@@ -29,8 +68,8 @@ macro_rules! create_coverage_visitor {
             var_name_ident: swc_plugin::ast::Ident,
             instrument_options: crate::InstrumentOptions,
             before: Vec<swc_plugin::ast::Stmt>,
-            should_ignore_child: bool,
             nodes: Vec<Node>,
+            should_ignore_child: bool,
             $(pub $field: $t,)*
         }
 
