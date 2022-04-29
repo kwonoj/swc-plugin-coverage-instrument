@@ -17,25 +17,6 @@ use crate::{
     },
 };
 
-/// Traverse down given nodes to check if it's leaf of the logical expr,
-/// or have inner logical expr to recurse.
-pub struct LogicalExprLeafFinder(pub bool);
-
-impl Visit for LogicalExprLeafFinder {
-    fn visit_bin_expr(&mut self, bin_expr: &BinExpr) {
-        match &bin_expr.op {
-            BinaryOp::LogicalOr | BinaryOp::LogicalAnd | BinaryOp::NullishCoalescing => {
-                self.0 = true;
-                // short curcuit, we know it's not leaf
-                return;
-            }
-            _ => {}
-        }
-
-        bin_expr.visit_children_with(self);
-    }
-}
-
 create_coverage_visitor!(LogicalExprVisitor { branch: u32 });
 
 /// A visitor to traverse down given logical expr's value (left / right) with existing branch idx.

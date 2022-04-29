@@ -19,7 +19,6 @@ use crate::{
 
 create_coverage_visitor!(StmtVisitor {});
 
-// TODO: duplicated path between CoverageVisitor
 impl<'a> StmtVisitor<'a> {
     insert_logical_expr_helper!();
     insert_counter_helper!();
