@@ -18,7 +18,7 @@ use tracing::instrument;
 
 use crate::{
     constants::idents::*,
-    insert_counter_helper,
+    insert_counter_helper, insert_logical_expr_helper,
     instrument::create_increase_expression_expr,
     template::{
         create_coverage_fn_decl::create_coverage_fn_decl,
@@ -65,6 +65,7 @@ pub struct CoverageVisitor<'a> {
 }
 
 impl<'a> CoverageVisitor<'a> {
+    insert_logical_expr_helper!();
     insert_counter_helper!();
 
     pub fn new(

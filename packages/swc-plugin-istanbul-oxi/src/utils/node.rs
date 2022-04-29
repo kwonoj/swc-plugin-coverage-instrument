@@ -5,6 +5,7 @@ pub enum Node {
     Program,
     Stmt,
     Stmts,
+    Expr,
     VarDeclarator,
     ExprStmt,
     ModuleItems,

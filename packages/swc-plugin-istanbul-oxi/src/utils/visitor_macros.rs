@@ -23,6 +23,58 @@ macro_rules! visit_mut_prepend_statement_counter {
     };
 }
 
+#[macro_export]
+macro_rules! insert_logical_expr_helper {
+    () => {
+        /// Attempt to wrap expression with branch increase counter. Given Expr may be left, or right of the logical expression.
+        fn wrap_bin_expr_with_branch_counter(&mut self, branch: u32, expr: &mut Expr) {
+            // Logical expression can have inner logical expression as non-direct child
+            // (i.e `args[0] > 0 && (args[0] < 5 || args[0] > 10)`, logical || expr is child of ParenExpr.
+            // Try to look up if current expr is the `leaf` of whole logical expr tree.
+            let mut has_inner_logical_expr =
+                crate::visitors::logical_expr_visitor::LogicalExprLeafFinder(false);
+            expr.visit_with(&mut has_inner_logical_expr);
+
+            // If current expr have inner logical expr, traverse until reaches to the leaf
+            if has_inner_logical_expr.0 {
+                let mut visitor = crate::visitors::logical_expr_visitor::LogicalExprVisitor::new(
+                    self.source_map,
+                    self.comments,
+                    &mut self.cov,
+                    &self.var_name_ident,
+                    &self.instrument_options,
+                    &self.nodes,
+                    branch,
+                );
+
+                expr.visit_mut_children_with(&mut visitor);
+            } else {
+                // Now we believe this expr is the leaf of the logical expr tree.
+                // Wrap it with branch counter.
+                if self.instrument_options.report_logic {
+                    /*
+                    // TODO
+                    const increment = this.getBranchLogicIncrement(
+                        leaf,
+                        b,
+                        leaf.node.loc
+                    );
+                    if (!increment[0]) {
+                        continue;
+                    }
+                    leaf.parent[leaf.property] = T.sequenceExpression([
+                        increment[0],
+                        increment[1]
+                    ]);
+                    */
+                } else {
+                    self.replace_expr_with_branch_counter(expr, branch);
+                }
+            }
+        }
+    };
+}
+
 /// Interfaces to mark counters. Parent node visitor should pick up and insert marked counter accordingly.
 /// Unlike istanbul we can't have single insert logic to be called in any arbitary child node.
 #[macro_export]
@@ -543,10 +595,8 @@ macro_rules! visit_mut_coverage {
         // LogicalExpression: entries(coverLogicalExpression)
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_bin_expr(&mut self, bin_expr: &mut BinExpr) {
-            println!("{:#?}", bin_expr.op);
             match &bin_expr.op {
                 BinaryOp::LogicalOr | BinaryOp::LogicalAnd | BinaryOp::NullishCoalescing => {
-                    let parent = self.nodes.last().unwrap().clone();
                     self.nodes.push(Node::LogicalExpr);
 
                     // escape if there's ignore comments
@@ -557,20 +607,7 @@ macro_rules! visit_mut_coverage {
                         return;
                     }
 
-                    // Determine if given expr is logicalExpr.
-                    let is_logical_expr = |e: &mut Expr| {
-                        if let Expr::Bin(BinExpr { op, .. }) = e {
-                            match op {
-                                BinaryOp::LogicalOr
-                                | BinaryOp::LogicalAnd
-                                | BinaryOp::NullishCoalescing => true,
-                                _ => false,
-                            }
-                        } else {
-                            false
-                        }
-                    };
-
+                    // Create a new branch. This id should be reused for any inner logical expr.
                     let range = get_range_from_span(self.source_map, &bin_expr.span);
                     let branch = self.cov.new_branch(
                         istanbul_oxi_instrument::BranchType::BinaryExpr,
@@ -578,38 +615,12 @@ macro_rules! visit_mut_coverage {
                         self.instrument_options.report_logic,
                     );
 
-                    let mut wrap_logical_expr = |expr: &mut Expr| {
-                        if is_logical_expr(expr) {
-                            // recursively run visitor down to the bottom of logical expr
-                            expr.visit_mut_children_with(self);
-                        } else {
-                            // we think this is end of the inner logicalExpr chain, wrap expr with branch counter
-                            if self.instrument_options.report_logic {
-                                /*
-                                // TODO
-                                const increment = this.getBranchLogicIncrement(
-                                    leaf,
-                                    b,
-                                    leaf.node.loc
-                                );
-                                if (!increment[0]) {
-                                    continue;
-                                }
-                                leaf.parent[leaf.property] = T.sequenceExpression([
-                                    increment[0],
-                                    increment[1]
-                                ]);
-                                */
-                            } else {
-                                self.replace_expr_with_branch_counter(expr, branch);
-                            }
-                        }
-                    };
-
-                    wrap_logical_expr(&mut *bin_expr.left);
-                    wrap_logical_expr(&mut *bin_expr.right);
+                    // Iterate over each expr, wrap it with branch counter.
+                    self.wrap_bin_expr_with_branch_counter(branch, &mut *bin_expr.left);
+                    self.wrap_bin_expr_with_branch_counter(branch, &mut *bin_expr.right);
                 }
                 _ => {
+                    // iterate as normal for non loigical expr
                     self.nodes.push(Node::BinExpr);
                     bin_expr.visit_mut_children_with(self);
                 }
