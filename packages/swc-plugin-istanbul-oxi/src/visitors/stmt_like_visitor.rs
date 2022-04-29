@@ -1,8 +1,6 @@
 use istanbul_oxi_instrument::SourceCoverage;
 use swc_plugin::{
     ast::*,
-    comments::PluginCommentsProxy,
-    source_map::PluginSourceMapProxy,
     syntax_pos::{Span, DUMMY_SP},
     utils::take::Take,
 };
@@ -10,50 +8,21 @@ use tracing::instrument;
 
 use crate::{
     constants::idents::*,
-    insert_counter_helper, insert_logical_expr_helper,
+    create_coverage_visitor, insert_counter_helper, insert_logical_expr_helper,
     instrument::create_increase_expression_expr,
     utils::{
         lookup_range::{get_expr_span, get_range_from_span},
         node::Node,
     },
-    visit_mut_coverage, InstrumentOptions,
+    visit_mut_coverage,
 };
 
-pub struct StmtVisitor<'a> {
-    pub source_map: &'a PluginSourceMapProxy,
-    pub comments: Option<&'a PluginCommentsProxy>,
-    pub cov: &'a mut SourceCoverage,
-    pub var_name_ident: Ident,
-    pub instrument_options: InstrumentOptions,
-    pub before: Vec<Stmt>,
-    pub nodes: Vec<Node>,
-    should_ignore_child: bool,
-}
+create_coverage_visitor!(StmtVisitor {});
 
 // TODO: duplicated path between CoverageVisitor
 impl<'a> StmtVisitor<'a> {
     insert_logical_expr_helper!();
     insert_counter_helper!();
-
-    pub fn new(
-        source_map: &'a PluginSourceMapProxy,
-        comments: Option<&'a PluginCommentsProxy>,
-        cov: &'a mut SourceCoverage,
-        var_name_ident: &'a Ident,
-        instrument_options: &InstrumentOptions,
-        current_node: &[Node],
-    ) -> StmtVisitor<'a> {
-        StmtVisitor {
-            source_map,
-            comments,
-            cov,
-            var_name_ident: var_name_ident.clone(),
-            instrument_options: instrument_options.clone(),
-            before: vec![],
-            nodes: current_node.to_vec(),
-            should_ignore_child: false,
-        }
-    }
 
     /// Visit individual statements with stmt_visitor and update.
     fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
@@ -82,6 +51,7 @@ impl<'a> StmtVisitor<'a> {
                     &self.var_name_ident,
                     &self.instrument_options,
                     &self.nodes,
+                    false,
                 );
                 stmt.visit_mut_children_with(&mut visitor);
 
