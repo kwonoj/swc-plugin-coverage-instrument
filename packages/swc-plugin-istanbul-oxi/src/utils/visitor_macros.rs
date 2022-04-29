@@ -138,8 +138,7 @@ macro_rules! insert_logical_expr_helper {
             // Logical expression can have inner logical expression as non-direct child
             // (i.e `args[0] > 0 && (args[0] < 5 || args[0] > 10)`, logical || expr is child of ParenExpr.
             // Try to look up if current expr is the `leaf` of whole logical expr tree.
-            let mut has_inner_logical_expr =
-                crate::visitors::logical_expr_visitor::LogicalExprLeafFinder(false);
+            let mut has_inner_logical_expr = crate::visitors::finders::LogicalExprLeafFinder(false);
             expr.visit_with(&mut has_inner_logical_expr);
 
             // If current expr have inner logical expr, traverse until reaches to the leaf
@@ -359,7 +358,7 @@ macro_rules! insert_counter_helper {
             // We can't do insert parent node's sibling in downstream's child node.
             // TODO: there should be a better way.
             if let Some(span) = span {
-                let mut block = crate::utils::visitor_macros::BlockStmtFinder::new();
+                let mut block = crate::visitors::finders::BlockStmtFinder::new();
                 expr.visit_with(&mut block);
                 // TODO: this may not required as visit_mut_block_stmt recursively visits inner instead.
                 if block.0 {
@@ -368,14 +367,14 @@ macro_rules! insert_counter_helper {
                     return;
                 }
 
-                let mut stmt = crate::utils::visitor_macros::StmtFinder::new();
+                let mut stmt = crate::visitors::finders::StmtFinder::new();
                 expr.visit_with(&mut stmt);
                 if stmt.0 {
                     //path.insertBefore(T.expressionStatement(increment));
                     self.mark_prepend_stmt_counter(span);
                 }
 
-                let mut hoist = crate::utils::visitor_macros::HoistingFinder::new();
+                let mut hoist = crate::visitors::finders::HoistingFinder::new();
                 expr.visit_with(&mut hoist);
                 let parent = self.nodes.last().unwrap().clone();
                 if hoist.0 && parent == Node::VarDeclarator {
@@ -402,7 +401,7 @@ macro_rules! insert_counter_helper {
                     return;
                 }
 
-                let mut expr_finder = crate::utils::visitor_macros::ExprFinder::new();
+                let mut expr_finder = crate::visitors::finders::ExprFinder::new();
                 expr.visit_with(&mut expr_finder);
                 if expr_finder.0 {
                     self.replace_expr_with_stmt_counter(expr);
@@ -694,72 +693,4 @@ macro_rules! visit_mut_coverage {
             self.nodes.pop();
         }
     };
-}
-
-#[derive(Debug)]
-pub struct HoistingFinder(pub bool);
-
-impl HoistingFinder {
-    pub fn new() -> HoistingFinder {
-        HoistingFinder(false)
-    }
-}
-
-impl Visit for HoistingFinder {
-    fn visit_fn_expr(&mut self, fn_expr: &FnExpr) {
-        self.0 = true;
-    }
-
-    fn visit_arrow_expr(&mut self, arrow_expr: &ArrowExpr) {
-        self.0 = true;
-    }
-
-    fn visit_class_expr(&mut self, class_expr: &ClassExpr) {
-        self.0 = true;
-    }
-}
-
-#[derive(Debug)]
-pub struct BlockStmtFinder(pub bool);
-
-impl BlockStmtFinder {
-    pub fn new() -> BlockStmtFinder {
-        BlockStmtFinder(false)
-    }
-}
-
-impl Visit for BlockStmtFinder {
-    fn visit_block_stmt(&mut self, block: &BlockStmt) {
-        self.0 = true;
-    }
-}
-
-#[derive(Debug)]
-pub struct StmtFinder(pub bool);
-
-impl StmtFinder {
-    pub fn new() -> StmtFinder {
-        StmtFinder(false)
-    }
-}
-
-impl Visit for StmtFinder {
-    fn visit_stmt(&mut self, block: &Stmt) {
-        self.0 = true;
-    }
-}
-
-#[derive(Debug)]
-pub struct ExprFinder(pub bool);
-
-impl ExprFinder {
-    pub fn new() -> ExprFinder {
-        ExprFinder(false)
-    }
-}
-
-impl Visit for ExprFinder {
-    fn visit_expr(&mut self, block: &Expr) {
-        self.0 = true;
-    }
 }
