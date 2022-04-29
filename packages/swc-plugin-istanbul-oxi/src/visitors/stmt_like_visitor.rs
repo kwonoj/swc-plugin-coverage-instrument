@@ -10,7 +10,7 @@ use tracing::instrument;
 
 use crate::{
     constants::idents::*,
-    insert_counter_helper,
+    insert_counter_helper, insert_logical_expr_helper,
     instrument::create_increase_expression_expr,
     utils::{
         lookup_range::{get_expr_span, get_range_from_span},
@@ -31,6 +31,9 @@ pub struct StmtVisitor<'a> {
 
 // TODO: duplicated path between CoverageVisitor
 impl<'a> StmtVisitor<'a> {
+    insert_logical_expr_helper!();
+    insert_counter_helper!();
+
     pub fn new(
         source_map: &'a PluginSourceMapProxy,
         comments: Option<&'a PluginCommentsProxy>,
@@ -49,8 +52,6 @@ impl<'a> StmtVisitor<'a> {
             nodes: current_node.to_vec(),
         }
     }
-
-    insert_counter_helper!();
 
     /// Visit individual statements with stmt_visitor and update.
     fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {

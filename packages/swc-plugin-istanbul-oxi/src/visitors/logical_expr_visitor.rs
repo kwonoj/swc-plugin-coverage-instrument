@@ -49,6 +49,8 @@ pub struct LogicalExprVisitor<'a> {
     pub branch: u32,
 }
 
+/// A visitor to traverse down given logical expr's value (left / right) with existing branch idx.
+/// This is required to preserve branch id to recursively traverse logical expr's inner child.
 impl<'a> LogicalExprVisitor<'a> {
     insert_logical_expr_helper!();
     insert_counter_helper!();
