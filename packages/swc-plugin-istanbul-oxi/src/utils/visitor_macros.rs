@@ -15,47 +15,7 @@ impl Default for UnknownReserved {
 /// visitor logics.
 #[macro_export]
 macro_rules! create_coverage_visitor {
-    ($name:ident {}) => {
-        // TODO: naive, ugly hack - need to refactor to properly expand regardless of having addtional field.
-        #[allow(unused)]
-        #[derive(Debug)]
-        pub struct $name<'a> {
-            pub source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
-            pub comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
-            pub cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
-            pub cov_fn_ident: swc_plugin::ast::Ident,
-            pub instrument_options: crate::InstrumentOptions,
-            pub before: Vec<swc_plugin::ast::Stmt>,
-            pub nodes: Vec<Node>,
-            pub should_ignore_child: bool,
-        }
-
-        impl<'a> $name<'a> {
-            pub fn new(
-                source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
-                comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
-                cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
-                instrument_options: &'a crate::InstrumentOptions,
-                nodes: &'a Vec<Node>,
-                should_ignore_child: bool,
-            ) -> $name<'a> {
-                $name {
-                    source_map,
-                    comments,
-                    cov,
-                    cov_fn_ident: crate::COVERAGE_FN_IDENT.get().expect("Coverage fn Ident should be initialized already").clone(),
-                    instrument_options: instrument_options.clone(),
-                    before: vec![],
-                    nodes: nodes.clone(),
-                    should_ignore_child,
-                }
-            }
-        }
-    };
-    ($name:ident {$($field:ident: $t:ty)*}) => {
-        create_coverage_visitor!($name {$($field: $t,)*});
-    };
-    ($name:ident {$($field:ident: $t:ty,)*}) => {
+    ($name:ident { $($field:ident: $t:ty),* $(,)? }) => {
         #[allow(unused)]
         #[derive(Debug)]
         pub struct $name<'a> {
@@ -64,7 +24,7 @@ macro_rules! create_coverage_visitor {
             cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
             cov_fn_ident: swc_plugin::ast::Ident,
             instrument_options: crate::InstrumentOptions,
-            before: Vec<swc_plugin::ast::Stmt>,
+            pub before: Vec<swc_plugin::ast::Stmt>,
             nodes: Vec<Node>,
             should_ignore_child: bool,
             $(pub $field: $t,)*
