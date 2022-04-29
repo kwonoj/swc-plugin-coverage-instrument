@@ -1,10 +1,4 @@
-use once_cell::sync::Lazy;
-use regex::Regex as Regexp;
 use swc_plugin::ast::*;
-
-/// pattern for istanbul to ignore a section
-pub static COMMENT_RE: Lazy<Regexp> =
-    Lazy::new(|| Regexp::new(r"^\s*istanbul\s+ignore\s+(if|else|next)(\W|$)").unwrap());
 
 /// A macro wraps a visitor fn create a statement AST to increase statement counter.
 /// Created statement is stored in `before` property in the CoverageVisitor, will be prepended
@@ -215,49 +209,6 @@ macro_rules! insert_counter_helper {
                     unimplemented!("Unable to process function body node type")
                 }
             }
-        }
-
-        fn lookup_hint_comments(&mut self, span: Option<&Span>) -> Option<String> {
-            use swc_plugin::comments::Comments;
-
-            if let Some(span) = span {
-                let h = self.comments.get_leading(span.hi);
-                let l = self.comments.get_leading(span.lo);
-
-                if let Some(h) = h {
-                    let h_value = h.iter().find_map(|c| {
-                        if let Some(re_match) =
-                            crate::utils::visitor_macros::COMMENT_RE.find_at(&c.text, 0)
-                        {
-                            Some(re_match.as_str().to_string())
-                        } else {
-                            None
-                        }
-                    });
-
-                    if let Some(h_value) = h_value {
-                        return Some(h_value);
-                    }
-                }
-
-                if let Some(l) = l {
-                    let l_value = l.iter().find_map(|c| {
-                        if let Some(re_match) =
-                            crate::utils::visitor_macros::COMMENT_RE.find_at(&c.text, 0)
-                        {
-                            Some(re_match.as_str().to_string())
-                        } else {
-                            None
-                        }
-                    });
-
-                    if let Some(l_value) = l_value {
-                        return Some(l_value);
-                    }
-                }
-            }
-
-            return None;
         }
 
         fn is_injected_counter_expr(&self, expr: &swc_plugin::ast::Expr) -> bool {
@@ -496,7 +447,10 @@ macro_rules! visit_mut_coverage {
             // cover_statement's is_stmt prepend logic for individual child stmt visitor
             self.mark_prepend_stmt_counter(&if_stmt.span);
 
-            let hint = self.lookup_hint_comments(Some(if_stmt.span).as_ref());
+            let hint = crate::utils::hint_comments::lookup_hint_comments(
+                &self.comments,
+                Some(if_stmt.span).as_ref(),
+            );
             let (ignore_if, ignore_else) = if let Some(hint) = hint {
                 (&hint == "if", &hint == "else")
             } else {
@@ -600,7 +554,10 @@ macro_rules! visit_mut_coverage {
                     self.nodes.push(Node::LogicalExpr);
 
                     // escape if there's ignore comments
-                    let hint = self.lookup_hint_comments(Some(bin_expr.span).as_ref());
+                    let hint = crate::utils::hint_comments::lookup_hint_comments(
+                        &self.comments,
+                        Some(bin_expr.span).as_ref(),
+                    );
                     if hint.as_deref() == Some("next") {
                         bin_expr.visit_mut_children_with(self);
                         self.nodes.pop();

@@ -25,6 +25,7 @@ use crate::{
         create_global_stmt_template::create_global_stmt_template,
     },
     utils::{
+        hint_comments::{lookup_hint_comments, should_ignore_file},
         lookup_range::{get_expr_span, get_range_from_span, get_stmt_span},
         node::Node,
     },
@@ -39,13 +40,6 @@ impl Default for UnknownReserved {
         UnknownReserved
     }
 }
-
-/// pattern for istanbul to ignore the whole file
-/// This is not fully identical to original file comments
-/// https://github.com/istanbuljs/istanbuljs/blob/6f45283feo31faaa066375528f6b68e3a9927b2d5/packages/istanbul-lib-instrument/src/visitor.js#L10=
-/// as regex package doesn't support lookaround
-static COMMENT_FILE_REGEX: Lazy<Regexp> =
-    Lazy::new(|| Regexp::new(r"^\s*istanbul\s+ignore\s+(file)(\W|$)").unwrap());
 
 pub struct CoverageVisitor<'a> {
     comments: Option<&'a PluginCommentsProxy>,
@@ -62,6 +56,7 @@ pub struct CoverageVisitor<'a> {
     instrument_options: InstrumentOptions,
     before: Vec<Stmt>,
     nodes: Vec<Node>,
+    should_ignore_child: bool,
 }
 
 impl<'a> CoverageVisitor<'a> {
@@ -96,6 +91,7 @@ impl<'a> CoverageVisitor<'a> {
             instrument_options,
             before: vec![],
             nodes: vec![],
+            should_ignore_child: false,
         }
     }
 
@@ -517,8 +513,8 @@ impl VisitMut for CoverageVisitor<'_> {
         let range = get_range_from_span(self.source_map, &cond_expr.span);
         let branch = self.cov.new_branch(BranchType::CondExpr, &range, false);
 
-        let c_hint = self.lookup_hint_comments(get_expr_span(&*cond_expr.cons));
-        let a_hint = self.lookup_hint_comments(get_expr_span(&*cond_expr.alt));
+        let c_hint = lookup_hint_comments(&self.comments, get_expr_span(&*cond_expr.cons));
+        let a_hint = lookup_hint_comments(&self.comments, get_expr_span(&*cond_expr.alt));
 
         if c_hint.as_deref() != Some("next") {
             // TODO: do we need this?
@@ -565,37 +561,5 @@ impl VisitMut for CoverageVisitor<'_> {
         setter_prop.visit_mut_children_with(self);
         self.nodes.pop();
         //ObjectMethodKind::Set,
-    }
-}
-
-fn should_ignore_file(comments: &Option<&PluginCommentsProxy>, program: &Program) -> bool {
-    if let Some(comments) = *comments {
-        let pos = match program {
-            Program::Module(module) => module.span,
-            Program::Script(script) => script.span,
-        };
-
-        let validate_comments = |comments: &Option<Vec<Comment>>| {
-            if let Some(comments) = comments {
-                comments
-                    .iter()
-                    .any(|comment| COMMENT_FILE_REGEX.is_match(&comment.text))
-            } else {
-                false
-            }
-        };
-
-        let x = vec![0];
-
-        vec![
-            comments.get_leading(pos.lo),
-            comments.get_leading(pos.hi),
-            comments.get_trailing(pos.lo),
-            comments.get_trailing(pos.hi),
-        ]
-        .iter()
-        .any(|c| validate_comments(c))
-    } else {
-        false
     }
 }

@@ -13,6 +13,7 @@ use crate::{
     insert_counter_helper, insert_logical_expr_helper,
     instrument::create_increase_expression_expr,
     utils::{
+        hint_comments::lookup_hint_comments,
         lookup_range::{get_expr_span, get_range_from_span},
         node::Node,
     },
@@ -85,7 +86,7 @@ impl VisitMut for LogicalExprVisitor<'_> {
                 self.nodes.push(Node::LogicalExpr);
 
                 // escape if there's ignore comments
-                let hint = self.lookup_hint_comments(Some(bin_expr.span).as_ref());
+                let hint = lookup_hint_comments(&self.comments, Some(bin_expr.span).as_ref());
                 if hint.as_deref() == Some("next") {
                     bin_expr.visit_mut_children_with(self);
                     self.nodes.pop();
