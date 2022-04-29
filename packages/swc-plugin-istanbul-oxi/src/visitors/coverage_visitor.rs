@@ -60,9 +60,7 @@ impl<'a> CoverageVisitor<'a> {
         return false;
     }
 
-    fn on_enter(&mut self) {}
-
-    fn on_exit(&mut self, module_items: &mut Vec<ModuleItem>) {
+    fn on_exit_transform(&mut self, module_items: &mut Vec<ModuleItem>) {
         self.cov.freeze();
 
         //TODO: option: global coverage variable scope. (optional, default `this`)
@@ -217,7 +215,7 @@ impl VisitMut for CoverageVisitor<'_> {
         *items = new_items;
         self.nodes.pop();
 
-        self.on_exit(items);
+        self.on_exit_transform(items);
     }
 
     // ArrowFunctionExpression: entries(convertArrowExpression, coverFunction),
@@ -329,10 +327,10 @@ impl VisitMut for CoverageVisitor<'_> {
     // VariableDeclaration: entries(), // ignore processing only
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_var_decl(&mut self, var_decl: &mut VarDecl) {
-        self.nodes.push(Node::VarDecl);
+        let ignore_current = self.on_enter(var_decl);
         //noop?
         var_decl.visit_mut_children_with(self);
-        self.nodes.pop();
+        self.on_exit(ignore_current);
     }
 
     /*
@@ -461,7 +459,13 @@ impl VisitMut for CoverageVisitor<'_> {
     // ConditionalExpression: entries(coverTernary),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_cond_expr(&mut self, cond_expr: &mut CondExpr) {
-        self.nodes.push(Node::CondExpr);
+        let ignore = self.on_enter(cond_expr);
+
+        if ignore {
+            cond_expr.visit_mut_children_with(self);
+            self.on_exit(ignore);
+            return;
+        }
 
         let range = get_range_from_span(self.source_map, &cond_expr.span);
         let branch = self.cov.new_branch(BranchType::CondExpr, &range, false);
@@ -486,7 +490,7 @@ impl VisitMut for CoverageVisitor<'_> {
         }
 
         cond_expr.visit_mut_children_with(self);
-        self.nodes.pop();
+        self.on_exit(ignore);
     }
 
     // ObjectMethod: entries(coverFunction),
