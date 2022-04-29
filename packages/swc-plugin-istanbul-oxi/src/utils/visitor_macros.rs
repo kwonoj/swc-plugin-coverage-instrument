@@ -1,5 +1,13 @@
 use swc_plugin::ast::*;
 
+#[derive(Debug)]
+pub struct UnknownReserved;
+impl Default for UnknownReserved {
+    fn default() -> UnknownReserved {
+        UnknownReserved
+    }
+}
+
 /// Expand given struct to contain necessary common filed for the coverage visitor
 /// with common utility functions.
 ///
@@ -17,6 +25,7 @@ macro_rules! create_coverage_visitor {
             source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
             comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
             cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
+            // an identifier to the function name for coverage collection.
             var_name_ident: swc_plugin::ast::Ident,
             instrument_options: crate::InstrumentOptions,
             before: Vec<swc_plugin::ast::Stmt>,

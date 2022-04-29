@@ -1,3 +1,8 @@
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
+
 use istanbul_oxi_instrument::FileCoverage;
 use swc_plugin::{
     ast::*,
@@ -11,6 +16,15 @@ use super::{
     create_assignment_stmt::create_assignment_stmt,
     create_coverage_data_object::create_coverage_data_object,
 };
+
+/// Create a unique ident for the injected coverage counter fn.
+pub fn create_coverage_fn_ident(value: &str) -> Ident {
+    let mut s = DefaultHasher::new();
+    value.hash(&mut s);
+    let var_name_hash = format!("cov_{}", s.finish());
+
+    Ident::new(var_name_hash.into(), DUMMY_SP)
+}
 
 /// Creates a function declaration for actual coverage collection.
 pub fn create_coverage_fn_decl(
