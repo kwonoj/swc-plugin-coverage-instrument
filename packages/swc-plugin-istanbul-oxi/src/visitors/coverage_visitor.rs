@@ -18,7 +18,7 @@ use tracing::instrument;
 
 use crate::{
     constants::idents::*,
-    insert_counter_helper, insert_logical_expr_helper,
+    create_coverage_visitor, insert_counter_helper, insert_logical_expr_helper,
     instrument::create_increase_expression_expr,
     template::{
         create_coverage_fn_decl::create_coverage_fn_decl,
@@ -28,72 +28,25 @@ use crate::{
         hint_comments::{lookup_hint_comments, should_ignore_file},
         lookup_range::{get_expr_span, get_range_from_span, get_stmt_span},
         node::Node,
+        visitor_macros::UnknownReserved,
     },
     visit_mut_coverage, visit_mut_prepend_statement_counter, InstrumentOptions,
 };
 
 use super::stmt_like_visitor::StmtVisitor;
 
-pub struct UnknownReserved;
-impl Default for UnknownReserved {
-    fn default() -> UnknownReserved {
-        UnknownReserved
-    }
-}
-
-pub struct CoverageVisitor<'a> {
-    comments: Option<&'a PluginCommentsProxy>,
-    source_map: &'a PluginSourceMapProxy,
-    // an identifier to the function name for coverage collection.
-    var_name_ident: Ident,
+create_coverage_visitor!(CoverageVisitor {
     file_path: String,
     attrs: UnknownReserved,
     next_ignore: Option<UnknownReserved>,
-    cov: SourceCoverage,
     ignore_class_method: UnknownReserved,
     types: UnknownReserved,
     source_mapping_url: Option<UnknownReserved>,
-    instrument_options: InstrumentOptions,
-    before: Vec<Stmt>,
-    nodes: Vec<Node>,
-    should_ignore_child: bool,
-}
+});
 
 impl<'a> CoverageVisitor<'a> {
     insert_logical_expr_helper!();
     insert_counter_helper!();
-
-    pub fn new(
-        comments: Option<&'a PluginCommentsProxy>,
-        source_map: &'a PluginSourceMapProxy,
-        var_name: &str,
-        attrs: UnknownReserved,
-        next_ignore: Option<UnknownReserved>,
-        cov: SourceCoverage,
-        ignore_class_method: UnknownReserved,
-        types: UnknownReserved,
-        source_mapping_url: Option<UnknownReserved>,
-        instrument_options: InstrumentOptions,
-    ) -> CoverageVisitor<'a> {
-        let var_name_hash = CoverageVisitor::get_var_name_hash(var_name);
-
-        CoverageVisitor {
-            comments,
-            source_map,
-            var_name_ident: Ident::new(var_name_hash.into(), DUMMY_SP),
-            file_path: var_name.to_string(),
-            attrs,
-            next_ignore,
-            cov,
-            ignore_class_method,
-            types,
-            source_mapping_url,
-            instrument_options,
-            before: vec![],
-            nodes: vec![],
-            should_ignore_child: false,
-        }
-    }
 
     fn get_var_name_hash(name: &str) -> String {
         let mut s = DefaultHasher::new();

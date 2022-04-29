@@ -1,3 +1,5 @@
+use std::collections::hash_map::DefaultHasher;
+
 use istanbul_oxi_instrument::SourceCoverage;
 use serde_json::Value;
 use swc_plugin::{ast::*, plugin_transform, TransformPluginProgramMetadata};
@@ -10,6 +12,7 @@ mod utils;
 mod options;
 mod visitors;
 pub use options::InstrumentOptions;
+use template::create_coverage_fn_decl::create_coverage_fn_ident;
 use tracing_subscriber::fmt::format::FmtSpan;
 pub use visitors::coverage_visitor;
 
@@ -50,17 +53,23 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
         .event_format(tracing_subscriber::fmt::format().pretty())
         .init();
 
+    let coverage_fn_ident = create_coverage_fn_ident(filename);
+    let mut cov = SourceCoverage::new(filename.to_string(), instrument_options.report_logic);
+    let nodes = vec![];
     let visitor = CoverageVisitor::new(
-        metadata.comments.as_ref(),
         &metadata.source_map,
-        filename,
+        metadata.comments.as_ref(),
+        &mut cov,
+        &coverage_fn_ident,
+        &instrument_options,
+        &nodes,
+        false,
+        filename.to_string(),
         Default::default(),
         None,
-        SourceCoverage::new(filename.to_string(), instrument_options.report_logic),
         Default::default(),
         Default::default(),
         None,
-        instrument_options,
     );
 
     program.fold_with(&mut as_folder(visitor))
