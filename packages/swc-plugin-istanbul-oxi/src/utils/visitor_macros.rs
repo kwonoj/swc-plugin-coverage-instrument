@@ -24,7 +24,7 @@ macro_rules! create_coverage_visitor {
             instrument_options: crate::InstrumentOptions,
             pub before: Vec<swc_plugin::ast::Stmt>,
             nodes: Vec<Node>,
-            should_ignore: bool,
+            should_ignore: Option<crate::utils::hint_comments::IgnoreScope>,
             $(pub $field: $t,)*
         }
 
@@ -35,7 +35,7 @@ macro_rules! create_coverage_visitor {
                 cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
                 instrument_options: &'a crate::InstrumentOptions,
                 nodes: &'a Vec<Node>,
-                should_ignore: bool,
+                should_ignore: Option<crate::utils::hint_comments::IgnoreScope>,
                 $($field: $t,)*
             ) -> $name<'a> {
                 $name {
@@ -51,7 +51,7 @@ macro_rules! create_coverage_visitor {
                 }
             }
 
-            fn on_exit(&mut self, old: bool) {
+            fn on_exit(&mut self, old: Option<crate::utils::hint_comments::IgnoreScope>) {
                 self.should_ignore = old;
                 self.nodes.pop();
             }
@@ -67,7 +67,7 @@ macro_rules! create_coverage_visitor {
         /// TODO: Can a macro like `on_visit_mut_expr` expands on_enter / exit automatically?
         /// `on_visit_mut_expr!(|expr| {self.xxx})` doesn't seem to work.
         trait CoverageInstrumentationMutVisitEnter<N> {
-            fn on_enter(&mut self, n: &mut N) -> (bool, bool);
+            fn on_enter(&mut self, n: &mut N) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>);
         }
 
 
@@ -76,15 +76,16 @@ macro_rules! create_coverage_visitor {
             ($N: tt) => {
                 impl CoverageInstrumentationMutVisitEnter<$N> for $name<'_> {
                     #[inline]
-                    fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> (bool, bool) {
+                    fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
                         self.nodes.push(Node::$N);
 
                         let old = self.should_ignore;
-                        let ret = if old {
-                            old
-                        } else {
-                            self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, Some(&n.span));
-                            self.should_ignore
+                        let ret = match old {
+                            Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
+                            _ => {
+                                self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, Some(&n.span));
+                                self.should_ignore
+                            }
                         };
 
                         (old, ret)
@@ -94,16 +95,17 @@ macro_rules! create_coverage_visitor {
         }
 
         impl CoverageInstrumentationMutVisitEnter<Expr> for $name<'_> {
-            fn on_enter(&mut self, n: &mut Expr) -> (bool, bool) {
+            fn on_enter(&mut self, n: &mut Expr) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
                 self.nodes.push(Node::Expr);
 
                 let old = self.should_ignore;
-                let ret = if old {
-                    old
-                } else {
-                    let span = get_expr_span(n);
-                    self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
-                    self.should_ignore
+                let ret = match old {
+                    Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
+                    _ => {
+                        let span = get_expr_span(n);
+                        self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
+                        self.should_ignore
+                    }
                 };
 
                 (old, ret)
@@ -488,8 +490,13 @@ macro_rules! visit_mut_coverage {
         fn visit_mut_expr_stmt(&mut self, expr_stmt: &mut ExprStmt) {
             let (old, ignore_current) = self.on_enter(expr_stmt);
 
-            if !ignore_current && !self.is_injected_counter_expr(&*expr_stmt.expr) {
-                self.mark_prepend_stmt_counter(&expr_stmt.span);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    if !self.is_injected_counter_expr(&*expr_stmt.expr) {
+                        self.mark_prepend_stmt_counter(&expr_stmt.span);
+                    }
+                }
             }
             expr_stmt.visit_mut_children_with(self);
 
@@ -519,10 +526,13 @@ macro_rules! visit_mut_coverage {
         fn visit_mut_var_declarator(&mut self, declarator: &mut VarDeclarator) {
             let (old, ignore_current) = self.on_enter(declarator);
 
-            if !ignore_current {
-                if let Some(init) = &mut declarator.init {
-                    let init = &mut **init;
-                    self.cover_statement(init);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    if let Some(init) = &mut declarator.init {
+                        let init = &mut **init;
+                        self.cover_statement(init);
+                    }
                 }
             }
 
@@ -567,9 +577,12 @@ macro_rules! visit_mut_coverage {
         fn visit_mut_labeled_stmt(&mut self, labeled_stmt: &mut LabeledStmt) {
             let (old, ignore_current) = self.on_enter(labeled_stmt);
 
-            if !ignore_current {
-                // cover_statement's is_stmt prepend logic for individual child stmt visitor
-                self.mark_prepend_stmt_counter(&labeled_stmt.span);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    // cover_statement's is_stmt prepend logic for individual child stmt visitor
+                    self.mark_prepend_stmt_counter(&labeled_stmt.span);
+                }
             }
 
             labeled_stmt.visit_mut_children_with(self);
@@ -582,9 +595,12 @@ macro_rules! visit_mut_coverage {
         fn visit_mut_continue_stmt(&mut self, continue_stmt: &mut ContinueStmt) {
             let (old, ignore_current) = self.on_enter(continue_stmt);
 
-            if !ignore_current {
-                // cover_statement's is_stmt prepend logic for individual child stmt visitor
-                self.mark_prepend_stmt_counter(&continue_stmt.span);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    // cover_statement's is_stmt prepend logic for individual child stmt visitor
+                    self.mark_prepend_stmt_counter(&continue_stmt.span);
+                }
             }
 
             continue_stmt.visit_mut_children_with(self);
@@ -596,117 +612,117 @@ macro_rules! visit_mut_coverage {
         fn visit_mut_if_stmt(&mut self, if_stmt: &mut IfStmt) {
             let (old, ignore_current) = self.on_enter(if_stmt);
 
-            if ignore_current {
-                if_stmt.visit_mut_children_with(self);
-                self.on_exit(old);
-                return;
-            }
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {
+                    if_stmt.visit_mut_children_with(self);
+                    self.on_exit(old);
+                }
+                _ => {
+                    // cover_statement's is_stmt prepend logic for individual child stmt visitor
+                    self.mark_prepend_stmt_counter(&if_stmt.span);
 
-            // cover_statement's is_stmt prepend logic for individual child stmt visitor
-            self.mark_prepend_stmt_counter(&if_stmt.span);
+                    let hint = crate::utils::hint_comments::lookup_hint_comments(
+                        &self.comments,
+                        Some(if_stmt.span).as_ref(),
+                    );
+                    let (ignore_if, ignore_else) = if let Some(hint) = hint {
+                        (&hint == "if", &hint == "else")
+                    } else {
+                        (false, false)
+                    };
 
-            let hint = crate::utils::hint_comments::lookup_hint_comments(
-                &self.comments,
-                Some(if_stmt.span).as_ref(),
-            );
-            let (ignore_if, ignore_else) = if let Some(hint) = hint {
-                (&hint == "if", &hint == "else")
-            } else {
-                (false, false)
-            };
+                    let range = get_range_from_span(self.source_map, &if_stmt.span);
+                    let branch =
+                        self.cov
+                            .new_branch(istanbul_oxi_instrument::BranchType::If, &range, false);
 
-            let range = get_range_from_span(self.source_map, &if_stmt.span);
-            let branch =
-                self.cov
-                    .new_branch(istanbul_oxi_instrument::BranchType::If, &range, false);
+                    let mut wrap_with_counter = |stmt: &mut Box<Stmt>| {
+                        let mut stmt_body = *stmt.take();
 
-            let mut wrap_with_counter = |stmt: &mut Box<Stmt>| {
-                let mut stmt_body = *stmt.take();
-
-                // create a branch path counter
-                let idx = self.cov.add_branch_path(branch, &range);
-                let expr = create_increase_expression_expr(
-                    &IDENT_B,
-                    branch,
-                    &self.cov_fn_ident,
-                    Some(idx),
-                );
-
-                let expr = Stmt::Expr(ExprStmt {
-                    span: DUMMY_SP,
-                    expr: Box::new(expr),
-                });
-
-                let body = if let Stmt::Block(mut block_stmt) = stmt_body {
-                    // if cons / alt is already blockstmt, insert stmt counter for each
-                    self.insert_stmts_counter(&mut block_stmt.stmts);
-
-                    let mut new_stmts = vec![expr];
-                    new_stmts.extend(block_stmt.stmts.drain(..));
-
-                    block_stmt.stmts = new_stmts;
-                    block_stmt
-                } else {
-                    let span = crate::utils::lookup_range::get_stmt_span(&stmt_body);
-                    let should_ignore =
-                        crate::utils::hint_comments::should_ignore(&self.comments, span);
-
-                    let mut stmts = vec![expr];
-                    if !should_ignore {
-                        let mut visitor = StmtVisitor::new(
-                            self.source_map,
-                            self.comments,
-                            &mut self.cov,
-                            &self.instrument_options,
-                            &self.nodes,
-                            should_ignore,
+                        // create a branch path counter
+                        let idx = self.cov.add_branch_path(branch, &range);
+                        let expr = create_increase_expression_expr(
+                            &IDENT_B,
+                            branch,
+                            &self.cov_fn_ident,
+                            Some(idx),
                         );
-                        stmt_body.visit_mut_with(&mut visitor);
-                        stmts.extend(visitor.before.drain(..));
+
+                        let expr = Stmt::Expr(ExprStmt {
+                            span: DUMMY_SP,
+                            expr: Box::new(expr),
+                        });
+
+                        let body = if let Stmt::Block(mut block_stmt) = stmt_body {
+                            // if cons / alt is already blockstmt, insert stmt counter for each
+                            self.insert_stmts_counter(&mut block_stmt.stmts);
+
+                            let mut new_stmts = vec![expr];
+                            new_stmts.extend(block_stmt.stmts.drain(..));
+
+                            block_stmt.stmts = new_stmts;
+                            block_stmt
+                        } else {
+                            let span = crate::utils::lookup_range::get_stmt_span(&stmt_body);
+                            let should_ignore =
+                                crate::utils::hint_comments::should_ignore(&self.comments, span);
+
+                            let mut stmts = vec![expr];
+                            // TODO: should_ignore ?
+                            let mut visitor = StmtVisitor::new(
+                                self.source_map,
+                                self.comments,
+                                &mut self.cov,
+                                &self.instrument_options,
+                                &self.nodes,
+                                should_ignore,
+                            );
+                            stmt_body.visit_mut_with(&mut visitor);
+                            stmts.extend(visitor.before.drain(..));
+
+                            stmts.push(stmt_body);
+
+                            BlockStmt {
+                                span: DUMMY_SP,
+                                stmts,
+                            }
+                        };
+
+                        *stmt = Box::new(Stmt::Block(body));
+                    };
+
+                    if ignore_if {
+                        //setAttr(if_stmt.cons, 'skip-all', true);
+                    } else {
+                        wrap_with_counter(&mut if_stmt.cons);
                     }
 
-                    stmts.push(stmt_body);
+                    if ignore_else {
+                        //setAttr(if_stmt.alt, 'skip-all', true);
+                    } else {
+                        if let Some(alt) = &mut if_stmt.alt {
+                            wrap_with_counter(alt);
+                        } else {
+                            // alt can be none (`if some {}` without else).
+                            // Inject empty blockstmt then insert branch counters
+                            let mut alt = Box::new(Stmt::Block(BlockStmt::dummy()));
+                            wrap_with_counter(&mut alt);
+                            if_stmt.alt = Some(alt);
 
-                    BlockStmt {
-                        span: DUMMY_SP,
-                        stmts,
+                            // We visit individual cons / alt depends on its state, need to run visitor for the `test` as well
+                            if_stmt.test.visit_mut_with(self);
+
+                            self.on_exit(old);
+                            return;
+                        }
                     }
-                };
-
-                *stmt = Box::new(Stmt::Block(body));
-            };
-
-            if ignore_if {
-                //setAttr(if_stmt.cons, 'skip-all', true);
-            } else {
-                wrap_with_counter(&mut if_stmt.cons);
-            }
-
-            if ignore_else {
-                //setAttr(if_stmt.alt, 'skip-all', true);
-            } else {
-                if let Some(alt) = &mut if_stmt.alt {
-                    wrap_with_counter(alt);
-                } else {
-                    // alt can be none (`if some {}` without else).
-                    // Inject empty blockstmt then insert branch counters
-                    let mut alt = Box::new(Stmt::Block(BlockStmt::dummy()));
-                    wrap_with_counter(&mut alt);
-                    if_stmt.alt = Some(alt);
 
                     // We visit individual cons / alt depends on its state, need to run visitor for the `test` as well
                     if_stmt.test.visit_mut_with(self);
 
                     self.on_exit(old);
-                    return;
                 }
-            }
-
-            // We visit individual cons / alt depends on its state, need to run visitor for the `test` as well
-            if_stmt.test.visit_mut_with(self);
-
-            self.on_exit(old);
-            return;
+            };
         }
 
         // LogicalExpression: entries(coverLogicalExpression)

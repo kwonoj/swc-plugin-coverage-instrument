@@ -37,30 +37,38 @@ impl VisitMut for LogicalExprVisitor<'_> {
     fn visit_mut_bin_expr(&mut self, bin_expr: &mut BinExpr) {
         let (old, ignore_current) = self.on_enter(bin_expr);
 
-        if ignore_current {
-            bin_expr.visit_mut_children_with(self);
-            self.on_exit(old);
-            return;
-        }
-
-        match &bin_expr.op {
-            BinaryOp::LogicalOr | BinaryOp::LogicalAnd | BinaryOp::NullishCoalescing => {
-                self.nodes.push(Node::LogicalExpr);
-
-                // escape if there's ignore comments
-                let hint = lookup_hint_comments(&self.comments, Some(bin_expr.span).as_ref());
-                if hint.as_deref() == Some("next") {
-                    bin_expr.visit_mut_children_with(self);
-                } else {
-                    // Iterate over each expr, wrap it with branch counter.
-                    // This does not create new branch counter - should use parent's index instead.
-                    self.wrap_bin_expr_with_branch_counter(self.branch, &mut *bin_expr.left);
-                    self.wrap_bin_expr_with_branch_counter(self.branch, &mut *bin_expr.right);
-                }
+        match ignore_current {
+            Some(crate::utils::hint_comments::IgnoreScope::Next) => {
+                bin_expr.visit_mut_children_with(self);
             }
             _ => {
-                self.nodes.push(Node::BinExpr);
-                bin_expr.visit_mut_children_with(self);
+                match &bin_expr.op {
+                    BinaryOp::LogicalOr | BinaryOp::LogicalAnd | BinaryOp::NullishCoalescing => {
+                        self.nodes.push(Node::LogicalExpr);
+
+                        // escape if there's ignore comments
+                        let hint =
+                            lookup_hint_comments(&self.comments, Some(bin_expr.span).as_ref());
+                        if hint.as_deref() == Some("next") {
+                            bin_expr.visit_mut_children_with(self);
+                        } else {
+                            // Iterate over each expr, wrap it with branch counter.
+                            // This does not create new branch counter - should use parent's index instead.
+                            self.wrap_bin_expr_with_branch_counter(
+                                self.branch,
+                                &mut *bin_expr.left,
+                            );
+                            self.wrap_bin_expr_with_branch_counter(
+                                self.branch,
+                                &mut *bin_expr.right,
+                            );
+                        }
+                    }
+                    _ => {
+                        self.nodes.push(Node::BinExpr);
+                        bin_expr.visit_mut_children_with(self);
+                    }
+                }
             }
         }
 
