@@ -8,7 +8,7 @@ use tracing::instrument;
 
 use crate::{
     constants::idents::*,
-    create_coverage_visitor, enter_visitor, insert_counter_helper, insert_logical_expr_helper,
+    create_coverage_visitor, insert_counter_helper, insert_logical_expr_helper,
     instrument::create_increase_expression_expr,
     utils::{
         hint_comments::lookup_hint_comments,
@@ -28,21 +28,20 @@ impl<'a> LogicalExprVisitor<'a> {
 
 impl VisitMut for LogicalExprVisitor<'_> {
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
-        enter_visitor!(self, expr, || {
-            expr.visit_mut_children_with(self);
-        });
+        let old = self.on_enter(expr);
+        expr.visit_mut_children_with(self);
+        self.on_exit(old);
     }
 
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_bin_expr(&mut self, bin_expr: &mut BinExpr) {
-        if self.should_ignore_child {
+        let ignore = self.on_enter(bin_expr);
+
+        if ignore {
             bin_expr.visit_mut_children_with(self);
+            self.on_exit(ignore);
             return;
         }
-
-        let old = self.should_ignore_child;
-        self.should_ignore_child =
-            crate::utils::hint_comments::should_ignore_child(&self.comments, Some(&bin_expr.span));
 
         match &bin_expr.op {
             BinaryOp::LogicalOr | BinaryOp::LogicalAnd | BinaryOp::NullishCoalescing => {
@@ -52,14 +51,12 @@ impl VisitMut for LogicalExprVisitor<'_> {
                 let hint = lookup_hint_comments(&self.comments, Some(bin_expr.span).as_ref());
                 if hint.as_deref() == Some("next") {
                     bin_expr.visit_mut_children_with(self);
-                    self.nodes.pop();
-                    return;
+                } else {
+                    // Iterate over each expr, wrap it with branch counter.
+                    // This does not create new branch counter - should use parent's index instead.
+                    self.wrap_bin_expr_with_branch_counter(self.branch, &mut *bin_expr.left);
+                    self.wrap_bin_expr_with_branch_counter(self.branch, &mut *bin_expr.right);
                 }
-
-                // Iterate over each expr, wrap it with branch counter.
-                // This does not create new branch counter - should use parent's index instead.
-                self.wrap_bin_expr_with_branch_counter(self.branch, &mut *bin_expr.left);
-                self.wrap_bin_expr_with_branch_counter(self.branch, &mut *bin_expr.right);
             }
             _ => {
                 self.nodes.push(Node::BinExpr);
@@ -67,7 +64,6 @@ impl VisitMut for LogicalExprVisitor<'_> {
             }
         }
 
-        self.should_ignore_child = old;
-        self.nodes.pop();
+        self.on_exit(ignore);
     }
 }

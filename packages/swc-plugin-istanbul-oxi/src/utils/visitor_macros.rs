@@ -1,5 +1,3 @@
-use swc_plugin::ast::*;
-
 #[derive(Debug)]
 pub struct UnknownReserved;
 impl Default for UnknownReserved {
@@ -26,7 +24,7 @@ macro_rules! create_coverage_visitor {
             instrument_options: crate::InstrumentOptions,
             pub before: Vec<swc_plugin::ast::Stmt>,
             nodes: Vec<Node>,
-            should_ignore_child: bool,
+            should_ignore: bool,
             $(pub $field: $t,)*
         }
 
@@ -37,7 +35,7 @@ macro_rules! create_coverage_visitor {
                 cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
                 instrument_options: &'a crate::InstrumentOptions,
                 nodes: &'a Vec<Node>,
-                should_ignore_child: bool,
+                should_ignore: bool,
                 $($field: $t,)*
             ) -> $name<'a> {
                 $name {
@@ -48,29 +46,75 @@ macro_rules! create_coverage_visitor {
                     instrument_options: instrument_options.clone(),
                     before: vec![],
                     nodes: nodes.clone(),
-                    should_ignore_child,
+                    should_ignore,
                     $($field,)*
                 }
             }
+
+            fn on_exit(&mut self, old: bool) {
+                self.should_ignore = old;
+                self.nodes.pop();
+            }
         }
+
+        #[allow(unused)]
+        use swc_plugin::ast::*;
+        #[allow(unused)]
+        use crate::utils::node::*;
+
+        /// A trait expands to the ast types we want to use to determine if we need to ignore
+        /// certain section of the code for the instrumentation.
+        /// TODO: Can a macro like `on_visit_mut_expr` expands on_enter / exit automatically?
+        /// `on_visit_mut_expr!(|expr| {self.xxx})` doesn't seem to work.
+        trait CoverageInstrumentationMutVisitEnter<N> {
+            fn on_enter(&mut self, n: &mut N) -> bool;
+        }
+
+
+        // Macro generates trait impl for the type can access span directly.
+        macro_rules! on_enter_span {
+            ($N: tt) => {
+                impl CoverageInstrumentationMutVisitEnter<$N> for $name<'_> {
+                    #[inline]
+                    fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> bool {
+                        self.nodes.push(Node::$N);
+
+                        let old = self.should_ignore;
+                        let ret = if old {
+                            old
+                        } else {
+                            self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, Some(&n.span));
+                            self.should_ignore
+                        };
+
+                        println!("on_enter, {:#?}", self.should_ignore);
+
+                        ret
+                    }
+                 }
+            }
+        }
+
+        impl CoverageInstrumentationMutVisitEnter<Expr> for $name<'_> {
+            fn on_enter(&mut self, n: &mut Expr) -> bool {
+                self.nodes.push(Node::Expr);
+
+                let old = self.should_ignore;
+                if old {
+                    old
+                } else {
+                    let span = get_expr_span(n);
+                    self.should_ignore  = crate::utils::hint_comments::should_ignore(&self.comments, span);
+                    self.should_ignore
+                }
+            }
+         }
+
+         on_enter_span!(BinExpr);
+         on_enter_span!(VarDeclarator);
+         on_enter_span!(VarDecl);
+         on_enter_span!(CondExpr);
     }
-}
-
-#[macro_export]
-macro_rules! enter_visitor {
-    ($self:ident, $name:ident, $v: expr) => {
-        if $self.should_ignore_child {
-            $name.visit_mut_children_with($self);
-            return;
-        }
-
-        let old = $self.should_ignore_child;
-        $self.should_ignore_child =
-            crate::utils::hint_comments::should_ignore_child(&$self.comments, get_expr_span($name));
-
-        $v();
-        $self.should_ignore_child = old;
-    };
 }
 
 /// A macro wraps a visitor fn create a statement AST to increase statement counter.
@@ -454,15 +498,18 @@ macro_rules! visit_mut_coverage {
         // VariableDeclarator: entries(coverVariableDeclarator),
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_var_declarator(&mut self, declarator: &mut VarDeclarator) {
-            self.nodes.push(Node::VarDeclarator);
+            let ignore_current = self.on_enter(declarator);
 
-            if let Some(init) = &mut declarator.init {
-                let init = &mut **init;
-                self.cover_statement(init);
+            if !ignore_current {
+                if let Some(init) = &mut declarator.init {
+                    let init = &mut **init;
+                    self.cover_statement(init);
+                }
             }
 
             declarator.visit_mut_children_with(self);
-            self.nodes.pop();
+
+            self.on_exit(ignore_current);
         }
 
         // ForStatement: entries(blockProp('body'), coverStatement),

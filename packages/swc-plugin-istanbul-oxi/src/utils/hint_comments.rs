@@ -89,7 +89,7 @@ pub fn lookup_hint_comments(
     return None;
 }
 
-pub fn should_ignore_child(comments: &Option<&PluginCommentsProxy>, span: Option<&Span>) -> bool {
+pub fn should_ignore(comments: &Option<&PluginCommentsProxy>, span: Option<&Span>) -> bool {
     let comments = lookup_hint_comments(comments, span);
     comments.is_some()
 }
