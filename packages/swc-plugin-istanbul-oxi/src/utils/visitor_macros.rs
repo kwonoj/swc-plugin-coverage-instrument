@@ -115,6 +115,9 @@ macro_rules! create_coverage_visitor {
          on_enter_span!(VarDecl);
          on_enter_span!(CondExpr);
          on_enter_span!(ExprStmt);
+         on_enter_span!(IfStmt);
+         on_enter_span!(LabeledStmt);
+         on_enter_span!(ContinueStmt);
     }
 }
 
@@ -559,21 +562,45 @@ macro_rules! visit_mut_coverage {
             self.nodes.pop();
         }
 
-        // FunctionExpression: entries(coverStatement),
+        //LabeledStatement: entries(coverStatement),
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_labeled_stmt(&mut self, labeled_stmt: &mut LabeledStmt) {
-            self.nodes.push(Node::LabeledStmt);
+            let (old, ignore_current) = self.on_enter(labeled_stmt);
 
-            // cover_statement's is_stmt prepend logic for individual child stmt visitor
-            self.mark_prepend_stmt_counter(&labeled_stmt.span);
+            if !ignore_current {
+                // cover_statement's is_stmt prepend logic for individual child stmt visitor
+                self.mark_prepend_stmt_counter(&labeled_stmt.span);
+            }
+
             labeled_stmt.visit_mut_children_with(self);
-            self.nodes.pop();
+
+            self.on_exit(old);
+        }
+
+        // ContinueStatement: entries(coverStatement),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_continue_stmt(&mut self, continue_stmt: &mut ContinueStmt) {
+            let (old, ignore_current) = self.on_enter(continue_stmt);
+
+            if !ignore_current {
+                // cover_statement's is_stmt prepend logic for individual child stmt visitor
+                self.mark_prepend_stmt_counter(&continue_stmt.span);
+            }
+
+            continue_stmt.visit_mut_children_with(self);
+            self.on_exit(old);
         }
 
         // IfStatement: entries(blockProp('consequent'), blockProp('alternate'), coverStatement, coverIfBranches)
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_if_stmt(&mut self, if_stmt: &mut IfStmt) {
-            self.nodes.push(Node::IfStmt);
+            let (old, ignore_current) = self.on_enter(if_stmt);
+
+            if ignore_current {
+                if_stmt.visit_mut_children_with(self);
+                self.on_exit(old);
+                return;
+            }
 
             // cover_statement's is_stmt prepend logic for individual child stmt visitor
             self.mark_prepend_stmt_counter(&if_stmt.span);
@@ -594,7 +621,7 @@ macro_rules! visit_mut_coverage {
                     .new_branch(istanbul_oxi_instrument::BranchType::If, &range, false);
 
             let mut wrap_with_counter = |stmt: &mut Box<Stmt>| {
-                let stmt_body = *stmt.take();
+                let mut stmt_body = *stmt.take();
 
                 // create a branch path counter
                 let idx = self.cov.add_branch_path(branch, &range);
@@ -620,22 +647,25 @@ macro_rules! visit_mut_coverage {
                     block_stmt.stmts = new_stmts;
                     block_stmt
                 } else {
-                    // if cons / alt is not a blockstmt, manually create stmt increase counter
-                    // for the stmt then wrap it with blockstmt
                     let span = crate::utils::lookup_range::get_stmt_span(&stmt_body);
-                    let stmts = if let Some(span) = span {
-                        let increment_expr = self.create_stmt_increase_counter_expr(span, None);
-                        vec![
-                            expr,
-                            Stmt::Expr(ExprStmt {
-                                span: DUMMY_SP,
-                                expr: Box::new(increment_expr),
-                            }),
-                            stmt_body,
-                        ]
-                    } else {
-                        vec![expr, stmt_body]
-                    };
+                    let should_ignore =
+                        crate::utils::hint_comments::should_ignore(&self.comments, span);
+
+                    let mut stmts = vec![expr];
+                    if !should_ignore {
+                        let mut visitor = StmtVisitor::new(
+                            self.source_map,
+                            self.comments,
+                            &mut self.cov,
+                            &self.instrument_options,
+                            &self.nodes,
+                            should_ignore,
+                        );
+                        stmt_body.visit_mut_with(&mut visitor);
+                        stmts.extend(visitor.before.drain(..));
+                    }
+
+                    stmts.push(stmt_body);
 
                     BlockStmt {
                         span: DUMMY_SP,
@@ -666,7 +696,8 @@ macro_rules! visit_mut_coverage {
 
                     // We visit individual cons / alt depends on its state, need to run visitor for the `test` as well
                     if_stmt.test.visit_mut_with(self);
-                    self.nodes.pop();
+
+                    self.on_exit(old);
                     return;
                 }
             }
@@ -674,7 +705,8 @@ macro_rules! visit_mut_coverage {
             // We visit individual cons / alt depends on its state, need to run visitor for the `test` as well
             if_stmt.test.visit_mut_with(self);
 
-            self.nodes.pop();
+            self.on_exit(old);
+            return;
         }
 
         // LogicalExpression: entries(coverLogicalExpression)
