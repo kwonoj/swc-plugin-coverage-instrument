@@ -19,6 +19,7 @@ use tracing::instrument;
 use crate::{
     constants::idents::*,
     create_coverage_visitor, insert_counter_helper, insert_logical_expr_helper,
+    insert_stmt_counter,
     instrument::create_increase_expression_expr,
     template::{
         create_coverage_fn_decl::create_coverage_fn_decl,
@@ -47,6 +48,7 @@ create_coverage_visitor!(CoverageVisitor {
 impl<'a> CoverageVisitor<'a> {
     insert_logical_expr_helper!();
     insert_counter_helper!();
+    insert_stmt_counter!();
 
     fn get_var_name_hash(name: &str) -> String {
         let mut s = DefaultHasher::new();
@@ -113,48 +115,6 @@ impl<'a> CoverageVisitor<'a> {
         // prepend template to the top of the code
         module_items.insert(0, coverage_template);
         module_items.insert(1, m);
-    }
-
-    /// Visit individual statements with stmt_visitor and update.
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
-        let mut new_stmts = vec![];
-
-        for mut stmt in stmts.drain(..) {
-            if !self.is_injected_counter_stmt(&stmt) {
-                let span = crate::utils::lookup_range::get_stmt_span(&stmt);
-                let mut visitor = StmtVisitor::new(
-                    self.source_map,
-                    self.comments,
-                    &mut self.cov,
-                    &self.instrument_options,
-                    &self.nodes,
-                    false,
-                );
-                stmt.visit_mut_children_with(&mut visitor);
-
-                if visitor.before.len() == 0 {
-                    //println!("{:#?}", stmt);
-                }
-
-                new_stmts.extend(visitor.before.drain(..));
-
-                /*
-                if let Some(span) = span {
-                    // if given stmt is not a plain stmt and omit to insert stmt counter,
-                    // visit it to collect inner stmt counters
-
-
-                } else {
-                    //stmt.visit_mut_children_with(self);
-                    //new_stmts.extend(visitor.before.drain(..));
-                } */
-            }
-
-            new_stmts.push(stmt);
-        }
-
-        *stmts = new_stmts;
     }
 }
 
@@ -324,15 +284,6 @@ impl VisitMut for CoverageVisitor<'_> {
         self.nodes.pop();
     }
 
-    // VariableDeclaration: entries(), // ignore processing only
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_var_decl(&mut self, var_decl: &mut VarDecl) {
-        let ignore_current = self.on_enter(var_decl);
-        //noop?
-        var_decl.visit_mut_children_with(self);
-        self.on_exit(ignore_current);
-    }
-
     /*
     // ForStatement: entries(blockProp('body'), coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
@@ -459,11 +410,11 @@ impl VisitMut for CoverageVisitor<'_> {
     // ConditionalExpression: entries(coverTernary),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_cond_expr(&mut self, cond_expr: &mut CondExpr) {
-        let ignore = self.on_enter(cond_expr);
+        let (old, ignore_current) = self.on_enter(cond_expr);
 
-        if ignore {
+        if ignore_current {
             cond_expr.visit_mut_children_with(self);
-            self.on_exit(ignore);
+            self.on_exit(old);
             return;
         }
 
@@ -490,7 +441,7 @@ impl VisitMut for CoverageVisitor<'_> {
         }
 
         cond_expr.visit_mut_children_with(self);
-        self.on_exit(ignore);
+        self.on_exit(old);
     }
 
     // ObjectMethod: entries(coverFunction),

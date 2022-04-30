@@ -28,18 +28,18 @@ impl<'a> LogicalExprVisitor<'a> {
 
 impl VisitMut for LogicalExprVisitor<'_> {
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
-        let old = self.on_enter(expr);
+        let (old, _ignore_current) = self.on_enter(expr);
         expr.visit_mut_children_with(self);
         self.on_exit(old);
     }
 
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_bin_expr(&mut self, bin_expr: &mut BinExpr) {
-        let ignore = self.on_enter(bin_expr);
+        let (old, ignore_current) = self.on_enter(bin_expr);
 
-        if ignore {
+        if ignore_current {
             bin_expr.visit_mut_children_with(self);
-            self.on_exit(ignore);
+            self.on_exit(old);
             return;
         }
 
@@ -64,6 +64,6 @@ impl VisitMut for LogicalExprVisitor<'_> {
             }
         }
 
-        self.on_exit(ignore);
+        self.on_exit(old);
     }
 }
