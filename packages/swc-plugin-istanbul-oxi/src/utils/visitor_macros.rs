@@ -67,7 +67,7 @@ macro_rules! create_coverage_visitor {
         /// TODO: Can a macro like `on_visit_mut_expr` expands on_enter / exit automatically?
         /// `on_visit_mut_expr!(|expr| {self.xxx})` doesn't seem to work.
         trait CoverageInstrumentationMutVisitEnter<N> {
-            fn on_enter(&mut self, n: &mut N) -> bool;
+            fn on_enter(&mut self, n: &mut N) -> (bool, bool);
         }
 
 
@@ -76,7 +76,7 @@ macro_rules! create_coverage_visitor {
             ($N: tt) => {
                 impl CoverageInstrumentationMutVisitEnter<$N> for $name<'_> {
                     #[inline]
-                    fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> bool {
+                    fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> (bool, bool) {
                         self.nodes.push(Node::$N);
 
                         let old = self.should_ignore;
@@ -87,26 +87,26 @@ macro_rules! create_coverage_visitor {
                             self.should_ignore
                         };
 
-                        println!("on_enter, {:#?}", self.should_ignore);
-
-                        ret
+                        (old, ret)
                     }
                  }
             }
         }
 
         impl CoverageInstrumentationMutVisitEnter<Expr> for $name<'_> {
-            fn on_enter(&mut self, n: &mut Expr) -> bool {
+            fn on_enter(&mut self, n: &mut Expr) -> (bool, bool) {
                 self.nodes.push(Node::Expr);
 
                 let old = self.should_ignore;
-                if old {
+                let ret = if old {
                     old
                 } else {
                     let span = get_expr_span(n);
                     self.should_ignore  = crate::utils::hint_comments::should_ignore(&self.comments, span);
                     self.should_ignore
-                }
+                };
+
+                (old, ret)
             }
          }
 
@@ -114,6 +114,7 @@ macro_rules! create_coverage_visitor {
          on_enter_span!(VarDeclarator);
          on_enter_span!(VarDecl);
          on_enter_span!(CondExpr);
+         on_enter_span!(ExprStmt);
     }
 }
 
@@ -153,7 +154,7 @@ macro_rules! insert_logical_expr_helper {
                     &mut self.cov,
                     &self.instrument_options,
                     &self.nodes,
-                    false, // TODO
+                    self.should_ignore,
                     branch,
                 );
 
@@ -419,6 +420,206 @@ macro_rules! insert_counter_helper {
 #[macro_export]
 macro_rules! visit_mut_coverage {
     () => {
+        noop_visit_mut_type!();
+
+        /*
+        fn visit_mut_array_lit(&mut self, n: &mut ArrayLit) {}
+        fn visit_mut_array_pat(&mut self, n: &mut ArrayPat) {}
+        fn visit_mut_arrow_expr(&mut self, n: &mut ArrowExpr) {}
+        fn visit_mut_assign_expr(&mut self, n: &mut AssignExpr) {}
+        fn visit_mut_assign_op(&mut self, n: &mut AssignOp) {}
+        fn visit_mut_assign_pat(&mut self, n: &mut AssignPat) {}
+        fn visit_mut_assign_pat_prop(&mut self, n: &mut AssignPatProp) {}
+        fn visit_mut_assign_prop(&mut self, n: &mut AssignProp) {}
+        fn visit_mut_await_expr(&mut self, n: &mut AwaitExpr) {}
+        fn visit_mut_big_int(&mut self, n: &mut BigInt) {}
+        fn visit_mut_binary_op(&mut self, n: &mut BinaryOp) {}
+        fn visit_mut_binding_ident(&mut self, n: &mut BindingIdent) {}
+        fn visit_mut_block_stmt_or_expr(&mut self, n: &mut BlockStmtOrExpr) {}
+        fn visit_mut_bool(&mut self, n: &mut Bool) {}
+        fn visit_mut_break_stmt(&mut self, n: &mut BreakStmt) {}
+        fn visit_mut_call_expr(&mut self, n: &mut CallExpr) {}
+        fn visit_mut_callee(&mut self, n: &mut Callee) {}
+        fn visit_mut_catch_clause(&mut self, n: &mut CatchClause) {}
+        fn visit_mut_class(&mut self, n: &mut Class) {}
+        fn visit_mut_class_decl(&mut self, n: &mut ClassDecl) {}
+        fn visit_mut_class_expr(&mut self, n: &mut ClassExpr) {}
+        fn visit_mut_class_member(&mut self, n: &mut ClassMember) {}
+        fn visit_mut_class_members(&mut self, n: &mut Vec<ClassMember>) {}
+        fn visit_mut_class_method(&mut self, n: &mut ClassMethod) {}
+        fn visit_mut_class_prop(&mut self, n: &mut ClassProp) {}
+        fn visit_mut_computed_prop_name(&mut self, n: &mut ComputedPropName) {}
+        fn visit_mut_cond_expr(&mut self, n: &mut CondExpr) {}
+        fn visit_mut_constructor(&mut self, n: &mut Constructor) {}
+        fn visit_mut_continue_stmt(&mut self, n: &mut ContinueStmt) {}
+        fn visit_mut_debugger_stmt(&mut self, n: &mut DebuggerStmt) {}
+        fn visit_mut_decl(&mut self, n: &mut Decl) {}
+        fn visit_mut_decorator(&mut self, n: &mut Decorator) {}
+        fn visit_mut_decorators(&mut self, n: &mut Vec<Decorator>) {}
+        fn visit_mut_default_decl(&mut self, n: &mut DefaultDecl) {}
+        fn visit_mut_do_while_stmt(&mut self, n: &mut DoWhileStmt) {}
+        fn visit_mut_empty_stmt(&mut self, n: &mut EmptyStmt) {}
+        fn visit_mut_export_all(&mut self, n: &mut ExportAll) {}
+        fn visit_mut_export_decl(&mut self, n: &mut ExportDecl) {}
+        fn visit_mut_export_default_decl(&mut self, n: &mut ExportDefaultDecl) {}
+        fn visit_mut_export_default_expr(&mut self, n: &mut ExportDefaultExpr) {}
+        fn visit_mut_export_default_specifier(&mut self, n: &mut ExportDefaultSpecifier) {}
+        fn visit_mut_export_named_specifier(&mut self, n: &mut ExportNamedSpecifier) {}
+        fn visit_mut_export_namespace_specifier(&mut self, n: &mut ExportNamespaceSpecifier) {}
+        fn visit_mut_export_specifier(&mut self, n: &mut ExportSpecifier) {}
+        fn visit_mut_export_specifiers(&mut self, n: &mut Vec<ExportSpecifier>) {}
+        fn visit_mut_expr(&mut self, n: &mut Expr) {}
+        fn visit_mut_expr_or_spread(&mut self, n: &mut ExprOrSpread) {}
+        fn visit_mut_expr_or_spreads(&mut self, n: &mut Vec<ExprOrSpread>) {}
+        fn visit_mut_exprs(&mut self, n: &mut Vec<Box<Expr>>) {}
+        fn visit_mut_f_64(&mut self, n: &mut f64) {}
+        fn visit_mut_fn_expr(&mut self, n: &mut FnExpr) {}
+        fn visit_mut_for_in_stmt(&mut self, n: &mut ForInStmt) {}
+        fn visit_mut_for_of_stmt(&mut self, n: &mut ForOfStmt) {}
+        fn visit_mut_function(&mut self, n: &mut Function) {}
+        fn visit_mut_getter_prop(&mut self, n: &mut GetterProp) {}
+        fn visit_mut_ident(&mut self, n: &mut Ident) {}
+        fn visit_mut_import(&mut self, n: &mut Import) {}
+        fn visit_mut_import_decl(&mut self, n: &mut ImportDecl) {}
+        fn visit_mut_import_default_specifier(&mut self, n: &mut ImportDefaultSpecifier) {}
+        fn visit_mut_import_named_specifier(&mut self, n: &mut ImportNamedSpecifier) {}
+        fn visit_mut_import_specifier(&mut self, n: &mut ImportSpecifier) {}
+        fn visit_mut_import_specifiers(&mut self, n: &mut Vec<ImportSpecifier>) {}
+        fn visit_mut_import_star_as_specifier(&mut self, n: &mut ImportStarAsSpecifier) {}
+        fn visit_mut_invalid(&mut self, n: &mut Invalid) {}
+        fn visit_mut_js_word(&mut self, n: &mut JsWord) {}
+        fn visit_mut_jsx_attr(&mut self, n: &mut JSXAttr) {}
+        fn visit_mut_jsx_attr_name(&mut self, n: &mut JSXAttrName) {}
+        fn visit_mut_jsx_attr_or_spread(&mut self, n: &mut JSXAttrOrSpread) {}
+        fn visit_mut_jsx_attr_or_spreads(&mut self, n: &mut Vec<JSXAttrOrSpread>) {}
+        fn visit_mut_jsx_attr_value(&mut self, n: &mut JSXAttrValue) {}
+        fn visit_mut_jsx_closing_element(&mut self, n: &mut JSXClosingElement) {}
+        fn visit_mut_jsx_closing_fragment(&mut self, n: &mut JSXClosingFragment) {}
+        fn visit_mut_jsx_element(&mut self, n: &mut JSXElement) {}
+        fn visit_mut_jsx_element_child(&mut self, n: &mut JSXElementChild) {}
+        fn visit_mut_jsx_element_children(&mut self, n: &mut Vec<JSXElementChild>) {}
+        fn visit_mut_jsx_element_name(&mut self, n: &mut JSXElementName) {}
+        fn visit_mut_jsx_empty_expr(&mut self, n: &mut JSXEmptyExpr) {}
+        fn visit_mut_jsx_expr(&mut self, n: &mut JSXExpr) {}
+        fn visit_mut_jsx_expr_container(&mut self, n: &mut JSXExprContainer) {}
+        fn visit_mut_jsx_fragment(&mut self, n: &mut JSXFragment) {}
+        fn visit_mut_jsx_member_expr(&mut self, n: &mut JSXMemberExpr) {}
+        fn visit_mut_jsx_namespaced_name(&mut self, n: &mut JSXNamespacedName) {}
+        fn visit_mut_jsx_object(&mut self, n: &mut JSXObject) {}
+        fn visit_mut_jsx_opening_element(&mut self, n: &mut JSXOpeningElement) {}
+        fn visit_mut_jsx_opening_fragment(&mut self, n: &mut JSXOpeningFragment) {}
+        fn visit_mut_jsx_spread_child(&mut self, n: &mut JSXSpreadChild) {}
+        fn visit_mut_jsx_text(&mut self, n: &mut JSXText) {}
+        fn visit_mut_key_value_pat_prop(&mut self, n: &mut KeyValuePatProp) {}
+        fn visit_mut_key_value_prop(&mut self, n: &mut KeyValueProp) {}
+        fn visit_mut_lit(&mut self, n: &mut Lit) {}
+        fn visit_mut_member_expr(&mut self, n: &mut MemberExpr) {}
+        fn visit_mut_member_prop(&mut self, n: &mut MemberProp) {}
+        fn visit_mut_meta_prop_expr(&mut self, n: &mut MetaPropExpr) {}
+        fn visit_mut_meta_prop_kind(&mut self, n: &mut MetaPropKind) {}
+        fn visit_mut_method_kind(&mut self, n: &mut MethodKind) {}
+        fn visit_mut_method_prop(&mut self, n: &mut MethodProp) {}
+        fn visit_mut_module(&mut self, n: &mut Module) {}
+        fn visit_mut_module_decl(&mut self, n: &mut ModuleDecl) {}
+        fn visit_mut_module_export_name(&mut self, n: &mut ModuleExportName) {}
+        fn visit_mut_module_item(&mut self, n: &mut ModuleItem) {}
+        fn visit_mut_module_items(&mut self, n: &mut Vec<ModuleItem>) {}
+        fn visit_mut_named_export(&mut self, n: &mut NamedExport) {}
+        fn visit_mut_new_expr(&mut self, n: &mut NewExpr) {}
+        fn visit_mut_null(&mut self, n: &mut Null) {}
+        fn visit_mut_number(&mut self, n: &mut Number) {}
+        fn visit_mut_object_lit(&mut self, n: &mut ObjectLit) {}
+        fn visit_mut_object_pat(&mut self, n: &mut ObjectPat) {}
+        fn visit_mut_object_pat_prop(&mut self, n: &mut ObjectPatProp) {}
+        fn visit_mut_object_pat_props(&mut self, n: &mut Vec<ObjectPatProp>) {}
+        fn visit_mut_opt_accessibility(&mut self, n: &mut Option<Accessibility>) {}
+        fn visit_mut_opt_block_stmt(&mut self, n: &mut Option<BlockStmt>) {}
+        fn visit_mut_opt_call(&mut self, n: &mut OptCall) {}
+        fn visit_mut_opt_catch_clause(&mut self, n: &mut Option<CatchClause>) {}
+        fn visit_mut_opt_chain_base(&mut self, n: &mut OptChainBase) {}
+        fn visit_mut_opt_chain_expr(&mut self, n: &mut OptChainExpr) {}
+        fn visit_mut_opt_expr(&mut self, n: &mut Option<Box<Expr>>) {}
+        fn visit_mut_opt_expr_or_spread(&mut self, n: &mut Option<ExprOrSpread>) {}
+        fn visit_mut_opt_expr_or_spreads(&mut self, n: &mut Option<Vec<ExprOrSpread>>) {}
+        fn visit_mut_opt_ident(&mut self, n: &mut Option<Ident>) {}
+        fn visit_mut_opt_js_word(&mut self, n: &mut Option<JsWord>) {}
+        fn visit_mut_opt_jsx_attr_value(&mut self, n: &mut Option<JSXAttrValue>) {}
+        fn visit_mut_opt_jsx_closing_element(&mut self, n: &mut Option<JSXClosingElement>) {}
+        fn visit_mut_opt_module_export_name(&mut self, n: &mut Option<ModuleExportName>) {}
+        fn visit_mut_opt_object_lit(&mut self, n: &mut Option<ObjectLit>) {}
+        fn visit_mut_opt_pat(&mut self, n: &mut Option<Pat>) {}
+        fn visit_mut_opt_span(&mut self, n: &mut Option<Span>) {}
+        fn visit_mut_opt_stmt(&mut self, n: &mut Option<Box<Stmt>>) {}
+        fn visit_mut_opt_str(&mut self, n: &mut Option<Str>) {}
+        fn visit_mut_opt_true_plus_minus(&mut self, n: &mut Option<TruePlusMinus>) {}
+        fn visit_mut_opt_ts_entity_name(&mut self, n: &mut Option<TsEntityName>) {}
+        fn visit_mut_opt_ts_namespace_body(&mut self, n: &mut Option<TsNamespaceBody>) {}
+        fn visit_mut_opt_ts_type(&mut self, n: &mut Option<Box<TsType>>) {}
+        fn visit_mut_opt_ts_type_ann(&mut self, n: &mut Option<TsTypeAnn>) {}
+        fn visit_mut_opt_ts_type_param_decl(&mut self, n: &mut Option<TsTypeParamDecl>) {}
+        fn visit_mut_opt_ts_type_param_instantiation(
+            &mut self,
+            n: &mut Option<TsTypeParamInstantiation>,
+        ) {
+        }
+        fn visit_mut_opt_var_decl_or_expr(&mut self, n: &mut Option<VarDeclOrExpr>) {}
+        fn visit_mut_opt_vec_expr_or_spreads(&mut self, n: &mut Vec<Option<ExprOrSpread>>) {}
+        fn visit_mut_opt_vec_pats(&mut self, n: &mut Vec<Option<Pat>>) {}
+        fn visit_mut_param(&mut self, n: &mut Param) {}
+        fn visit_mut_param_or_ts_param_prop(&mut self, n: &mut ParamOrTsParamProp) {}
+        fn visit_mut_param_or_ts_param_props(&mut self, n: &mut Vec<ParamOrTsParamProp>) {}
+        fn visit_mut_params(&mut self, n: &mut Vec<Param>) {}
+        fn visit_mut_paren_expr(&mut self, n: &mut ParenExpr) {}
+        fn visit_mut_pat(&mut self, n: &mut Pat) {}
+        fn visit_mut_pat_or_expr(&mut self, n: &mut PatOrExpr) {}
+        fn visit_mut_pats(&mut self, n: &mut Vec<Pat>) {}
+        fn visit_mut_private_method(&mut self, n: &mut PrivateMethod) {}
+        fn visit_mut_private_name(&mut self, n: &mut PrivateName) {}
+        fn visit_mut_private_prop(&mut self, n: &mut PrivateProp) {}
+        fn visit_mut_program(&mut self, n: &mut Program) {}
+        fn visit_mut_prop(&mut self, n: &mut Prop) {}
+        fn visit_mut_prop_name(&mut self, n: &mut PropName) {}
+        fn visit_mut_prop_or_spread(&mut self, n: &mut PropOrSpread) {}
+        fn visit_mut_prop_or_spreads(&mut self, n: &mut Vec<PropOrSpread>) {}
+        fn visit_mut_regex(&mut self, n: &mut Regex) {}
+        fn visit_mut_rest_pat(&mut self, n: &mut RestPat) {}
+        fn visit_mut_script(&mut self, n: &mut Script) {}
+        fn visit_mut_seq_expr(&mut self, n: &mut SeqExpr) {}
+        fn visit_mut_setter_prop(&mut self, n: &mut SetterProp) {}
+        fn visit_mut_span(&mut self, n: &mut Span) {}
+        fn visit_mut_spread_element(&mut self, n: &mut SpreadElement) {}
+        fn visit_mut_static_block(&mut self, n: &mut StaticBlock) {}
+        fn visit_mut_stmt(&mut self, n: &mut Stmt) {}
+        fn visit_mut_stmts(&mut self, n: &mut Vec<Stmt>) {}
+        fn visit_mut_str(&mut self, n: &mut Str) {}
+        fn visit_mut_super(&mut self, n: &mut Super) {}
+        fn visit_mut_super_prop(&mut self, n: &mut SuperProp) {}
+        fn visit_mut_super_prop_expr(&mut self, n: &mut SuperPropExpr) {}
+        fn visit_mut_switch_case(&mut self, n: &mut SwitchCase) {}
+        fn visit_mut_switch_cases(&mut self, n: &mut Vec<SwitchCase>) {}
+        fn visit_mut_switch_stmt(&mut self, n: &mut SwitchStmt) {}
+        fn visit_mut_tagged_tpl(&mut self, n: &mut TaggedTpl) {}
+        fn visit_mut_this_expr(&mut self, n: &mut ThisExpr) {}
+        fn visit_mut_throw_stmt(&mut self, n: &mut ThrowStmt) {}
+        fn visit_mut_tpl(&mut self, n: &mut Tpl) {}
+        fn visit_mut_tpl_element(&mut self, n: &mut TplElement) {}
+        fn visit_mut_tpl_elements(&mut self, n: &mut Vec<TplElement>) {}
+        fn visit_mut_true_plus_minus(&mut self, n: &mut TruePlusMinus) {}
+        fn visit_mut_try_stmt(&mut self, n: &mut TryStmt) {}
+        fn visit_mut_unary_expr(&mut self, n: &mut UnaryExpr) {}
+        fn visit_mut_unary_op(&mut self, n: &mut UnaryOp) {}
+        fn visit_mut_update_expr(&mut self, n: &mut UpdateExpr) {}
+        fn visit_mut_update_op(&mut self, n: &mut UpdateOp) {}
+        fn visit_mut_var_decl(&mut self, n: &mut VarDecl) {}
+        fn visit_mut_var_decl_kind(&mut self, n: &mut VarDeclKind) {}
+        fn visit_mut_var_decl_or_expr(&mut self, n: &mut VarDeclOrExpr) {}
+        fn visit_mut_var_decl_or_pat(&mut self, n: &mut VarDeclOrPat) {}
+        fn visit_mut_var_declarators(&mut self, n: &mut Vec<VarDeclarator>) {}
+        fn visit_mut_while_stmt(&mut self, n: &mut WhileStmt) {}
+        fn visit_mut_with_stmt(&mut self, n: &mut WithStmt) {}
+        fn visit_mut_yield_expr(&mut self, n: &mut YieldExpr) {}
+         */
+
         // BlockStatement: entries(), // ignore processing only
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_block_stmt(&mut self, block_stmt: &mut BlockStmt) {
@@ -476,14 +677,14 @@ macro_rules! visit_mut_coverage {
         // ExpressionStatement: entries(coverStatement),
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_expr_stmt(&mut self, expr_stmt: &mut ExprStmt) {
-            self.nodes.push(Node::ExprStmt);
+            let (old, ignore_current) = self.on_enter(expr_stmt);
 
-            if !self.is_injected_counter_expr(&*expr_stmt.expr) {
+            if !ignore_current && !self.is_injected_counter_expr(&*expr_stmt.expr) {
                 self.mark_prepend_stmt_counter(&expr_stmt.span);
             }
             expr_stmt.visit_mut_children_with(self);
 
-            self.nodes.pop();
+            self.on_exit(old);
         }
 
         // ReturnStatement: entries(coverStatement),
@@ -495,10 +696,19 @@ macro_rules! visit_mut_coverage {
             self.nodes.pop();
         }
 
+        // VariableDeclaration: entries(), // ignore processing only
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_var_decl(&mut self, var_decl: &mut VarDecl) {
+            let (old, ignore_current) = self.on_enter(var_decl);
+            //noop?
+            var_decl.visit_mut_children_with(self);
+            self.on_exit(old);
+        }
+
         // VariableDeclarator: entries(coverVariableDeclarator),
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_var_declarator(&mut self, declarator: &mut VarDeclarator) {
-            let ignore_current = self.on_enter(declarator);
+            let (old, ignore_current) = self.on_enter(declarator);
 
             if !ignore_current {
                 if let Some(init) = &mut declarator.init {
@@ -509,7 +719,7 @@ macro_rules! visit_mut_coverage {
 
             declarator.visit_mut_children_with(self);
 
-            self.on_exit(ignore_current);
+            self.on_exit(old);
         }
 
         // ForStatement: entries(blockProp('body'), coverStatement),
@@ -698,6 +908,58 @@ macro_rules! visit_mut_coverage {
                 }
             }
             self.nodes.pop();
+        }
+    };
+}
+
+/// Create a fn inserts stmt counter for each stmt
+#[macro_export]
+macro_rules! insert_stmt_counter {
+    () => {
+        /// Visit individual statements with stmt_visitor and update.
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
+            let mut new_stmts = vec![];
+
+            for mut stmt in stmts.drain(..) {
+                if !self.is_injected_counter_stmt(&stmt) {
+                    let span = crate::utils::lookup_range::get_stmt_span(&stmt);
+
+                    let should_ignore =
+                        crate::utils::hint_comments::should_ignore(&self.comments, span);
+
+                    let mut visitor = StmtVisitor::new(
+                        self.source_map,
+                        self.comments,
+                        &mut self.cov,
+                        &self.instrument_options,
+                        &self.nodes,
+                        should_ignore,
+                    );
+                    stmt.visit_mut_children_with(&mut visitor);
+
+                    if visitor.before.len() == 0 {
+                        //println!("{:#?}", stmt);
+                    }
+
+                    new_stmts.extend(visitor.before.drain(..));
+
+                    /*
+                    if let Some(span) = span {
+                        // if given stmt is not a plain stmt and omit to insert stmt counter,
+                        // visit it to collect inner stmt counters
+
+
+                    } else {
+                        //stmt.visit_mut_children_with(self);
+                        //new_stmts.extend(visitor.before.drain(..));
+                    } */
+                }
+
+                new_stmts.push(stmt);
+            }
+
+            *stmts = new_stmts;
         }
     };
 }
