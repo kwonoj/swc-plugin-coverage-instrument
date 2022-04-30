@@ -34,8 +34,6 @@ pub fn should_ignore_file(comments: &Option<&PluginCommentsProxy>, program: &Pro
             }
         };
 
-        let x = vec![0];
-
         vec![
             comments.get_leading(pos.lo),
             comments.get_leading(pos.hi),

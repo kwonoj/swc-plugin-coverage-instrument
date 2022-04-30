@@ -252,14 +252,6 @@ impl VisitMut for CoverageVisitor<'_> {
         self.nodes.pop();
     }
 
-    // BreakStatement: entries(coverStatement),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_continue_stmt(&mut self, continue_stmt: &mut ContinueStmt) {
-        self.nodes.push(Node::ContinueStmt);
-        continue_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
     // DebuggerStatement: entries(coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_debugger_stmt(&mut self, debugger_stmt: &mut DebuggerStmt) {
