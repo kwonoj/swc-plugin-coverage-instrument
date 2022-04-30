@@ -404,33 +404,32 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_cond_expr(&mut self, cond_expr: &mut CondExpr) {
         let (old, ignore_current) = self.on_enter(cond_expr);
 
-        if ignore_current {
-            cond_expr.visit_mut_children_with(self);
-            self.on_exit(old);
-            return;
-        }
+        match ignore_current {
+            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            _ => {
+                let range = get_range_from_span(self.source_map, &cond_expr.span);
+                let branch = self.cov.new_branch(BranchType::CondExpr, &range, false);
 
-        let range = get_range_from_span(self.source_map, &cond_expr.span);
-        let branch = self.cov.new_branch(BranchType::CondExpr, &range, false);
+                let c_hint = lookup_hint_comments(&self.comments, get_expr_span(&*cond_expr.cons));
+                let a_hint = lookup_hint_comments(&self.comments, get_expr_span(&*cond_expr.alt));
 
-        let c_hint = lookup_hint_comments(&self.comments, get_expr_span(&*cond_expr.cons));
-        let a_hint = lookup_hint_comments(&self.comments, get_expr_span(&*cond_expr.alt));
+                if c_hint.as_deref() != Some("next") {
+                    // TODO: do we need this?
+                    // cond_expr.cons.visit_mut_children_with(self);
 
-        if c_hint.as_deref() != Some("next") {
-            // TODO: do we need this?
-            // cond_expr.cons.visit_mut_children_with(self);
+                    // replace consequence to the paren for increase expr + expr itself
+                    self.replace_expr_with_branch_counter(&mut *cond_expr.cons, branch);
+                }
 
-            // replace consequence to the paren for increase expr + expr itself
-            self.replace_expr_with_branch_counter(&mut *cond_expr.cons, branch);
-        }
+                if a_hint.as_deref() != Some("next") {
+                    // TODO: do we need this?
+                    // cond_expr.alt.visit_mut_children_with(self);
 
-        if a_hint.as_deref() != Some("next") {
-            // TODO: do we need this?
-            // cond_expr.alt.visit_mut_children_with(self);
-
-            // replace consequence to the paren for increase expr + expr itself
-            self.replace_expr_with_branch_counter(&mut *cond_expr.alt, branch);
-        }
+                    // replace consequence to the paren for increase expr + expr itself
+                    self.replace_expr_with_branch_counter(&mut *cond_expr.alt, branch);
+                }
+            }
+        };
 
         cond_expr.visit_mut_children_with(self);
         self.on_exit(old);

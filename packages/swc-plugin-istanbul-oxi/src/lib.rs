@@ -61,7 +61,7 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
         &mut cov,
         &instrument_options,
         &nodes,
-        false,
+        None,
         filename.to_string(),
         Default::default(),
         None,

@@ -87,7 +87,27 @@ pub fn lookup_hint_comments(
     return None;
 }
 
-pub fn should_ignore(comments: &Option<&PluginCommentsProxy>, span: Option<&Span>) -> bool {
+#[derive(Debug, Copy, Clone)]
+pub enum IgnoreScope {
+    Next,
+    If,
+    Else,
+}
+
+pub fn should_ignore(
+    comments: &Option<&PluginCommentsProxy>,
+    span: Option<&Span>,
+) -> Option<IgnoreScope> {
     let comments = lookup_hint_comments(comments, span);
-    comments.is_some()
+
+    if let Some(comments) = comments.as_deref() {
+        match comments {
+            "next" => Some(IgnoreScope::Next),
+            "if" => Some(IgnoreScope::If),
+            "else" => Some(IgnoreScope::Else),
+            _ => None,
+        }
+    } else {
+        None
+    }
 }
