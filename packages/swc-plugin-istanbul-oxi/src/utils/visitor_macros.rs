@@ -67,7 +67,7 @@ macro_rules! create_coverage_visitor {
         /// TODO: Can a macro like `on_visit_mut_expr` expands on_enter / exit automatically?
         /// `on_visit_mut_expr!(|expr| {self.xxx})` doesn't seem to work.
         trait CoverageInstrumentationMutVisitEnter<N> {
-            fn on_enter(&mut self, n: &mut N) -> bool;
+            fn on_enter(&mut self, n: &mut N) -> (bool, bool);
         }
 
 
@@ -76,7 +76,7 @@ macro_rules! create_coverage_visitor {
             ($N: tt) => {
                 impl CoverageInstrumentationMutVisitEnter<$N> for $name<'_> {
                     #[inline]
-                    fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> bool {
+                    fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> (bool, bool) {
                         self.nodes.push(Node::$N);
 
                         let old = self.should_ignore;
@@ -87,26 +87,26 @@ macro_rules! create_coverage_visitor {
                             self.should_ignore
                         };
 
-                        println!("on_enter, {:#?}", self.should_ignore);
-
-                        ret
+                        (old, ret)
                     }
                  }
             }
         }
 
         impl CoverageInstrumentationMutVisitEnter<Expr> for $name<'_> {
-            fn on_enter(&mut self, n: &mut Expr) -> bool {
+            fn on_enter(&mut self, n: &mut Expr) -> (bool, bool) {
                 self.nodes.push(Node::Expr);
 
                 let old = self.should_ignore;
-                if old {
+                let ret = if old {
                     old
                 } else {
                     let span = get_expr_span(n);
-                    self.should_ignore  = crate::utils::hint_comments::should_ignore(&self.comments, span);
+                    self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
                     self.should_ignore
-                }
+                };
+
+                (old, ret)
             }
          }
 
@@ -114,6 +114,7 @@ macro_rules! create_coverage_visitor {
          on_enter_span!(VarDeclarator);
          on_enter_span!(VarDecl);
          on_enter_span!(CondExpr);
+         on_enter_span!(ExprStmt);
     }
 }
 
@@ -147,13 +148,17 @@ macro_rules! insert_logical_expr_helper {
 
             // If current expr have inner logical expr, traverse until reaches to the leaf
             if has_inner_logical_expr.0 {
+                let span = get_expr_span(expr);
+                let should_ignore =
+                    crate::utils::hint_comments::should_ignore(&self.comments, span);
+
                 let mut visitor = crate::visitors::logical_expr_visitor::LogicalExprVisitor::new(
                     self.source_map,
                     self.comments,
                     &mut self.cov,
                     &self.instrument_options,
                     &self.nodes,
-                    false, // TODO
+                    should_ignore,
                     branch,
                 );
 
@@ -419,6 +424,8 @@ macro_rules! insert_counter_helper {
 #[macro_export]
 macro_rules! visit_mut_coverage {
     () => {
+        noop_visit_mut_type!();
+
         // BlockStatement: entries(), // ignore processing only
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_block_stmt(&mut self, block_stmt: &mut BlockStmt) {
@@ -476,14 +483,14 @@ macro_rules! visit_mut_coverage {
         // ExpressionStatement: entries(coverStatement),
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_expr_stmt(&mut self, expr_stmt: &mut ExprStmt) {
-            self.nodes.push(Node::ExprStmt);
+            let (old, ignore_current) = self.on_enter(expr_stmt);
 
-            if !self.is_injected_counter_expr(&*expr_stmt.expr) {
+            if !ignore_current && !self.is_injected_counter_expr(&*expr_stmt.expr) {
                 self.mark_prepend_stmt_counter(&expr_stmt.span);
             }
             expr_stmt.visit_mut_children_with(self);
 
-            self.nodes.pop();
+            self.on_exit(old);
         }
 
         // ReturnStatement: entries(coverStatement),
@@ -495,10 +502,19 @@ macro_rules! visit_mut_coverage {
             self.nodes.pop();
         }
 
+        // VariableDeclaration: entries(), // ignore processing only
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_var_decl(&mut self, var_decl: &mut VarDecl) {
+            let (old, ignore_current) = self.on_enter(var_decl);
+            //noop?
+            var_decl.visit_mut_children_with(self);
+            self.on_exit(old);
+        }
+
         // VariableDeclarator: entries(coverVariableDeclarator),
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_var_declarator(&mut self, declarator: &mut VarDeclarator) {
-            let ignore_current = self.on_enter(declarator);
+            let (old, ignore_current) = self.on_enter(declarator);
 
             if !ignore_current {
                 if let Some(init) = &mut declarator.init {
@@ -509,7 +525,7 @@ macro_rules! visit_mut_coverage {
 
             declarator.visit_mut_children_with(self);
 
-            self.on_exit(ignore_current);
+            self.on_exit(old);
         }
 
         // ForStatement: entries(blockProp('body'), coverStatement),
@@ -698,6 +714,58 @@ macro_rules! visit_mut_coverage {
                 }
             }
             self.nodes.pop();
+        }
+    };
+}
+
+/// Create a fn inserts stmt counter for each stmt
+#[macro_export]
+macro_rules! insert_stmt_counter {
+    () => {
+        /// Visit individual statements with stmt_visitor and update.
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
+            let mut new_stmts = vec![];
+
+            for mut stmt in stmts.drain(..) {
+                if !self.is_injected_counter_stmt(&stmt) {
+                    let span = crate::utils::lookup_range::get_stmt_span(&stmt);
+
+                    let should_ignore =
+                        crate::utils::hint_comments::should_ignore(&self.comments, span);
+
+                    let mut visitor = StmtVisitor::new(
+                        self.source_map,
+                        self.comments,
+                        &mut self.cov,
+                        &self.instrument_options,
+                        &self.nodes,
+                        should_ignore,
+                    );
+                    stmt.visit_mut_children_with(&mut visitor);
+
+                    if visitor.before.len() == 0 {
+                        //println!("{:#?}", stmt);
+                    }
+
+                    new_stmts.extend(visitor.before.drain(..));
+
+                    /*
+                    if let Some(span) = span {
+                        // if given stmt is not a plain stmt and omit to insert stmt counter,
+                        // visit it to collect inner stmt counters
+
+
+                    } else {
+                        //stmt.visit_mut_children_with(self);
+                        //new_stmts.extend(visitor.before.drain(..));
+                    } */
+                }
+
+                new_stmts.push(stmt);
+            }
+
+            *stmts = new_stmts;
         }
     };
 }
