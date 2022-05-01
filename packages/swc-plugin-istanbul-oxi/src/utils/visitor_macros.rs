@@ -650,7 +650,6 @@ macro_rules! visit_mut_coverage {
 
             match ignore_current {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {
-                    if_stmt.visit_mut_children_with(self);
                     self.on_exit(old);
                 }
                 _ => {
