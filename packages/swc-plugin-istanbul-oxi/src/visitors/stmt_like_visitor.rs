@@ -8,8 +8,7 @@ use tracing::instrument;
 
 use crate::{
     constants::idents::*,
-    create_coverage_visitor, insert_counter_helper, insert_logical_expr_helper,
-    insert_stmt_counter,
+    create_instrumentation_visitor, insert_counter_helper, insert_stmt_counter,
     instrument::create_increase_expression_expr,
     utils::{
         lookup_range::{get_expr_span, get_range_from_span},
@@ -18,10 +17,9 @@ use crate::{
     visit_mut_coverage,
 };
 
-create_coverage_visitor!(StmtVisitor {});
+create_instrumentation_visitor!(StmtVisitor {});
 
 impl<'a> StmtVisitor<'a> {
-    insert_logical_expr_helper!();
     insert_counter_helper!();
     insert_stmt_counter!();
 }

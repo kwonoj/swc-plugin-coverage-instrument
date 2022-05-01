@@ -8,6 +8,15 @@ pub(crate) mod lookup_range;
 pub(crate) mod node;
 pub(crate) mod visitor_macros;
 
+/// Temporal type for unknown.
+#[derive(Debug)]
+pub struct UnknownReserved;
+impl Default for UnknownReserved {
+    fn default() -> UnknownReserved {
+        UnknownReserved
+    }
+}
+
 /// Determines if var_declarator::init's expr should be wrapped into parenExpr with
 /// statementcounter.
 pub fn is_var_declarator_init_to_be_wrapped_into_paren(expr: &Expr) -> bool {

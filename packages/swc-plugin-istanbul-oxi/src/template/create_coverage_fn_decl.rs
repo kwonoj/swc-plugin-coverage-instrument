@@ -23,7 +23,7 @@ pub static COVERAGE_FN_IDENT: OnceCell<Ident> = OnceCell::new();
 /// Create a unique ident for the injected coverage counter fn,
 /// Stores it into a global scope.
 ///
-/// Do not use static value directly - create_coverage_visitor macro
+/// Do not use static value directly - create_instrumentation_visitor macro
 /// should inject this into a struct accordingly.
 pub fn create_coverage_fn_ident(value: &str) {
     COVERAGE_FN_IDENT.get_or_init(|| {

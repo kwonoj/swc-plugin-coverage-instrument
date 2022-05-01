@@ -18,8 +18,7 @@ use tracing::instrument;
 
 use crate::{
     constants::idents::*,
-    create_coverage_visitor, insert_counter_helper, insert_logical_expr_helper,
-    insert_stmt_counter,
+    create_instrumentation_visitor, insert_counter_helper, insert_stmt_counter,
     instrument::create_increase_expression_expr,
     template::{
         create_coverage_fn_decl::create_coverage_fn_decl,
@@ -29,14 +28,14 @@ use crate::{
         hint_comments::{lookup_hint_comments, should_ignore_file},
         lookup_range::{get_expr_span, get_range_from_span, get_stmt_span},
         node::Node,
-        visitor_macros::UnknownReserved,
+        UnknownReserved,
     },
-    visit_mut_coverage, visit_mut_prepend_statement_counter, InstrumentOptions,
+    visit_mut_coverage, InstrumentOptions,
 };
 
 use super::stmt_like_visitor::StmtVisitor;
 
-create_coverage_visitor!(CoverageVisitor {
+create_instrumentation_visitor!(CoverageVisitor {
     file_path: String,
     attrs: UnknownReserved,
     next_ignore: Option<UnknownReserved>,
@@ -46,7 +45,6 @@ create_coverage_visitor!(CoverageVisitor {
 });
 
 impl<'a> CoverageVisitor<'a> {
-    insert_logical_expr_helper!();
     insert_counter_helper!();
     insert_stmt_counter!();
 

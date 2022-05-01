@@ -6,6 +6,8 @@ mod constants;
 mod instrument;
 mod template;
 #[macro_use]
+mod macros;
+#[macro_use]
 mod utils;
 mod options;
 mod visitors;
