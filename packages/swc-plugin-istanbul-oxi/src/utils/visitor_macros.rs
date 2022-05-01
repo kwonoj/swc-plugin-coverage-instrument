@@ -94,6 +94,7 @@ macro_rules! create_coverage_visitor {
             }
         }
 
+        // TODO: remove dupe
         impl CoverageInstrumentationMutVisitEnter<Expr> for $name<'_> {
             fn on_enter(&mut self, n: &mut Expr) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
                 self.nodes.push(Node::Expr);
@@ -173,6 +174,9 @@ macro_rules! create_coverage_visitor {
          on_enter_span!(IfStmt);
          on_enter_span!(LabeledStmt);
          on_enter_span!(ContinueStmt);
+         on_enter_span!(ClassProp);
+         on_enter_span!(PrivateProp);
+         on_enter_span!(ClassMethod);
     }
 }
 
@@ -586,6 +590,54 @@ macro_rules! visit_mut_coverage {
                 }
             }
 
+            self.on_exit(old);
+        }
+
+        // ClassProperty: entries(coverClassPropDeclarator),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_class_prop(&mut self, class_prop: &mut ClassProp) {
+            let (old, ignore_current) = self.on_enter(class_prop);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    if let Some(value) = &mut class_prop.value {
+                        self.cover_statement(&mut *value);
+                    }
+                }
+            }
+            self.on_exit(old);
+        }
+
+        // ClassPrivateProperty: entries(coverClassPropDeclarator),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_private_prop(&mut self, private_prop: &mut PrivateProp) {
+            // TODO: this is same as visit_mut_class_prop
+            let (old, ignore_current) = self.on_enter(private_prop);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    if let Some(value) = &mut private_prop.value {
+                        self.cover_statement(&mut *value);
+                    }
+                }
+            }
+            self.on_exit(old);
+        }
+
+        // ClassMethod: entries(coverFunction),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_class_method(&mut self, class_method: &mut ClassMethod) {
+            let (old, ignore_current) = self.on_enter(class_method);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    // TODO: this does not cover all of PropName enum yet
+                    if let PropName::Ident(ident) = &class_method.key {
+                        self.visit_mut_fn(&Some(&ident), &mut class_method.function);
+                        class_method.visit_mut_children_with(self);
+                    }
+                }
+            }
             self.on_exit(old);
         }
 
