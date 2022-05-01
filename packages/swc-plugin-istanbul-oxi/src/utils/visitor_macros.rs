@@ -148,6 +148,23 @@ macro_rules! create_coverage_visitor {
             }
          }
 
+         impl CoverageInstrumentationMutVisitEnter<ClassDecl> for $name<'_> {
+            fn on_enter(&mut self, n: &mut ClassDecl) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+                self.nodes.push(Node::Expr);
+
+                let old = self.should_ignore;
+                let ret = match old {
+                    Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
+                    _ => {
+                        self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, Some(&n.class.span));
+                        self.should_ignore
+                    }
+                };
+
+                (old, ret)
+            }
+         }
+
          on_enter_span!(BinExpr);
          on_enter_span!(VarDeclarator);
          on_enter_span!(VarDecl);
@@ -551,9 +568,24 @@ macro_rules! visit_mut_coverage {
         // VariableDeclaration: entries(), // ignore processing only
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_var_decl(&mut self, var_decl: &mut VarDecl) {
-            let (old, ignore_current) = self.on_enter(var_decl);
+            let (old, _ignore_current) = self.on_enter(var_decl);
             //noop?
             var_decl.visit_mut_children_with(self);
+            self.on_exit(old);
+        }
+
+        // ClassDeclaration: entries(parenthesizedExpressionProp('superClass')),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_class_decl(&mut self, class_decl: &mut ClassDecl) {
+            let (old, ignore_current) = self.on_enter(class_decl);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    //self.mark_prepend_stmt_counter(&class_decl.class.span);
+                    class_decl.visit_mut_children_with(self);
+                }
+            }
+
             self.on_exit(old);
         }
 
@@ -569,10 +601,10 @@ macro_rules! visit_mut_coverage {
                         let init = &mut **init;
                         self.cover_statement(init);
                     }
+
+                    declarator.visit_mut_children_with(self);
                 }
             }
-
-            declarator.visit_mut_children_with(self);
 
             self.on_exit(old);
         }

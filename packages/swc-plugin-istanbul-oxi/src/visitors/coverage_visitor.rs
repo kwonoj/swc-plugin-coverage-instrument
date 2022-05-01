@@ -162,7 +162,8 @@ impl VisitMut for CoverageVisitor<'_> {
             return;
         }
 
-        self.nodes.push(Node::ModuleItems);
+        // TODO: Should module_items need to be added in self.nodes?
+
         let mut new_items = vec![];
         for mut item in items.drain(..) {
             let (old, ignore_current) = match &mut item {
@@ -178,7 +179,6 @@ impl VisitMut for CoverageVisitor<'_> {
             self.on_exit(old);
         }
         *items = new_items;
-        self.nodes.pop();
 
         self.on_exit_transform(items);
     }
@@ -222,14 +222,6 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_class_method(&mut self, class_method: &mut ClassMethod) {
         self.nodes.push(Node::ClassMethod);
         class_method.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
-    // ClassDeclaration: entries(parenthesizedExpressionProp('superClass')),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_class_decl(&mut self, class_decl: &mut ClassDecl) {
-        self.nodes.push(Node::ClassDecl);
-        class_decl.visit_mut_children_with(self);
         self.nodes.pop();
     }
 
