@@ -31,7 +31,7 @@ use crate::{
         node::Node,
         UnknownReserved,
     },
-    visit_mut_coverage, visit_mut_prepend_statement_counter, InstrumentOptions,
+    visit_mut_coverage, InstrumentOptions,
 };
 
 use super::stmt_like_visitor::StmtVisitor;
