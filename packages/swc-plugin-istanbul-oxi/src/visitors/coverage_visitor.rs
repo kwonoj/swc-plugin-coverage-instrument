@@ -183,14 +183,6 @@ impl VisitMut for CoverageVisitor<'_> {
         self.on_exit_transform(items);
     }
 
-    // ArrowFunctionExpression: entries(convertArrowExpression, coverFunction),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_arrow_expr(&mut self, arrow_expr: &mut ArrowExpr) {
-        self.nodes.push(Node::ArrowExpr);
-        arrow_expr.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
     // AssignmentPattern: entries(coverAssignmentPattern),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_assign_pat(&mut self, assign_pat: &mut AssignPat) {
