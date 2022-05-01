@@ -13,7 +13,7 @@ impl Default for UnknownReserved {
 /// visitor logics.
 #[macro_export]
 macro_rules! create_coverage_visitor {
-    ($name:ident { $($field:ident: $t:ty),* $(,)? }) => {
+    ($name:ident { $($vis: vis $field:ident: $t:ty),* $(,)? }) => {
         #[allow(unused)]
         #[derive(Debug)]
         pub struct $name<'a> {
@@ -25,7 +25,7 @@ macro_rules! create_coverage_visitor {
             pub before: Vec<swc_plugin::ast::Stmt>,
             nodes: Vec<Node>,
             should_ignore: Option<crate::utils::hint_comments::IgnoreScope>,
-            $(pub $field: $t,)*
+            $($vis $field: $t,)*
         }
 
         impl<'a> $name<'a> {
@@ -69,7 +69,6 @@ macro_rules! create_coverage_visitor {
         trait CoverageInstrumentationMutVisitEnter<N> {
             fn on_enter(&mut self, n: &mut N) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>);
         }
-
 
         // Macro generates trait impl for the type can access span directly.
         macro_rules! on_enter_span {
@@ -178,6 +177,9 @@ macro_rules! create_coverage_visitor {
          on_enter_span!(PrivateProp);
          on_enter_span!(ClassMethod);
          on_enter_span!(ArrowExpr);
+         on_enter_span!(ForStmt);
+         on_enter_span!(ForOfStmt);
+         on_enter_span!(ForInStmt);
     }
 }
 
@@ -195,6 +197,41 @@ macro_rules! visit_mut_prepend_statement_counter {
             n.visit_mut_children_with(self);
             self.nodes.pop();
         }
+    };
+}
+
+/// A macro creates body for the for-variant visitors (for, for-of, for-in) which
+/// shares same logic.
+#[macro_export]
+macro_rules! visit_mut_for_like {
+    ($self: ident, $for_like_stmt: ident) => {
+        let (old, ignore_current) = $self.on_enter($for_like_stmt);
+
+        match ignore_current {
+            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            _ => {
+                // cover_statement's is_stmt prepend logic for individual child stmt visitor
+                $self.mark_prepend_stmt_counter(&$for_like_stmt.span);
+
+                let body = *$for_like_stmt.body.take();
+                // if for stmt body is not block, wrap it before insert statement counter
+                let body = if let Stmt::Block(body) = body {
+                    body
+                } else {
+                    let stmts = vec![body];
+                    BlockStmt {
+                        span: DUMMY_SP,
+                        stmts,
+                    }
+                };
+
+                $for_like_stmt.body = Box::new(Stmt::Block(body));
+                // Iterate children for inner stmt's counter insertion
+                $for_like_stmt.visit_mut_children_with($self);
+            }
+        }
+
+        $self.on_exit(old);
     };
 }
 
@@ -738,32 +775,19 @@ macro_rules! visit_mut_coverage {
         // ForStatement: entries(blockProp('body'), coverStatement),
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_for_stmt(&mut self, for_stmt: &mut ForStmt) {
-            self.nodes.push(Node::ForStmt);
+            crate::visit_mut_for_like!(self, for_stmt);
+        }
 
-            // cover_statement's is_stmt prepend logic for individual child stmt visitor
-            self.mark_prepend_stmt_counter(&for_stmt.span);
+        // ForInStatement: entries(blockProp('body'), coverStatement),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_for_in_stmt(&mut self, for_in_stmt: &mut ForInStmt) {
+            crate::visit_mut_for_like!(self, for_in_stmt);
+        }
 
-            let body = *for_stmt.body.take();
-            // if for stmt body is not block, wrap it before insert statement counter
-            let body = if let Stmt::Block(body) = body {
-                //self.insert_stmts_counter(&mut body.stmts);
-                body
-            } else {
-                let stmts = vec![body];
-                //self.insert_stmts_counter(&mut stmts);
-
-                BlockStmt {
-                    span: DUMMY_SP,
-                    stmts,
-                }
-            };
-
-            //self.insert_stmts_counter(&mut body.stmts);
-
-            for_stmt.body = Box::new(Stmt::Block(body));
-            for_stmt.visit_mut_children_with(self);
-
-            self.nodes.pop();
+        // ForOfStatement: entries(blockProp('body'), coverStatement),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_for_of_stmt(&mut self, for_of_stmt: &mut ForOfStmt) {
+            crate::visit_mut_for_like!(self, for_of_stmt);
         }
 
         //LabeledStatement: entries(coverStatement),
