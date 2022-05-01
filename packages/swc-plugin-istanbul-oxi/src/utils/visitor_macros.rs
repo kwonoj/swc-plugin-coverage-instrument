@@ -1,11 +1,3 @@
-#[derive(Debug)]
-pub struct UnknownReserved;
-impl Default for UnknownReserved {
-    fn default() -> UnknownReserved {
-        UnknownReserved
-    }
-}
-
 /// A macro wraps a visitor fn create a statement AST to increase statement counter.
 /// Created statement is stored in `before` property in the CoverageVisitor, will be prepended
 /// via visit_mut_module_items.

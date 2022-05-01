@@ -29,7 +29,7 @@ use crate::{
         hint_comments::{lookup_hint_comments, should_ignore_file},
         lookup_range::{get_expr_span, get_range_from_span, get_stmt_span},
         node::Node,
-        visitor_macros::UnknownReserved,
+        UnknownReserved,
     },
     visit_mut_coverage, visit_mut_prepend_statement_counter, InstrumentOptions,
 };
