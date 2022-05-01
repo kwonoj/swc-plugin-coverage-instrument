@@ -137,8 +137,9 @@ macro_rules! insert_counter_helper {
 
         fn mark_prepend_stmt_counter_for_hoisted(&mut self) {}
 
+        /// Common logics for the fn-like visitors to insert fn instrumentation counters.
         #[tracing::instrument(skip_all)]
-        fn visit_mut_fn(&mut self, ident: &Option<&Ident>, function: &mut Function) {
+        fn create_fn_instrumentation(&mut self, ident: &Option<&Ident>, function: &mut Function) {
             let (span, name) = if let Some(ident) = &ident {
                 (&ident.span, Some(ident.sym.to_string()))
             } else {
@@ -285,7 +286,7 @@ macro_rules! visit_mut_coverage {
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_fn_decl(&mut self, fn_decl: &mut FnDecl) {
             self.nodes.push(Node::FnDecl);
-            self.visit_mut_fn(&Some(&fn_decl.ident), &mut fn_decl.function);
+            self.create_fn_instrumentation(&Some(&fn_decl.ident), &mut fn_decl.function);
             fn_decl.visit_mut_children_with(self);
             self.nodes.pop();
         }
@@ -393,7 +394,7 @@ macro_rules! visit_mut_coverage {
             // We do insert counter _first_, then iterate child:
             // Otherwise inner stmt / fn will get the first idx to the each counter.
             // StmtVisitor filters out injected counter internally.
-            self.visit_mut_fn(&fn_expr.ident.as_ref(), &mut fn_expr.function);
+            self.create_fn_instrumentation(&fn_expr.ident.as_ref(), &mut fn_expr.function);
             fn_expr.visit_mut_children_with(self);
             self.nodes.pop();
         }
@@ -489,7 +490,7 @@ macro_rules! visit_mut_coverage {
                 _ => {
                     // TODO: this does not cover all of PropName enum yet
                     if let PropName::Ident(ident) = &class_method.key {
-                        self.visit_mut_fn(&Some(&ident), &mut class_method.function);
+                        self.create_fn_instrumentation(&Some(&ident), &mut class_method.function);
                         class_method.visit_mut_children_with(self);
                     }
                 }
