@@ -13,7 +13,7 @@ impl Default for UnknownReserved {
 /// visitor logics.
 #[macro_export]
 macro_rules! create_coverage_visitor {
-    ($name:ident { $($field:ident: $t:ty),* $(,)? }) => {
+    ($name:ident { $($vis: vis $field:ident: $t:ty),* $(,)? }) => {
         #[allow(unused)]
         #[derive(Debug)]
         pub struct $name<'a> {
@@ -25,7 +25,7 @@ macro_rules! create_coverage_visitor {
             pub before: Vec<swc_plugin::ast::Stmt>,
             nodes: Vec<Node>,
             should_ignore: Option<crate::utils::hint_comments::IgnoreScope>,
-            $(pub $field: $t,)*
+            $($vis $field: $t,)*
         }
 
         impl<'a> $name<'a> {
