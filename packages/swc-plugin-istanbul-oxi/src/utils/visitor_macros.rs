@@ -177,6 +177,7 @@ macro_rules! create_coverage_visitor {
          on_enter_span!(ClassProp);
          on_enter_span!(PrivateProp);
          on_enter_span!(ClassMethod);
+         on_enter_span!(ArrowExpr);
     }
 }
 
@@ -505,6 +506,79 @@ macro_rules! visit_mut_coverage {
             self.visit_mut_fn(&Some(&fn_decl.ident), &mut fn_decl.function);
             fn_decl.visit_mut_children_with(self);
             self.nodes.pop();
+        }
+
+        // ArrowFunctionExpression: entries(convertArrowExpression, coverFunction),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_arrow_expr(&mut self, arrow_expr: &mut ArrowExpr) {
+            let (old, ignore_current) = self.on_enter(arrow_expr);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => match &mut arrow_expr.body {
+                    BlockStmtOrExpr::BlockStmt(block_stmt) => {
+                        let range = get_range_from_span(self.source_map, &arrow_expr.span);
+                        let body_range = get_range_from_span(self.source_map, &block_stmt.span);
+                        let index = self.cov.new_function(&None, &range, &body_range);
+                        let b = create_increase_expression_expr(
+                            &IDENT_F,
+                            index,
+                            &self.cov_fn_ident,
+                            None,
+                        );
+
+                        // insert fn counter expression
+                        let mut new_stmts = vec![Stmt::Expr(ExprStmt {
+                            span: DUMMY_SP,
+                            expr: Box::new(b),
+                        })];
+                        // if arrow fn body is already blockstmt, insert stmt counter for each
+                        self.insert_stmts_counter(&mut block_stmt.stmts);
+                        new_stmts.extend(block_stmt.stmts.drain(..));
+                        block_stmt.stmts = new_stmts;
+                    }
+                    BlockStmtOrExpr::Expr(expr) => {
+                        // TODO: refactor common logics creates a blockstmt from single expr
+                        let range = get_range_from_span(self.source_map, &arrow_expr.span);
+                        let span = get_expr_span(expr);
+                        if let Some(span) = span {
+                            let body_range = get_range_from_span(self.source_map, &span);
+                            let index = self.cov.new_function(&None, &range, &body_range);
+                            let b = create_increase_expression_expr(
+                                &IDENT_F,
+                                index,
+                                &self.cov_fn_ident,
+                                None,
+                            );
+
+                            // insert fn counter expression
+                            let mut stmts = vec![Stmt::Expr(ExprStmt {
+                                span: DUMMY_SP,
+                                expr: Box::new(b),
+                            })];
+
+                            // single line expr in arrow fn need to be converted into return stmt
+                            // Note we should preserve original expr's span, otherwise statementmap will lose correct
+                            // code location
+                            let ret = Stmt::Return(ReturnStmt {
+                                span: span.clone(),
+                                arg: Some(expr.take()),
+                            });
+                            stmts.push(ret);
+
+                            let mut new_stmts = vec![];
+                            // insert stmt counter for the returnstmt we made above
+                            self.insert_stmts_counter(&mut stmts);
+                            new_stmts.extend(stmts.drain(..));
+
+                            arrow_expr.body = BlockStmtOrExpr::BlockStmt(BlockStmt {
+                                span: DUMMY_SP,
+                                stmts: new_stmts,
+                            });
+                        }
+                    }
+                },
+            }
+            self.on_exit(old);
         }
 
         /*
