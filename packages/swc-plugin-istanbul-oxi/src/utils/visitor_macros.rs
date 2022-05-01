@@ -102,7 +102,43 @@ macro_rules! create_coverage_visitor {
                 let ret = match old {
                     Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
                     _ => {
-                        let span = get_expr_span(n);
+                        let span = crate::utils::lookup_range::get_expr_span(n);
+                        self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
+                        self.should_ignore
+                    }
+                };
+
+                (old, ret)
+            }
+         }
+
+         impl CoverageInstrumentationMutVisitEnter<Stmt> for $name<'_> {
+            fn on_enter(&mut self, n: &mut Stmt) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+                self.nodes.push(Node::Expr);
+
+                let old = self.should_ignore;
+                let ret = match old {
+                    Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
+                    _ => {
+                        let span = crate::utils::lookup_range::get_stmt_span(n);
+                        self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
+                        self.should_ignore
+                    }
+                };
+
+                (old, ret)
+            }
+         }
+
+         impl CoverageInstrumentationMutVisitEnter<ModuleDecl> for $name<'_> {
+            fn on_enter(&mut self, n: &mut ModuleDecl) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+                self.nodes.push(Node::Expr);
+
+                let old = self.should_ignore;
+                let ret = match old {
+                    Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
+                    _ => {
+                        let span = crate::utils::lookup_range::get_module_decl_span(n);
                         self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
                         self.should_ignore
                     }
@@ -621,16 +657,6 @@ macro_rules! visit_mut_coverage {
                     // cover_statement's is_stmt prepend logic for individual child stmt visitor
                     self.mark_prepend_stmt_counter(&if_stmt.span);
 
-                    let hint = crate::utils::hint_comments::lookup_hint_comments(
-                        &self.comments,
-                        Some(if_stmt.span).as_ref(),
-                    );
-                    let (ignore_if, ignore_else) = if let Some(hint) = hint {
-                        (&hint == "if", &hint == "else")
-                    } else {
-                        (false, false)
-                    };
-
                     let range = get_range_from_span(self.source_map, &if_stmt.span);
                     let branch =
                         self.cov
@@ -663,19 +689,14 @@ macro_rules! visit_mut_coverage {
                             block_stmt.stmts = new_stmts;
                             block_stmt
                         } else {
-                            let span = crate::utils::lookup_range::get_stmt_span(&stmt_body);
-                            let should_ignore =
-                                crate::utils::hint_comments::should_ignore(&self.comments, span);
-
                             let mut stmts = vec![expr];
-                            // TODO: should_ignore ?
                             let mut visitor = StmtVisitor::new(
                                 self.source_map,
                                 self.comments,
                                 &mut self.cov,
                                 &self.instrument_options,
                                 &self.nodes,
-                                should_ignore,
+                                ignore_current,
                             );
                             stmt_body.visit_mut_with(&mut visitor);
                             stmts.extend(visitor.before.drain(..));
@@ -691,13 +712,13 @@ macro_rules! visit_mut_coverage {
                         *stmt = Box::new(Stmt::Block(body));
                     };
 
-                    if ignore_if {
+                    if ignore_current == Some(crate::utils::hint_comments::IgnoreScope::If) {
                         //setAttr(if_stmt.cons, 'skip-all', true);
                     } else {
                         wrap_with_counter(&mut if_stmt.cons);
                     }
 
-                    if ignore_else {
+                    if ignore_current == Some(crate::utils::hint_comments::IgnoreScope::Else) {
                         //setAttr(if_stmt.alt, 'skip-all', true);
                     } else {
                         if let Some(alt) = &mut if_stmt.alt {
