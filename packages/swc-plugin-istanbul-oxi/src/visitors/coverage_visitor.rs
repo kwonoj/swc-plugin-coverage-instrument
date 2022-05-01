@@ -165,12 +165,17 @@ impl VisitMut for CoverageVisitor<'_> {
         self.nodes.push(Node::ModuleItems);
         let mut new_items = vec![];
         for mut item in items.drain(..) {
+            let (old, ignore_current) = match &mut item {
+                ModuleItem::ModuleDecl(decl) => self.on_enter(decl),
+                ModuleItem::Stmt(stmt) => self.on_enter(stmt),
+            };
             item.visit_mut_children_with(self);
 
             if self.before.len() > 0 {
                 new_items.extend(self.before.drain(..).map(|v| ModuleItem::Stmt(v)));
             }
             new_items.push(item);
+            self.on_exit(old);
         }
         *items = new_items;
         self.nodes.pop();

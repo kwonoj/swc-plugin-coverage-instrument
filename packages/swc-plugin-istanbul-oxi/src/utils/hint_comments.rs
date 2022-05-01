@@ -57,11 +57,10 @@ pub fn lookup_hint_comments(
 
         if let Some(h) = h {
             let h_value = h.iter().find_map(|c| {
-                if let Some(re_match) = COMMENT_RE.find_at(&c.text, 0) {
-                    Some(re_match.as_str().to_string())
-                } else {
-                    None
-                }
+                COMMENT_RE
+                    .captures(&c.text)
+                    .map(|captures| captures.get(1).map(|c| c.as_str().trim().to_string()))
+                    .flatten()
             });
 
             if let Some(h_value) = h_value {
@@ -71,23 +70,20 @@ pub fn lookup_hint_comments(
 
         if let Some(l) = l {
             let l_value = l.iter().find_map(|c| {
-                if let Some(re_match) = COMMENT_RE.find_at(&c.text, 0) {
-                    Some(re_match.as_str().to_string())
-                } else {
-                    None
-                }
+                COMMENT_RE
+                    .captures(&c.text)
+                    .map(|captures| captures.get(1).map(|c| c.as_str().trim().to_string()))
+                    .flatten()
             });
 
-            if let Some(l_value) = l_value {
-                return Some(l_value);
-            }
+            return l_value;
         }
     }
 
     return None;
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum IgnoreScope {
     Next,
     If,

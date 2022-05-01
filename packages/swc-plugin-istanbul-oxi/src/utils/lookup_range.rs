@@ -95,3 +95,15 @@ pub fn get_stmt_span(stmt: &Stmt) -> Option<&Span> {
         }
     }
 }
+
+pub fn get_module_decl_span(decl: &ModuleDecl) -> Option<&Span> {
+    match decl {
+        ModuleDecl::Import(ImportDecl { span, .. })
+        | ModuleDecl::ExportDecl(ExportDecl { span, .. })
+        | ModuleDecl::ExportNamed(NamedExport { span, .. })
+        | ModuleDecl::ExportDefaultDecl(ExportDefaultDecl { span, .. })
+        | ModuleDecl::ExportDefaultExpr(ExportDefaultExpr { span, .. })
+        | ModuleDecl::ExportAll(ExportAll { span, .. }) => Some(span),
+        _ => None,
+    }
+}
