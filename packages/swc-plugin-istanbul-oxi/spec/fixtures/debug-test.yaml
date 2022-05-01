@@ -1,24 +1,20 @@
 ---
-name: class property declaration
-guard: isClassPropAvailable
+name: es6 arrow function expression
+guard: isArrowFnAvailable
 code: |
-  class Foo {
-    bar = 1;
-    uninitialized;
-  }
-  output = args === 1 ? new Foo().bar : args
+  var input = args
+  output = input.map(x => x * x)
 tests:
-  - name: covered
-    args: 1
-    out: 1
-    lines: {'2': 1, '5': 1}
-    statements: {'0': 1, '1': 1}
-    branches: {'0': [1, 0]}
-    functions: {}
-  - name: not covered
-    args: 2
-    out: 2
-    lines: {'2': 0, '5': 1}
-    statements: {'0': 0, '1': 1}
-    branches: {'0': [0, 1]}
-    functions: {}
+  - name: function called
+    args: [1, 2, 3, 4]
+    out: [1, 4, 9, 16]
+    lines: {'1': 1, '2': 4}
+    statements: {'0': 1, '1': 1, '2': 4}
+    functions: {'0': 4}
+
+  - name: function not called
+    args: []
+    out: []
+    lines: {'1': 1, '2': 1}
+    statements: {'0': 1, '1': 1, '2': 0}
+    functions: {'0': 0}
