@@ -4,7 +4,7 @@
 /// This does not impl actual visitors (VisitMut) as each visitor may have different
 /// visitor logics.
 #[macro_export]
-macro_rules! create_coverage_visitor {
+macro_rules! create_instrumentation_visitor {
     ($name:ident { $($vis: vis $field:ident: $t:ty),* $(,)? }) => {
         #[allow(unused)]
         #[derive(Debug)]

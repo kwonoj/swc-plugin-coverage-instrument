@@ -18,7 +18,7 @@ use tracing::instrument;
 
 use crate::{
     constants::idents::*,
-    create_coverage_visitor, insert_counter_helper, insert_logical_expr_helper,
+    create_instrumentation_visitor, insert_counter_helper, insert_logical_expr_helper,
     insert_stmt_counter,
     instrument::create_increase_expression_expr,
     template::{
@@ -36,7 +36,7 @@ use crate::{
 
 use super::stmt_like_visitor::StmtVisitor;
 
-create_coverage_visitor!(CoverageVisitor {
+create_instrumentation_visitor!(CoverageVisitor {
     file_path: String,
     attrs: UnknownReserved,
     next_ignore: Option<UnknownReserved>,
