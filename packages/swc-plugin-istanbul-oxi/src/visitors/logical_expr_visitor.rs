@@ -8,7 +8,7 @@ use tracing::instrument;
 
 use crate::{
     constants::idents::*,
-    create_instrumentation_visitor, insert_counter_helper, insert_logical_expr_helper,
+    create_instrumentation_visitor, insert_counter_helper,
     instrument::create_increase_expression_expr,
     utils::{
         hint_comments::lookup_hint_comments,
@@ -22,7 +22,6 @@ create_instrumentation_visitor!(LogicalExprVisitor { branch: u32 });
 /// A visitor to traverse down given logical expr's value (left / right) with existing branch idx.
 /// This is required to preserve branch id to recursively traverse logical expr's inner child.
 impl<'a> LogicalExprVisitor<'a> {
-    insert_logical_expr_helper!();
     insert_counter_helper!();
 }
 

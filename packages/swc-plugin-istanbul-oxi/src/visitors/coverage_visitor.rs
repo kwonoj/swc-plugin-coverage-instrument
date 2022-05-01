@@ -18,8 +18,7 @@ use tracing::instrument;
 
 use crate::{
     constants::idents::*,
-    create_instrumentation_visitor, insert_counter_helper, insert_logical_expr_helper,
-    insert_stmt_counter,
+    create_instrumentation_visitor, insert_counter_helper, insert_stmt_counter,
     instrument::create_increase_expression_expr,
     template::{
         create_coverage_fn_decl::create_coverage_fn_decl,
@@ -46,7 +45,6 @@ create_instrumentation_visitor!(CoverageVisitor {
 });
 
 impl<'a> CoverageVisitor<'a> {
-    insert_logical_expr_helper!();
     insert_counter_helper!();
     insert_stmt_counter!();
 

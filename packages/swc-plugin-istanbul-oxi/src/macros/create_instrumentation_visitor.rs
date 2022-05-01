@@ -6,6 +6,7 @@
 #[macro_export]
 macro_rules! create_instrumentation_visitor {
     ($name:ident { $($vis: vis $field:ident: $t:ty),* $(,)? }) => {
+        // Declare a struct, expand fields commonly used for any instrumentation visitor.
         #[allow(unused)]
         #[derive(Debug)]
         pub struct $name<'a> {
@@ -40,6 +41,22 @@ macro_rules! create_instrumentation_visitor {
                     nodes: nodes.clone(),
                     should_ignore,
                     $($field,)*
+                }
+            }
+
+            // Display current nodes.
+            fn print_node(&self) -> String {
+                if self.nodes.len() > 0 {
+                    format!(
+                        "{}",
+                        self.nodes
+                            .iter()
+                            .map(|n| n.to_string())
+                            .collect::<Vec<String>>()
+                            .join(":")
+                    )
+                } else {
+                    "".to_string()
                 }
             }
 

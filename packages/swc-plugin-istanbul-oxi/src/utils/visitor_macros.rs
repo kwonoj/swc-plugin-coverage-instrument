@@ -1,7 +1,11 @@
+/// Interfaces to mark counters. Parent node visitor should pick up and insert marked counter accordingly.
+/// Unlike istanbul we can't have single insert logic to be called in any arbitary child node.
 #[macro_export]
-macro_rules! insert_logical_expr_helper {
+macro_rules! insert_counter_helper {
     () => {
-        /// Attempt to wrap expression with branch increase counter. Given Expr may be left, or right of the logical expression.
+        /// Attempt to wrap expression with branch increase counter.
+        /// Given Expr may be left, or right of the logical expression.
+        #[tracing::instrument(skip_all)]
         fn wrap_bin_expr_with_branch_counter(&mut self, branch: u32, expr: &mut Expr) {
             // Logical expression can have inner logical expression as non-direct child
             // (i.e `args[0] > 0 && (args[0] < 5 || args[0] > 10)`, logical || expr is child of ParenExpr.
@@ -48,28 +52,6 @@ macro_rules! insert_logical_expr_helper {
                 } else {
                     self.replace_expr_with_branch_counter(expr, branch);
                 }
-            }
-        }
-    };
-}
-
-/// Interfaces to mark counters. Parent node visitor should pick up and insert marked counter accordingly.
-/// Unlike istanbul we can't have single insert logic to be called in any arbitary child node.
-#[macro_export]
-macro_rules! insert_counter_helper {
-    () => {
-        fn print_node(&self) -> String {
-            if self.nodes.len() > 0 {
-                format!(
-                    "{}",
-                    self.nodes
-                        .iter()
-                        .map(|n| n.to_string())
-                        .collect::<Vec<String>>()
-                        .join(":")
-                )
-            } else {
-                "unexpected".to_string()
             }
         }
 
