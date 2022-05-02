@@ -1,4 +1,4 @@
-use istanbul_oxi_coverage::{Branch, BranchType, FileCoverage, Function, Range};
+use istanbul_oxi_coverage::{Branch, BranchType, FileCoverage, Function, Range, SourceMap};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct SourceCoverageMetaHitCount {
@@ -34,8 +34,6 @@ pub struct SourceCoverage {
     inner: FileCoverage,
     meta: SourceCoverageMeta,
 }
-
-pub struct UnknownReserved;
 
 impl SourceCoverage {
     pub fn new(file_path: String, report_logic: bool) -> Self {
@@ -165,8 +163,8 @@ impl SourceCoverage {
         }
     }
 
-    pub fn set_input_source_map(&mut self, _source_map: UnknownReserved) {
-        todo!("Not implemented");
+    pub fn set_input_source_map(&mut self, source_map: Option<SourceMap>) {
+        self.inner.input_source_map = source_map;
     }
 
     pub fn freeze(&mut self) {
