@@ -153,5 +153,7 @@ macro_rules! create_instrumentation_visitor {
          on_enter!(ForStmt);
          on_enter!(ForOfStmt);
          on_enter!(ForInStmt);
+         on_enter!(WhileStmt);
+         on_enter!(DoWhileStmt);
     }
 }

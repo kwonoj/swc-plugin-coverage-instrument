@@ -268,6 +268,18 @@ macro_rules! instrumentation_visitor {
             crate::visit_mut_for_like!(self, for_of_stmt);
         }
 
+        // WhileStatement: entries(blockProp('body'), coverStatement),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_while_stmt(&mut self, while_stmt: &mut WhileStmt) {
+            crate::visit_mut_for_like!(self, while_stmt);
+        }
+
+        // DoWhileStatement: entries(blockProp('body'), coverStatement),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_do_while_stmt(&mut self, do_while_stmt: &mut DoWhileStmt) {
+            crate::visit_mut_for_like!(self, do_while_stmt);
+        }
+
         //LabeledStatement: entries(coverStatement),
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_labeled_stmt(&mut self, labeled_stmt: &mut LabeledStmt) {

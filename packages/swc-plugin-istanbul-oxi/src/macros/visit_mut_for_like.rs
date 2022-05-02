@@ -1,5 +1,5 @@
 /// A macro creates body for the for-variant visitors (for, for-of, for-in) which
-/// shares same logic.
+/// shares same logic. This also works for other loops like while, do-while.
 #[macro_export]
 macro_rules! visit_mut_for_like {
     ($self: ident, $for_like_stmt: ident) => {

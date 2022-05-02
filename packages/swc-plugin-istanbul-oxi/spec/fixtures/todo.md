@@ -2,7 +2,7 @@
 - [x] class-properties
 - [x] classes
 - [ ] default-args
-- [ ] do-while
+- [x] do-while
 - [ ] es6-modules
 - [x] expressions
 - [x] for-in
@@ -23,6 +23,6 @@
 - [ ] switch
 - [ ] truthy
 - [ ] try
-- [ ] while
+- [x] while
 - [ ] with
 - [x] yield
