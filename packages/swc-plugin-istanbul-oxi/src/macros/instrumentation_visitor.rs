@@ -139,11 +139,24 @@ macro_rules! instrumentation_visitor {
             match ignore_current {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
                 _ => {
-                    // We do insert counter _first_, then iterate child:
-                    // Otherwise inner stmt / fn will get the first idx to the each counter.
-                    // StmtVisitor filters out injected counter internally.
-                    self.create_fn_instrumentation(&fn_expr.ident.as_ref(), &mut fn_expr.function);
-                    fn_expr.visit_mut_children_with(self);
+                    let fn_ident = &fn_expr.ident.as_ref();
+
+                    let should_ignore_via_options = if let Some(ident) = fn_ident {
+                        self.instrument_options
+                            .ignore_class_methods
+                            .iter()
+                            .any(|v| v.as_str() == &*ident.sym)
+                    } else {
+                        false
+                    };
+
+                    if !should_ignore_via_options {
+                        // We do insert counter _first_, then iterate child:
+                        // Otherwise inner stmt / fn will get the first idx to the each counter.
+                        // StmtVisitor filters out injected counter internally.
+                        self.create_fn_instrumentation(&fn_ident, &mut fn_expr.function);
+                        fn_expr.visit_mut_children_with(self);
+                    }
                 }
             }
             self.on_exit(old);
@@ -270,9 +283,21 @@ macro_rules! instrumentation_visitor {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     // TODO: this does not cover all of PropName enum yet
+                    // TODO: diplicated logic between fn_expr
                     if let PropName::Ident(ident) = &class_method.key {
-                        self.create_fn_instrumentation(&Some(&ident), &mut class_method.function);
-                        class_method.visit_mut_children_with(self);
+                        let should_ignore_via_options = self
+                            .instrument_options
+                            .ignore_class_methods
+                            .iter()
+                            .any(|v| v.as_str() == &*ident.sym);
+
+                        if !should_ignore_via_options {
+                            self.create_fn_instrumentation(
+                                &Some(&ident),
+                                &mut class_method.function,
+                            );
+                            class_method.visit_mut_children_with(self);
+                        }
                     }
                 }
             }
