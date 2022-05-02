@@ -16,10 +16,17 @@ const pluginBinary = path.resolve(
 const instrumentSync = (
   code: string,
   filename: string,
-  inputSourceMap?: unknown,
+  inputSourceMap?: object,
   instrumentOptions?: Record<string, any>,
   transformOptions?: Options
 ) => {
+  const pluginOptions = inputSourceMap
+    ? {
+        ...(instrumentOptions ?? {}),
+        inputSourceMap,
+      }
+    : instrumentOptions ?? {};
+
   const ret = transformSync(code, {
     filename: filename ?? "unknown",
     jsc: {
@@ -29,7 +36,7 @@ const instrumentSync = (
       },
       target: "es2022",
       experimental: {
-        plugins: [[pluginBinary, instrumentOptions ?? {}]],
+        plugins: [[pluginBinary, pluginOptions]],
       },
       preserveAllComments: true,
     },
@@ -102,6 +109,7 @@ class Verifier {
       expectedCoverage.statements || {},
       "Statement coverage mismatch"
     );
+
     assert.deepEqual(
       cov.inputSourceMap(),
       expectedCoverage.inputSourceMap || undefined,
@@ -193,6 +201,7 @@ const create = (code, options = {}, instrumentOptions = {}, inputSourceMap) => {
   }
 
   try {
+    console.log(inputSourceMap);
     let out = instrumentSync(
       code,
       file,

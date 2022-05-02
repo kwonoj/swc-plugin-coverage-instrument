@@ -60,7 +60,6 @@ class CoverageReadVisitor extends Visitor {
   }
 }
 
-//TODO: Should not rely on babel to parse & get initial coverage
 export function readInitialCoverage(code: any) {
   const ast = getAst(code);
 
@@ -114,6 +113,9 @@ export function readInitialCoverage(code: any) {
           setPropertiesRecursive(obj[resultKey], p.value, p.key.value);
         });
       } else if (binding?.elements) {
+        if (binding?.elements.length === 0) {
+          obj[resultKey] = [];
+        }
         binding?.elements.forEach((elem, idx) => {
           if (!Array.isArray(obj[resultKey])) {
             obj[resultKey] = [];
