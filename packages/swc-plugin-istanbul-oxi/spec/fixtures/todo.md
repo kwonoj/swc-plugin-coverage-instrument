@@ -19,7 +19,7 @@
 - [x] object-spread
 - [ ] statement-hints
 - [x] statement
-- [ ] strict
+- [x] strict
 - [ ] switch
 - [ ] truthy
 - [ ] try

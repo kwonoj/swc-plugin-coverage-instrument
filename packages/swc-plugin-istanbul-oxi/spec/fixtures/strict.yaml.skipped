@@ -1,3 +1,5 @@
+# TODO: this test is skipped in upstream via guard isObjectFreezeAvailable,
+# look like using transpiler (swc-node) enforces strict modes for the guard fn.
 ---
 name: function expr using strict
 guard: isObjectFreezeAvailable
