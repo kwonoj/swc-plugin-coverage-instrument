@@ -1,0 +1,28 @@
+- [x] arrow-fn
+- [x] class-properties
+- [x] classes
+- [ ] default-args
+- [ ] do-while
+- [ ] es6-modules
+- [x] expressions
+- [x] for-in
+- [x] for-of
+- [x] for
+- [x] functions
+- [x] if-hints
+- [x] if
+- [x] ignore
+- [ ] input-source-map
+- [x] jsx
+- [x] meta-property
+- [ ] object-method
+- [x] object-spread
+- [ ] statement-hints
+- [x] statement
+- [ ] strict
+- [ ] switch
+- [ ] truthy
+- [ ] try
+- [ ] while
+- [ ] with
+- [x] yield
