@@ -137,7 +137,6 @@ fn create_branch_prop(key: &str, value: &Branch) -> PropOrSpread {
 
 pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Expr) {
     // Afaik there's no built-in way to iterate over struct properties via keys.
-
     let mut props = vec![];
 
     // assign coverage['all']
@@ -268,6 +267,128 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
             }),
         );
         props.push(b_t_prop);
+    }
+
+    // assign coverage['inputSourceMap']
+    if let Some(input_source_map) = &coverage_data.input_source_map {
+        let mut source_map_props = vec![];
+
+        source_map_props.push(create_ident_key_value_prop(
+            &IDENT_VERSION,
+            Expr::Lit(Lit::Num(Number {
+                span: DUMMY_SP,
+                value: input_source_map.version as f64,
+                raw: None,
+            })),
+        ));
+
+        if let Some(file) = &input_source_map.file {
+            source_map_props.push(create_ident_key_value_prop(
+                &IDENT_FILE,
+                Expr::Lit(Lit::Str(Str {
+                    value: file.clone().into(),
+                    ..Str::dummy()
+                })),
+            ));
+        }
+
+        if let Some(source_root) = &input_source_map.source_root {
+            source_map_props.push(create_ident_key_value_prop(
+                &IDENT_SOURCE_ROOT,
+                Expr::Lit(Lit::Str(Str {
+                    value: source_root.clone().into(),
+                    ..Str::dummy()
+                })),
+            ));
+        }
+
+        source_map_props.push(create_ident_key_value_prop(
+            &IDENT_SOURCES,
+            Expr::Array(ArrayLit {
+                span: DUMMY_SP,
+                elems: input_source_map
+                    .sources
+                    .iter()
+                    .map(|v| {
+                        Some(ExprOrSpread {
+                            spread: None,
+                            expr: Box::new(Expr::Lit(Lit::Str(Str {
+                                value: v.clone().into(),
+                                ..Str::dummy()
+                            }))),
+                        })
+                    })
+                    .collect(),
+            }),
+        ));
+
+        if let Some(sources_content) = &input_source_map.sources_content {
+            source_map_props.push(create_ident_key_value_prop(
+                &IDENT_SOURCES_CONTENT,
+                Expr::Array(ArrayLit {
+                    span: DUMMY_SP,
+                    elems: sources_content
+                        .iter()
+                        .map(|v| {
+                            Some(ExprOrSpread {
+                                spread: None,
+                                expr: Box::new(Expr::Lit(Lit::Str(Str {
+                                    value: if let Some(v) = v {
+                                        v.clone().into()
+                                    } else {
+                                        "null".into()
+                                    },
+                                    raw: if let Some(_) = v {
+                                        None
+                                    } else {
+                                        Some("null".into())
+                                    },
+                                    ..Str::dummy()
+                                }))),
+                            })
+                        })
+                        .collect(),
+                }),
+            ));
+        }
+
+        source_map_props.push(create_ident_key_value_prop(
+            &IDENT_NAMES,
+            Expr::Array(ArrayLit {
+                span: DUMMY_SP,
+                elems: input_source_map
+                    .names
+                    .iter()
+                    .map(|v| {
+                        Some(ExprOrSpread {
+                            spread: None,
+                            expr: Box::new(Expr::Lit(Lit::Str(Str {
+                                value: v.clone().into(),
+                                ..Str::dummy()
+                            }))),
+                        })
+                    })
+                    .collect(),
+            }),
+        ));
+
+        source_map_props.push(create_ident_key_value_prop(
+            &IDENT_MAPPINGS,
+            Expr::Lit(Lit::Str(Str {
+                value: input_source_map.mappings.clone().into(),
+                ..Str::dummy()
+            })),
+        ));
+
+        let input_source_map_prop = create_ident_key_value_prop(
+            &IDENT_INPUT_SOURCE_MAP,
+            Expr::Object(ObjectLit {
+                span: DUMMY_SP,
+                props: source_map_props,
+            }),
+        );
+
+        props.push(input_source_map_prop);
     }
 
     // assign coverage['_coverageSchema']

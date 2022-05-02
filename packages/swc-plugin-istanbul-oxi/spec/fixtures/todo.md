@@ -12,7 +12,7 @@
 - [x] if-hints
 - [x] if
 - [x] ignore
-- [ ] input-source-map
+- [x] input-source-map
 - [x] jsx
 - [x] meta-property
 - [ ] object-method

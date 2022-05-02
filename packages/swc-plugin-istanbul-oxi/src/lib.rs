@@ -21,6 +21,14 @@ use visitors::coverage_visitor::CoverageVisitor;
 
 #[plugin_transform]
 pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Program {
+    tracing_subscriber::fmt()
+        // TODO: runtime config
+        .with_max_level(Level::TRACE)
+        .with_span_events(FmtSpan::ENTER | FmtSpan::CLOSE)
+        .with_ansi(false)
+        .event_format(tracing_subscriber::fmt::format().pretty())
+        .init();
+
     let context: Value = serde_json::from_str(&metadata.transform_context)
         .expect("Should able to deserialize context");
     let filename = if let Some(filename) = (&context["filename"]).as_str() {
@@ -28,6 +36,9 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
     } else {
         "unknown.js"
     };
+
+    // create a function name ident for the injected coverage instrumentation counters.
+    create_coverage_fn_ident(filename);
 
     let instrument_options_value: Value = serde_json::from_str(&metadata.plugin_config)
         .expect("Should able to deserialize plugin config");
@@ -52,17 +63,11 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
             .unwrap_or_default(),
     };
 
-    tracing_subscriber::fmt()
-        // TODO: runtime config
-        .with_max_level(Level::TRACE)
-        .with_span_events(FmtSpan::ENTER | FmtSpan::CLOSE)
-        .with_ansi(false)
-        .event_format(tracing_subscriber::fmt::format().pretty())
-        .init();
-
-    create_coverage_fn_ident(filename);
-
     let mut cov = SourceCoverage::new(filename.to_string(), instrument_options.report_logic);
+    let source_map: Option<istanbul_oxi_instrument::SourceMap> =
+        serde_json::from_str(&instrument_options_value["inputSourceMap"].to_string()).ok();
+    cov.set_input_source_map(source_map);
+
     let nodes = vec![];
     let visitor = CoverageVisitor::new(
         &metadata.source_map,

@@ -2,8 +2,7 @@
 
 use istanbul_oxi_instrument::COVERAGE_MAGIC_KEY;
 use once_cell::sync::Lazy;
-use swc_ecma_quote::swc_ecma_ast::Ident;
-use swc_plugin::utils::take::Take;
+use swc_plugin::{ast::Ident, utils::take::Take};
 
 pub static IDENT_ALL: Lazy<Ident> = Lazy::new(|| Ident {
     sym: "all".into(),
@@ -117,5 +116,45 @@ pub static IDENT_TYPE: Lazy<Ident> = Lazy::new(|| Ident {
 
 pub static IDENT_LOCATIONS: Lazy<Ident> = Lazy::new(|| Ident {
     sym: "locations".into(),
+    ..Ident::dummy()
+});
+
+pub static IDENT_INPUT_SOURCE_MAP: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "inputSourceMap".into(),
+    ..Ident::dummy()
+});
+
+pub static IDENT_VERSION: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "version".into(),
+    ..Ident::dummy()
+});
+
+pub static IDENT_FILE: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "file".into(),
+    ..Ident::dummy()
+});
+
+pub static IDENT_SOURCE_ROOT: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "sourceRoot".into(),
+    ..Ident::dummy()
+});
+
+pub static IDENT_SOURCES: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "sources".into(),
+    ..Ident::dummy()
+});
+
+pub static IDENT_SOURCES_CONTENT: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "sourcesContent".into(),
+    ..Ident::dummy()
+});
+
+pub static IDENT_NAMES: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "names".into(),
+    ..Ident::dummy()
+});
+
+pub static IDENT_MAPPINGS: Lazy<Ident> = Lazy::new(|| Ident {
+    sym: "mappings".into(),
     ..Ident::dummy()
 });
