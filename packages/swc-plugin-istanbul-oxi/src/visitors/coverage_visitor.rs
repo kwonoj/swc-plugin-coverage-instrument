@@ -240,22 +240,6 @@ impl VisitMut for CoverageVisitor<'_> {
         self.nodes.pop();
     }
 
-    // WhileStatement: entries(blockProp('body'), coverStatement),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_while_stmt(&mut self, while_stmt: &mut WhileStmt) {
-        self.nodes.push(Node::WhileStmt);
-        while_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
-    // DoWhileStatement: entries(blockProp('body'), coverStatement),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_do_while_stmt(&mut self, do_while_stmt: &mut DoWhileStmt) {
-        self.nodes.push(Node::DoWhileStmt);
-        do_while_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
     // SwitchStatement: entries(createSwitchBranch, coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_switch_stmt(&mut self, switch_stmt: &mut SwitchStmt) {
