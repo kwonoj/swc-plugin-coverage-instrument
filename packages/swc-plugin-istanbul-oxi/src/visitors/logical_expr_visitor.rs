@@ -32,6 +32,7 @@ impl VisitMut for LogicalExprVisitor<'_> {
         self.on_exit(old);
     }
 
+    // TODO: common logic between coveragevisitor::visit_mut_bin_expr
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_bin_expr(&mut self, bin_expr: &mut BinExpr) {
         // We don't use self.on_enter() here since Node::LogicalExpr is a dialect of BinExpr
@@ -65,6 +66,7 @@ impl VisitMut for LogicalExprVisitor<'_> {
                         self.wrap_bin_expr_with_branch_counter(self.branch, &mut *bin_expr.right);
                     }
                     _ => {
+                        // iterate as normal for non loigical expr
                         self.nodes.push(Node::BinExpr);
                         bin_expr.visit_mut_children_with(self);
                         self.on_exit(old);

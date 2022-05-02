@@ -42,6 +42,14 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
         report_logic: instrument_options_value["reportLogic"]
             .as_bool()
             .unwrap_or(false),
+        ignore_class_methods: instrument_options_value["ignoreClassMethods"]
+            .as_array()
+            .map(|v| {
+                v.iter()
+                    .map(|m| m.as_str().expect("Should be a valid string").to_string())
+                    .collect()
+            })
+            .unwrap_or_default(),
     };
 
     tracing_subscriber::fmt()
@@ -66,7 +74,6 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
         filename.to_string(),
         Default::default(),
         None,
-        Default::default(),
         Default::default(),
         None,
     );

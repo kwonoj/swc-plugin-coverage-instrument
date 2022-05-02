@@ -40,7 +40,6 @@ create_instrumentation_visitor!(CoverageVisitor {
     file_path: String,
     attrs: UnknownReserved,
     next_ignore: Option<UnknownReserved>,
-    ignore_class_method: UnknownReserved,
     types: UnknownReserved,
     source_mapping_url: Option<UnknownReserved>,
 });

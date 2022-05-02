@@ -17,7 +17,7 @@
 - [x] meta-property
 - [ ] object-method
 - [x] object-spread
-- [ ] statement-hints
+- [x] statement-hints
 - [x] statement
 - [x] strict
 - [x] switch

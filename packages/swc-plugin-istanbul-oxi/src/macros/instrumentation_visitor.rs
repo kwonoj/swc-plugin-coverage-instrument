@@ -139,11 +139,24 @@ macro_rules! instrumentation_visitor {
             match ignore_current {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
                 _ => {
-                    // We do insert counter _first_, then iterate child:
-                    // Otherwise inner stmt / fn will get the first idx to the each counter.
-                    // StmtVisitor filters out injected counter internally.
-                    self.create_fn_instrumentation(&fn_expr.ident.as_ref(), &mut fn_expr.function);
-                    fn_expr.visit_mut_children_with(self);
+                    let fn_ident = &fn_expr.ident.as_ref();
+
+                    let should_ignore_via_options = if let Some(ident) = fn_ident {
+                        self.instrument_options
+                            .ignore_class_methods
+                            .iter()
+                            .any(|v| v.as_str() == &*ident.sym)
+                    } else {
+                        false
+                    };
+
+                    if !should_ignore_via_options {
+                        // We do insert counter _first_, then iterate child:
+                        // Otherwise inner stmt / fn will get the first idx to the each counter.
+                        // StmtVisitor filters out injected counter internally.
+                        self.create_fn_instrumentation(&fn_ident, &mut fn_expr.function);
+                        fn_expr.visit_mut_children_with(self);
+                    }
                 }
             }
             self.on_exit(old);
@@ -270,9 +283,21 @@ macro_rules! instrumentation_visitor {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     // TODO: this does not cover all of PropName enum yet
+                    // TODO: diplicated logic between fn_expr
                     if let PropName::Ident(ident) = &class_method.key {
-                        self.create_fn_instrumentation(&Some(&ident), &mut class_method.function);
-                        class_method.visit_mut_children_with(self);
+                        let should_ignore_via_options = self
+                            .instrument_options
+                            .ignore_class_methods
+                            .iter()
+                            .any(|v| v.as_str() == &*ident.sym);
+
+                        if !should_ignore_via_options {
+                            self.create_fn_instrumentation(
+                                &Some(&ident),
+                                &mut class_method.function,
+                            );
+                            class_method.visit_mut_children_with(self);
+                        }
                     }
                 }
             }
@@ -504,40 +529,54 @@ macro_rules! instrumentation_visitor {
         // LogicalExpression: entries(coverLogicalExpression)
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_bin_expr(&mut self, bin_expr: &mut BinExpr) {
-            match &bin_expr.op {
-                BinaryOp::LogicalOr | BinaryOp::LogicalAnd | BinaryOp::NullishCoalescing => {
-                    self.nodes.push(Node::LogicalExpr);
-
-                    // escape if there's ignore comments
-                    let hint = crate::utils::hint_comments::lookup_hint_comments(
-                        &self.comments,
-                        Some(bin_expr.span).as_ref(),
-                    );
-                    if hint.as_deref() == Some("next") {
-                        bin_expr.visit_mut_children_with(self);
-                        self.nodes.pop();
-                        return;
-                    }
-
-                    // Create a new branch. This id should be reused for any inner logical expr.
-                    let range = get_range_from_span(self.source_map, &bin_expr.span);
-                    let branch = self.cov.new_branch(
-                        istanbul_oxi_instrument::BranchType::BinaryExpr,
-                        &range,
-                        self.instrument_options.report_logic,
-                    );
-
-                    // Iterate over each expr, wrap it with branch counter.
-                    self.wrap_bin_expr_with_branch_counter(branch, &mut *bin_expr.left);
-                    self.wrap_bin_expr_with_branch_counter(branch, &mut *bin_expr.right);
-                }
+            // We don't use self.on_enter() here since Node::LogicalExpr is a dialect of BinExpr
+            // which we can't pass directly via on_enter() macro
+            let old = self.should_ignore;
+            let ignore_current = match old {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
                 _ => {
-                    // iterate as normal for non loigical expr
+                    self.should_ignore = crate::utils::hint_comments::should_ignore(
+                        &self.comments,
+                        Some(&bin_expr.span),
+                    );
+                    self.should_ignore
+                }
+            };
+
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {
                     self.nodes.push(Node::BinExpr);
                     bin_expr.visit_mut_children_with(self);
+                    self.on_exit(old);
+                }
+                _ => {
+                    match &bin_expr.op {
+                        BinaryOp::LogicalOr
+                        | BinaryOp::LogicalAnd
+                        | BinaryOp::NullishCoalescing => {
+                            self.nodes.push(Node::LogicalExpr);
+
+                            // Create a new branch. This id should be reused for any inner logical expr.
+                            let range = get_range_from_span(self.source_map, &bin_expr.span);
+                            let branch = self.cov.new_branch(
+                                istanbul_oxi_instrument::BranchType::BinaryExpr,
+                                &range,
+                                self.instrument_options.report_logic,
+                            );
+
+                            // Iterate over each expr, wrap it with branch counter.
+                            self.wrap_bin_expr_with_branch_counter(branch, &mut *bin_expr.left);
+                            self.wrap_bin_expr_with_branch_counter(branch, &mut *bin_expr.right);
+                        }
+                        _ => {
+                            // iterate as normal for non loigical expr
+                            self.nodes.push(Node::BinExpr);
+                            bin_expr.visit_mut_children_with(self);
+                            self.on_exit(old);
+                        }
+                    }
                 }
             }
-            self.nodes.pop();
         }
     };
 }

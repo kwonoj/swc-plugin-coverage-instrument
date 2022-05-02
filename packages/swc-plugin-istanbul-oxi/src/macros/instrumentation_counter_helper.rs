@@ -7,6 +7,13 @@ macro_rules! instrumentation_counter_helper {
         /// Given Expr may be left, or right of the logical expression.
         #[tracing::instrument(skip_all)]
         fn wrap_bin_expr_with_branch_counter(&mut self, branch: u32, expr: &mut Expr) {
+            let span = get_expr_span(expr);
+            let should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
+
+            if let Some(crate::utils::hint_comments::IgnoreScope::Next) = should_ignore {
+                return;
+            }
+
             // Logical expression can have inner logical expression as non-direct child
             // (i.e `args[0] > 0 && (args[0] < 5 || args[0] > 10)`, logical || expr is child of ParenExpr.
             // Try to look up if current expr is the `leaf` of whole logical expr tree.
@@ -15,10 +22,6 @@ macro_rules! instrumentation_counter_helper {
 
             // If current expr have inner logical expr, traverse until reaches to the leaf
             if has_inner_logical_expr.0 {
-                let span = get_expr_span(expr);
-                let should_ignore =
-                    crate::utils::hint_comments::should_ignore(&self.comments, span);
-
                 let mut visitor = crate::visitors::logical_expr_visitor::LogicalExprVisitor::new(
                     self.source_map,
                     self.comments,
