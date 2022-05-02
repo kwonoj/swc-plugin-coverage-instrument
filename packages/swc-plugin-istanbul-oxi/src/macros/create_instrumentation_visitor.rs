@@ -138,6 +138,20 @@ macro_rules! create_instrumentation_visitor {
             }
          }
 
+         impl CoverageInstrumentationMutVisitEnter<FnExpr> for $name<'_> {
+            fn on_enter(&mut self, n: &mut FnExpr) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+                self.nodes.push(Node::FnExpr);
+                self.on_enter_with_span(Some(&n.function.span))
+            }
+         }
+
+         impl CoverageInstrumentationMutVisitEnter<FnDecl> for $name<'_> {
+            fn on_enter(&mut self, n: &mut FnDecl) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+                self.nodes.push(Node::FnDecl);
+                self.on_enter_with_span(Some(&n.function.span))
+            }
+         }
+
          on_enter!(BinExpr);
          on_enter!(VarDeclarator);
          on_enter!(VarDecl);
@@ -158,5 +172,14 @@ macro_rules! create_instrumentation_visitor {
          on_enter!(SwitchStmt);
          on_enter!(SwitchCase);
          on_enter!(BreakStmt);
+         on_enter!(ReturnStmt);
+         on_enter!(BlockStmt);
+         on_enter!(WithStmt);
+         on_enter!(TryStmt);
+         on_enter!(ThrowStmt);
+         on_enter!(ExportDecl);
+         on_enter!(ExportDefaultDecl);
+         on_enter!(DebuggerStmt);
+         on_enter!(AssignPat);
     }
 }

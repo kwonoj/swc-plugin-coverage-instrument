@@ -9,20 +9,29 @@ macro_rules! instrumentation_visitor {
         // BlockStatement: entries(), // ignore processing only
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_block_stmt(&mut self, block_stmt: &mut BlockStmt) {
-            self.nodes.push(Node::BlockStmt);
-
-            // Recursively visit inner for the blockstmt
-            block_stmt.visit_mut_children_with(self);
-            self.nodes.pop();
+            let (old, ignore_current) = self.on_enter(block_stmt);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    // Visit inner for the block stmt
+                    block_stmt.visit_mut_children_with(self);
+                }
+            }
+            self.on_exit(old);
         }
 
         // FunctionDeclaration: entries(coverFunction),
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_fn_decl(&mut self, fn_decl: &mut FnDecl) {
-            self.nodes.push(Node::FnDecl);
-            self.create_fn_instrumentation(&Some(&fn_decl.ident), &mut fn_decl.function);
-            fn_decl.visit_mut_children_with(self);
-            self.nodes.pop();
+            let (old, ignore_current) = self.on_enter(fn_decl);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    self.create_fn_instrumentation(&Some(&fn_decl.ident), &mut fn_decl.function);
+                    fn_decl.visit_mut_children_with(self);
+                }
+            }
+            self.on_exit(old);
         }
 
         // ArrowFunctionExpression: entries(convertArrowExpression, coverFunction),
@@ -116,6 +125,8 @@ macro_rules! instrumentation_visitor {
 
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
+            // Each Stmt looks up own comments for the hint, we don't
+            // do self.on_enter() in here.
             self.nodes.push(Node::Stmts);
             self.insert_stmts_counter(stmts);
             self.nodes.pop();
@@ -124,13 +135,18 @@ macro_rules! instrumentation_visitor {
         // FunctionExpression: entries(coverFunction),
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_fn_expr(&mut self, fn_expr: &mut FnExpr) {
-            self.nodes.push(Node::FnExpr);
-            // We do insert counter _first_, then iterate child:
-            // Otherwise inner stmt / fn will get the first idx to the each counter.
-            // StmtVisitor filters out injected counter internally.
-            self.create_fn_instrumentation(&fn_expr.ident.as_ref(), &mut fn_expr.function);
-            fn_expr.visit_mut_children_with(self);
-            self.nodes.pop();
+            let (old, ignore_current) = self.on_enter(fn_expr);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    // We do insert counter _first_, then iterate child:
+                    // Otherwise inner stmt / fn will get the first idx to the each counter.
+                    // StmtVisitor filters out injected counter internally.
+                    self.create_fn_instrumentation(&fn_expr.ident.as_ref(), &mut fn_expr.function);
+                    fn_expr.visit_mut_children_with(self);
+                }
+            }
+            self.on_exit(old);
         }
 
         // ExpressionStatement: entries(coverStatement),
@@ -179,10 +195,14 @@ macro_rules! instrumentation_visitor {
         // ReturnStatement: entries(coverStatement),
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_return_stmt(&mut self, return_stmt: &mut ReturnStmt) {
-            self.nodes.push(Node::ReturnStmt);
-            self.mark_prepend_stmt_counter(&return_stmt.span);
-            return_stmt.visit_mut_children_with(self);
-            self.nodes.pop();
+            let (old, ignore_current) = self.on_enter(return_stmt);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    self.mark_prepend_stmt_counter(&return_stmt.span);
+                    return_stmt.visit_mut_children_with(self);
+                }
+            }
         }
 
         // VariableDeclaration: entries(), // ignore processing only
