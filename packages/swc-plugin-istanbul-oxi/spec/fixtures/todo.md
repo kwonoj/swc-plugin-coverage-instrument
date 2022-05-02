@@ -20,7 +20,7 @@
 - [ ] statement-hints
 - [x] statement
 - [x] strict
-- [ ] switch
+- [x] switch
 - [ ] truthy
 - [ ] try
 - [x] while

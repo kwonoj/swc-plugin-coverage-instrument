@@ -208,14 +208,6 @@ impl VisitMut for CoverageVisitor<'_> {
         self.nodes.pop();
     }
 
-    // BreakStatement: entries(coverStatement),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_break_stmt(&mut self, break_stmt: &mut BreakStmt) {
-        self.nodes.push(Node::BreakStmt);
-        break_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
     // DebuggerStatement: entries(coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_debugger_stmt(&mut self, debugger_stmt: &mut DebuggerStmt) {
@@ -237,22 +229,6 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_try_stmt(&mut self, try_stmt: &mut TryStmt) {
         self.nodes.push(Node::TryStmt);
         try_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
-    // SwitchStatement: entries(createSwitchBranch, coverStatement),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_switch_stmt(&mut self, switch_stmt: &mut SwitchStmt) {
-        self.nodes.push(Node::SwitchStmt);
-        switch_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
-    }
-
-    // SwitchCase: entries(coverSwitchCase),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_switch_case(&mut self, switch_case: &mut SwitchCase) {
-        self.nodes.push(Node::SwitchCase);
-        switch_case.visit_mut_children_with(self);
         self.nodes.pop();
     }
 

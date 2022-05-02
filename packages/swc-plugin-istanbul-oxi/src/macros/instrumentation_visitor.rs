@@ -1,3 +1,5 @@
+pub(crate) const DIRECTIVES: &[&str] = &["use strict", "use asm", "use strong"];
+
 /// Generate common visitors to visit stmt.
 #[macro_export]
 macro_rules! instrumentation_visitor {
@@ -136,6 +138,15 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_expr_stmt(&mut self, expr_stmt: &mut ExprStmt) {
             let (old, ignore_current) = self.on_enter(expr_stmt);
 
+            if let Expr::Lit(Lit::Str(Str { value, .. })) = expr_stmt.expr.as_ref() {
+                let value: &str = &*value;
+
+                if crate::macros::instrumentation_visitor::DIRECTIVES.contains(&value) {
+                    self.on_exit(old);
+                    return;
+                }
+            }
+
             match ignore_current {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
                 _ => {
@@ -145,6 +156,22 @@ macro_rules! instrumentation_visitor {
                 }
             }
             expr_stmt.visit_mut_children_with(self);
+
+            self.on_exit(old);
+        }
+
+        // BreakStatement: entries(coverStatement),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_break_stmt(&mut self, break_stmt: &mut BreakStmt) {
+            let (old, ignore_current) = self.on_enter(break_stmt);
+
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    self.mark_prepend_stmt_counter(&break_stmt.span);
+                }
+            }
+            break_stmt.visit_mut_children_with(self);
 
             self.on_exit(old);
         }
@@ -315,6 +342,41 @@ macro_rules! instrumentation_visitor {
             self.on_exit(old);
         }
 
+        // SwitchStatement: entries(createSwitchBranch, coverStatement),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_switch_stmt(&mut self, switch_stmt: &mut SwitchStmt) {
+            let (old, ignore_current) = self.on_enter(switch_stmt);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    // Insert stmt counter for `switch` itself, then create a new branch
+                    self.mark_prepend_stmt_counter(&switch_stmt.span);
+
+                    let range = get_range_from_span(self.source_map, &switch_stmt.span);
+                    let branch = self.cov.new_branch(
+                        istanbul_oxi_instrument::BranchType::Switch,
+                        &range,
+                        false,
+                    );
+
+                    // traverse `case` with a visitor contains branch idx, insert new
+                    // branch increase counter accordingly
+                    let mut visitor = crate::visitors::switch_case_visitor::SwitchCaseVisitor::new(
+                        self.source_map,
+                        self.comments,
+                        &mut self.cov,
+                        &self.instrument_options,
+                        &self.nodes,
+                        ignore_current,
+                        branch,
+                    );
+
+                    switch_stmt.visit_mut_children_with(&mut visitor);
+                }
+            }
+            self.on_exit(old);
+        }
+
         // IfStatement: entries(blockProp('consequent'), blockProp('alternate'), coverStatement, coverIfBranches)
         #[instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_if_stmt(&mut self, if_stmt: &mut IfStmt) {
@@ -361,7 +423,7 @@ macro_rules! instrumentation_visitor {
                             block_stmt
                         } else {
                             let mut stmts = vec![expr];
-                            let mut visitor = StmtVisitor::new(
+                            let mut visitor = crate::visitors::stmt_like_visitor::StmtVisitor::new(
                                 self.source_map,
                                 self.comments,
                                 &mut self.cov,
