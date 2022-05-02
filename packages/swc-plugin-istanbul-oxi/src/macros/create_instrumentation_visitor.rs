@@ -60,6 +60,19 @@ macro_rules! create_instrumentation_visitor {
                 }
             }
 
+            fn on_enter_with_span(&mut self, span: Option<&Span>) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+                let old = self.should_ignore;
+                let ret = match old {
+                    Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
+                    _ => {
+                        self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
+                        self.should_ignore
+                    }
+                };
+
+                (old, ret)
+            }
+
             fn on_exit(&mut self, old: Option<crate::utils::hint_comments::IgnoreScope>) {
                 self.should_ignore = old;
                 self.nodes.pop();
@@ -80,114 +93,65 @@ macro_rules! create_instrumentation_visitor {
         }
 
         // Macro generates trait impl for the type can access span directly.
-        macro_rules! on_enter_span {
+        macro_rules! on_enter {
             ($N: tt) => {
                 impl CoverageInstrumentationMutVisitEnter<$N> for $name<'_> {
                     #[inline]
                     fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
                         self.nodes.push(Node::$N);
-
-                        let old = self.should_ignore;
-                        let ret = match old {
-                            Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
-                            _ => {
-                                self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, Some(&n.span));
-                                self.should_ignore
-                            }
-                        };
-
-                        (old, ret)
+                        self.on_enter_with_span(Some(&n.span))
                     }
                  }
             }
         }
 
-        // TODO: remove dupe
         impl CoverageInstrumentationMutVisitEnter<Expr> for $name<'_> {
             fn on_enter(&mut self, n: &mut Expr) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
                 self.nodes.push(Node::Expr);
-
-                let old = self.should_ignore;
-                let ret = match old {
-                    Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
-                    _ => {
-                        let span = crate::utils::lookup_range::get_expr_span(n);
-                        self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
-                        self.should_ignore
-                    }
-                };
-
-                (old, ret)
+                let span = crate::utils::lookup_range::get_expr_span(n);
+                self.on_enter_with_span(span)
             }
          }
 
          impl CoverageInstrumentationMutVisitEnter<Stmt> for $name<'_> {
             fn on_enter(&mut self, n: &mut Stmt) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
-                self.nodes.push(Node::Expr);
+                self.nodes.push(Node::Stmt);
+                let span = crate::utils::lookup_range::get_stmt_span(n);
 
-                let old = self.should_ignore;
-                let ret = match old {
-                    Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
-                    _ => {
-                        let span = crate::utils::lookup_range::get_stmt_span(n);
-                        self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
-                        self.should_ignore
-                    }
-                };
-
-                (old, ret)
+                self.on_enter_with_span(span)
             }
          }
 
          impl CoverageInstrumentationMutVisitEnter<ModuleDecl> for $name<'_> {
             fn on_enter(&mut self, n: &mut ModuleDecl) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
-                self.nodes.push(Node::Expr);
+                self.nodes.push(Node::ModuleDecl);
+                let span = crate::utils::lookup_range::get_module_decl_span(n);
 
-                let old = self.should_ignore;
-                let ret = match old {
-                    Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
-                    _ => {
-                        let span = crate::utils::lookup_range::get_module_decl_span(n);
-                        self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
-                        self.should_ignore
-                    }
-                };
-
-                (old, ret)
+                self.on_enter_with_span(span)
             }
          }
 
          impl CoverageInstrumentationMutVisitEnter<ClassDecl> for $name<'_> {
             fn on_enter(&mut self, n: &mut ClassDecl) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
-                self.nodes.push(Node::Expr);
-
-                let old = self.should_ignore;
-                let ret = match old {
-                    Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
-                    _ => {
-                        self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, Some(&n.class.span));
-                        self.should_ignore
-                    }
-                };
-
-                (old, ret)
+                self.nodes.push(Node::ClassDecl);
+                self.on_enter_with_span(Some(&n.class.span))
             }
          }
 
-         on_enter_span!(BinExpr);
-         on_enter_span!(VarDeclarator);
-         on_enter_span!(VarDecl);
-         on_enter_span!(CondExpr);
-         on_enter_span!(ExprStmt);
-         on_enter_span!(IfStmt);
-         on_enter_span!(LabeledStmt);
-         on_enter_span!(ContinueStmt);
-         on_enter_span!(ClassProp);
-         on_enter_span!(PrivateProp);
-         on_enter_span!(ClassMethod);
-         on_enter_span!(ArrowExpr);
-         on_enter_span!(ForStmt);
-         on_enter_span!(ForOfStmt);
-         on_enter_span!(ForInStmt);
+         on_enter!(BinExpr);
+         on_enter!(VarDeclarator);
+         on_enter!(VarDecl);
+         on_enter!(CondExpr);
+         on_enter!(ExprStmt);
+         on_enter!(IfStmt);
+         on_enter!(LabeledStmt);
+         on_enter!(ContinueStmt);
+         on_enter!(ClassProp);
+         on_enter!(PrivateProp);
+         on_enter!(ClassMethod);
+         on_enter!(ArrowExpr);
+         on_enter!(ForStmt);
+         on_enter!(ForOfStmt);
+         on_enter!(ForInStmt);
     }
 }
