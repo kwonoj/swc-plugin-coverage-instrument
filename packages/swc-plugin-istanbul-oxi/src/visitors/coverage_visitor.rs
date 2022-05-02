@@ -185,59 +185,94 @@ impl VisitMut for CoverageVisitor<'_> {
     // AssignmentPattern: entries(coverAssignmentPattern),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_assign_pat(&mut self, assign_pat: &mut AssignPat) {
-        self.nodes.push(Node::AssignPat);
-        assign_pat.visit_mut_children_with(self);
-        self.nodes.pop();
+        let (old, ignore_current) = self.on_enter(assign_pat);
+        match ignore_current {
+            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            _ => {
+                assign_pat.visit_mut_children_with(self);
+            }
+        }
+        self.on_exit(old);
     }
 
     // ExportDefaultDeclaration: entries(), // ignore processing only
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_export_default_decl(&mut self, export_default_decl: &mut ExportDefaultDecl) {
-        self.nodes.push(Node::ExportDefaultDecl);
-        // noop
-        export_default_decl.visit_mut_children_with(self);
-        self.nodes.pop();
+        let (old, ignore_current) = self.on_enter(export_default_decl);
+        match ignore_current {
+            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            _ => {
+                // noop
+                export_default_decl.visit_mut_children_with(self);
+            }
+        }
+        self.on_exit(old);
     }
 
     // ExportNamedDeclaration: entries(), // ignore processing only
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_export_decl(&mut self, export_named_decl: &mut ExportDecl) {
-        self.nodes.push(Node::ExportDecl);
-        // noop
-        export_named_decl.visit_mut_children_with(self);
-        self.nodes.pop();
+        let (old, ignore_current) = self.on_enter(export_named_decl);
+        match ignore_current {
+            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            _ => {
+                // noop
+                export_named_decl.visit_mut_children_with(self);
+            }
+        }
+        self.on_exit(old);
     }
 
     // DebuggerStatement: entries(coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_debugger_stmt(&mut self, debugger_stmt: &mut DebuggerStmt) {
-        self.nodes.push(Node::DebuggerStmt);
-        debugger_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
+        let (old, ignore_current) = self.on_enter(debugger_stmt);
+        match ignore_current {
+            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            _ => {
+                debugger_stmt.visit_mut_children_with(self);
+            }
+        }
+        self.on_exit(old);
     }
 
     // ThrowStatement: entries(coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_throw_stmt(&mut self, throw_stmt: &mut ThrowStmt) {
-        self.nodes.push(Node::ThrowStmt);
-        throw_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
+        let (old, ignore_current) = self.on_enter(throw_stmt);
+        match ignore_current {
+            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            _ => {
+                throw_stmt.visit_mut_children_with(self);
+            }
+        }
+        self.on_exit(old);
     }
 
     // TryStatement: entries(coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_try_stmt(&mut self, try_stmt: &mut TryStmt) {
-        self.nodes.push(Node::TryStmt);
-        try_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
+        let (old, ignore_current) = self.on_enter(try_stmt);
+        match ignore_current {
+            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            _ => {
+                try_stmt.visit_mut_children_with(self);
+            }
+        }
+        self.on_exit(old);
     }
 
     // WithStatement: entries(blockProp('body'), coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_with_stmt(&mut self, with_stmt: &mut WithStmt) {
-        self.nodes.push(Node::WithStmt);
-        with_stmt.visit_mut_children_with(self);
-        self.nodes.pop();
+        let (old, ignore_current) = self.on_enter(with_stmt);
+        match ignore_current {
+            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            _ => {
+                with_stmt.visit_mut_children_with(self);
+            }
+        }
+        self.on_exit(old);
     }
 
     // ConditionalExpression: entries(coverTernary),
