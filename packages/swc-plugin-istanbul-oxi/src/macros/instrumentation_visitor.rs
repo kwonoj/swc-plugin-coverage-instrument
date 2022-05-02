@@ -578,5 +578,25 @@ macro_rules! instrumentation_visitor {
                 }
             }
         }
+
+        // AssignmentPattern: entries(coverAssignmentPattern),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_assign_pat(&mut self, assign_pat: &mut AssignPat) {
+            let (old, ignore_current) = self.on_enter(assign_pat);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    let range = get_range_from_span(self.source_map, &assign_pat.span);
+                    let branch = self.cov.new_branch(
+                        istanbul_oxi_instrument::BranchType::DefaultArg,
+                        &range,
+                        false,
+                    );
+
+                    self.wrap_bin_expr_with_branch_counter(branch, &mut *assign_pat.right);
+                }
+            }
+            self.on_exit(old);
+        }
     };
 }

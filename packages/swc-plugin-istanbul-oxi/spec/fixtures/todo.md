@@ -1,7 +1,7 @@
 - [x] arrow-fn
 - [x] class-properties
 - [x] classes
-- [ ] default-args
+- [x] default-args
 - [x] do-while
 - [ ] es6-modules
 - [x] expressions

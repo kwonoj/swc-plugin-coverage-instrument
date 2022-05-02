@@ -181,19 +181,6 @@ impl VisitMut for CoverageVisitor<'_> {
         self.on_exit_transform(items);
     }
 
-    // AssignmentPattern: entries(coverAssignmentPattern),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_assign_pat(&mut self, assign_pat: &mut AssignPat) {
-        let (old, ignore_current) = self.on_enter(assign_pat);
-        match ignore_current {
-            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
-            _ => {
-                assign_pat.visit_mut_children_with(self);
-            }
-        }
-        self.on_exit(old);
-    }
-
     // ExportDefaultDeclaration: entries(), // ignore processing only
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_export_default_decl(&mut self, export_default_decl: &mut ExportDefaultDecl) {
