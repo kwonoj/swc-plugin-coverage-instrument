@@ -64,7 +64,10 @@ impl FileCoverageInterop {
 
     #[wasm_bindgen(js_name = "inputSourceMap")]
     pub fn get_source_map(&self) -> JsValue {
-        // Not implemented yet
-        JsValue::undefined()
+        if let Some(source_map) = &self.inner.input_source_map {
+            serde_wasm_bindgen::to_value(source_map).unwrap_or(JsValue::undefined())
+        } else {
+            JsValue::undefined()
+        }
     }
 }

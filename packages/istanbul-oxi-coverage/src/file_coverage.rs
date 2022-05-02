@@ -5,7 +5,7 @@ use crate::{
     coverage::Coverage,
     percent,
     types::{Branch, BranchCoverageMap, BranchHitMap, BranchMap, Function, FunctionMap},
-    CoveragePercentage, CoverageSummary, LineHitMap, Range, StatementMap, Totals,
+    CoveragePercentage, CoverageSummary, LineHitMap, Range, SourceMap, StatementMap, Totals,
 };
 use std::fmt::Debug;
 
@@ -138,6 +138,8 @@ pub struct FileCoverage {
     pub b: BranchHitMap,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub b_t: Option<BranchHitMap>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input_source_map: Option<SourceMap>,
 }
 
 impl FileCoverage {
@@ -156,6 +158,7 @@ impl FileCoverage {
             } else {
                 None
             },
+            input_source_map: Default::default(),
         }
     }
 
@@ -416,6 +419,7 @@ mod tests {
             f: IndexMap::from([(0, 0)]),
             b: IndexMap::from([(0, vec![0, 0])]),
             b_t: None,
+            input_source_map: None,
         };
 
         let mut first = base.clone();
@@ -507,6 +511,7 @@ mod tests {
             f: IndexMap::from([(0, 0)]),
             b: IndexMap::from([(0, vec![0, 0])]),
             b_t: None,
+            input_source_map: None,
         };
 
         let base_other = FileCoverage {
@@ -539,6 +544,7 @@ mod tests {
             f: IndexMap::from([(1, 0)]),
             b: IndexMap::from([(1, vec![0, 0])]),
             b_t: None,
+            input_source_map: None,
         };
 
         let mut first = base.clone();
@@ -630,6 +636,7 @@ mod tests {
             f: IndexMap::from([(1, 0)]),
             b: IndexMap::from([(1, vec![0, 0])]),
             b_t: None,
+            input_source_map: None,
         };
 
         let create_coverage = |all: bool| {
@@ -688,6 +695,7 @@ mod tests {
             f: IndexMap::from([(0, 0)]),
             b: IndexMap::from([(0, vec![0, 0])]),
             b_t: None,
+            input_source_map: None,
         };
 
         let mut first = base.clone();
@@ -786,6 +794,7 @@ mod tests {
             f: IndexMap::from([(1, 54)]),
             b: IndexMap::from([(1, vec![1, 50])]),
             b_t: Some(IndexMap::from([(1, vec![1, 50])])),
+            input_source_map: None,
         };
 
         let mut value = base.clone();
@@ -813,6 +822,7 @@ mod tests {
             f: Default::default(),
             b: Default::default(),
             b_t: None,
+            input_source_map: None,
         };
 
         assert_eq!(base.get_uncovered_lines(), vec![2]);
@@ -833,6 +843,7 @@ mod tests {
             f: Default::default(),
             b: IndexMap::from([(1, vec![1, 0]), (2, vec![0, 0, 0, 1])]),
             b_t: None,
+            input_source_map: None,
         };
 
         let coverage = base.get_branch_coverage_by_line();
@@ -870,6 +881,7 @@ mod tests {
             f: Default::default(),
             b: IndexMap::from([(1, vec![1, 0]), (2, vec![0, 0, 0, 1])]),
             b_t: None,
+            input_source_map: None,
         };
 
         let coverage = base.get_branch_coverage_by_line();

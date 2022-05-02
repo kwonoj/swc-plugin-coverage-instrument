@@ -11,3 +11,4 @@ pub use visitor::*;
 pub use istanbul_oxi_coverage::types::*;
 pub use istanbul_oxi_coverage::FileCoverage;
 pub use istanbul_oxi_coverage::Range;
+pub use istanbul_oxi_coverage::SourceMap;
