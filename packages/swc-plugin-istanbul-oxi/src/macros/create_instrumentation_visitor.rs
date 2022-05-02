@@ -155,5 +155,8 @@ macro_rules! create_instrumentation_visitor {
          on_enter!(ForInStmt);
          on_enter!(WhileStmt);
          on_enter!(DoWhileStmt);
+         on_enter!(SwitchStmt);
+         on_enter!(SwitchCase);
+         on_enter!(BreakStmt);
     }
 }

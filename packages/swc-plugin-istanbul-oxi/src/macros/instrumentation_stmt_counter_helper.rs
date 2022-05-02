@@ -14,7 +14,7 @@ macro_rules! instrumentation_stmt_counter_helper {
                     let should_ignore =
                         crate::utils::hint_comments::should_ignore(&self.comments, span);
 
-                    let mut visitor = StmtVisitor::new(
+                    let mut visitor = crate::visitors::stmt_like_visitor::StmtVisitor::new(
                         self.source_map,
                         self.comments,
                         &mut self.cov,
