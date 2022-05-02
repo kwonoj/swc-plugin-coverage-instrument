@@ -203,6 +203,8 @@ macro_rules! instrumentation_visitor {
                     return_stmt.visit_mut_children_with(self);
                 }
             }
+
+            self.on_exit(old);
         }
 
         // VariableDeclaration: entries(), // ignore processing only

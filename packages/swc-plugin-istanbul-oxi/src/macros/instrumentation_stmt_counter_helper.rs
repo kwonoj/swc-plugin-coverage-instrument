@@ -9,37 +9,25 @@ macro_rules! instrumentation_stmt_counter_helper {
 
             for mut stmt in stmts.drain(..) {
                 if !self.is_injected_counter_stmt(&stmt) {
-                    let span = crate::utils::lookup_range::get_stmt_span(&stmt);
+                    let (old, ignore_current) = self.on_enter(&mut stmt);
 
-                    let should_ignore =
-                        crate::utils::hint_comments::should_ignore(&self.comments, span);
+                    match ignore_current {
+                        Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                        _ => {
+                            let mut visitor = crate::visitors::stmt_like_visitor::StmtVisitor::new(
+                                self.source_map,
+                                self.comments,
+                                &mut self.cov,
+                                &self.instrument_options,
+                                &self.nodes,
+                                ignore_current,
+                            );
+                            stmt.visit_mut_children_with(&mut visitor);
 
-                    let mut visitor = crate::visitors::stmt_like_visitor::StmtVisitor::new(
-                        self.source_map,
-                        self.comments,
-                        &mut self.cov,
-                        &self.instrument_options,
-                        &self.nodes,
-                        should_ignore,
-                    );
-                    stmt.visit_mut_children_with(&mut visitor);
-
-                    if visitor.before.len() == 0 {
-                        //println!("{:#?}", stmt);
+                            new_stmts.extend(visitor.before.drain(..));
+                        }
                     }
-
-                    new_stmts.extend(visitor.before.drain(..));
-
-                    /*
-                    if let Some(span) = span {
-                        // if given stmt is not a plain stmt and omit to insert stmt counter,
-                        // visit it to collect inner stmt counters
-
-
-                    } else {
-                        //stmt.visit_mut_children_with(self);
-                        //new_stmts.extend(visitor.before.drain(..));
-                    } */
+                    self.on_exit(old);
                 }
 
                 new_stmts.push(stmt);
