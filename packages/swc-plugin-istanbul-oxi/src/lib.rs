@@ -7,9 +7,8 @@ mod instrument;
 mod template;
 #[macro_use]
 mod macros;
-#[macro_use]
-mod utils;
 mod options;
+mod utils;
 mod visitors;
 pub use options::InstrumentOptions;
 use template::create_coverage_fn_decl::{create_coverage_fn_ident, COVERAGE_FN_IDENT};

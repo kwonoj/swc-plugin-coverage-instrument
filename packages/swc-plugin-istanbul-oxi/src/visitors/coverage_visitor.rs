@@ -18,8 +18,9 @@ use tracing::instrument;
 
 use crate::{
     constants::idents::*,
-    create_instrumentation_visitor, insert_counter_helper, insert_stmt_counter,
+    create_instrumentation_visitor,
     instrument::create_increase_expression_expr,
+    instrumentation_counter_helper, instrumentation_stmt_counter_helper, instrumentation_visitor,
     template::{
         create_coverage_fn_decl::create_coverage_fn_decl,
         create_global_stmt_template::create_global_stmt_template,
@@ -30,7 +31,7 @@ use crate::{
         node::Node,
         UnknownReserved,
     },
-    visit_mut_coverage, InstrumentOptions,
+    InstrumentOptions,
 };
 
 use super::stmt_like_visitor::StmtVisitor;
@@ -45,8 +46,8 @@ create_instrumentation_visitor!(CoverageVisitor {
 });
 
 impl<'a> CoverageVisitor<'a> {
-    insert_counter_helper!();
-    insert_stmt_counter!();
+    instrumentation_counter_helper!();
+    instrumentation_stmt_counter_helper!();
 
     fn get_var_name_hash(name: &str) -> String {
         let mut s = DefaultHasher::new();
@@ -117,7 +118,7 @@ impl<'a> CoverageVisitor<'a> {
 }
 
 impl VisitMut for CoverageVisitor<'_> {
-    visit_mut_coverage!();
+    instrumentation_visitor!();
 
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_program(&mut self, program: &mut Program) {

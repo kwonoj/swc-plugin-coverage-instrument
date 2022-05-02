@@ -8,22 +8,22 @@ use tracing::instrument;
 
 use crate::{
     constants::idents::*,
-    create_instrumentation_visitor, insert_counter_helper, insert_stmt_counter,
+    create_instrumentation_visitor,
     instrument::create_increase_expression_expr,
+    instrumentation_counter_helper, instrumentation_stmt_counter_helper, instrumentation_visitor,
     utils::{
         lookup_range::{get_expr_span, get_range_from_span},
         node::Node,
     },
-    visit_mut_coverage,
 };
 
 create_instrumentation_visitor!(StmtVisitor {});
 
 impl<'a> StmtVisitor<'a> {
-    insert_counter_helper!();
-    insert_stmt_counter!();
+    instrumentation_counter_helper!();
+    instrumentation_stmt_counter_helper!();
 }
 
 impl VisitMut for StmtVisitor<'_> {
-    visit_mut_coverage!();
+    instrumentation_visitor!();
 }
