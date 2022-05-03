@@ -3,10 +3,9 @@ use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
 use tracing::instrument;
 
 use crate::{
-    create_instrumentation_visitor,
-    instrument::create_increase_counter_expr,
+    create_instrumentation_visitor, instrument::create_increase_counter_expr,
     instrumentation_counter_helper, instrumentation_stmt_counter_helper, instrumentation_visitor,
-    utils::{lookup_range::get_range_from_span, node::Node},
+    utils::lookup_range::get_range_from_span,
 };
 
 create_instrumentation_visitor!(SwitchCaseVisitor { branch: u32 });

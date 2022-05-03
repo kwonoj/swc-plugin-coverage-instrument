@@ -141,7 +141,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
             // Each Stmt looks up own comments for the hint, we don't
             // do self.on_enter() in here.
-            self.nodes.push(Node::Stmts);
+            self.nodes.push(istanbul_oxi_instrument::Node::Stmts);
             self.insert_stmts_counter(stmts);
             self.nodes.pop();
         }
@@ -704,7 +704,7 @@ macro_rules! instrumentation_visitor {
 
             match ignore_current {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {
-                    self.nodes.push(Node::BinExpr);
+                    self.nodes.push(istanbul_oxi_instrument::Node::BinExpr);
                     bin_expr.visit_mut_children_with(self);
                     self.on_exit(old);
                 }
@@ -713,7 +713,7 @@ macro_rules! instrumentation_visitor {
                         BinaryOp::LogicalOr
                         | BinaryOp::LogicalAnd
                         | BinaryOp::NullishCoalescing => {
-                            self.nodes.push(Node::LogicalExpr);
+                            self.nodes.push(istanbul_oxi_instrument::Node::LogicalExpr);
 
                             // Create a new branch. This id should be reused for any inner logical expr.
                             let range = crate::utils::lookup_range::get_range_from_span(
@@ -732,7 +732,7 @@ macro_rules! instrumentation_visitor {
                         }
                         _ => {
                             // iterate as normal for non loigical expr
-                            self.nodes.push(Node::BinExpr);
+                            self.nodes.push(istanbul_oxi_instrument::Node::BinExpr);
                             bin_expr.visit_mut_children_with(self);
                             self.on_exit(old);
                         }
