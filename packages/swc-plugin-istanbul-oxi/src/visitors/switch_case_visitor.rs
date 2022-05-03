@@ -24,7 +24,7 @@ impl VisitMut for SwitchCaseVisitor<'_> {
     fn visit_mut_switch_case(&mut self, switch_case: &mut SwitchCase) {
         let (old, ignore_current) = self.on_enter(switch_case);
         match ignore_current {
-            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
             _ => {
                 // TODO: conslidate brach expr creation, i.e ifstmt
                 let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(

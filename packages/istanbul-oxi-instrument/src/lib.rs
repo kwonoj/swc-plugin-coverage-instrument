@@ -5,6 +5,7 @@ pub mod source_coverage;
 
 mod utils;
 //TODO: can this be private?
+pub use utils::hint_comments;
 pub use utils::lookup_range;
 pub use utils::node::Node;
 

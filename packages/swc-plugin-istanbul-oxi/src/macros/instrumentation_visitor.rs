@@ -11,7 +11,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_block_stmt(&mut self, block_stmt: &mut BlockStmt) {
             let (old, ignore_current) = self.on_enter(block_stmt);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     // Visit inner for the block stmt
                     block_stmt.visit_mut_children_with(self);
@@ -25,7 +25,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_fn_decl(&mut self, fn_decl: &mut FnDecl) {
             let (old, ignore_current) = self.on_enter(fn_decl);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     self.create_fn_instrumentation(&Some(&fn_decl.ident), &mut fn_decl.function);
                     fn_decl.visit_mut_children_with(self);
@@ -41,7 +41,7 @@ macro_rules! instrumentation_visitor {
 
             let (old, ignore_current) = self.on_enter(arrow_expr);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => match &mut arrow_expr.body {
                     BlockStmtOrExpr::BlockStmt(block_stmt) => {
                         let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
@@ -152,7 +152,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_fn_expr(&mut self, fn_expr: &mut FnExpr) {
             let (old, ignore_current) = self.on_enter(fn_expr);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     let fn_ident = &fn_expr.ident.as_ref();
 
@@ -192,7 +192,7 @@ macro_rules! instrumentation_visitor {
             }
 
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     if !self.is_injected_counter_expr(&*expr_stmt.expr) {
                         self.mark_prepend_stmt_counter(&expr_stmt.span);
@@ -210,7 +210,7 @@ macro_rules! instrumentation_visitor {
             let (old, ignore_current) = self.on_enter(break_stmt);
 
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     self.mark_prepend_stmt_counter(&break_stmt.span);
                 }
@@ -225,7 +225,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_return_stmt(&mut self, return_stmt: &mut ReturnStmt) {
             let (old, ignore_current) = self.on_enter(return_stmt);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     self.mark_prepend_stmt_counter(&return_stmt.span);
                     return_stmt.visit_mut_children_with(self);
@@ -249,7 +249,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_class_decl(&mut self, class_decl: &mut ClassDecl) {
             let (old, ignore_current) = self.on_enter(class_decl);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     //self.mark_prepend_stmt_counter(&class_decl.class.span);
                     class_decl.visit_mut_children_with(self);
@@ -264,7 +264,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_class_prop(&mut self, class_prop: &mut ClassProp) {
             let (old, ignore_current) = self.on_enter(class_prop);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     if let Some(value) = &mut class_prop.value {
                         self.cover_statement(&mut *value);
@@ -280,7 +280,7 @@ macro_rules! instrumentation_visitor {
             // TODO: this is same as visit_mut_class_prop
             let (old, ignore_current) = self.on_enter(private_prop);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     if let Some(value) = &mut private_prop.value {
                         self.cover_statement(&mut *value);
@@ -295,7 +295,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_class_method(&mut self, class_method: &mut ClassMethod) {
             let (old, ignore_current) = self.on_enter(class_method);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     // TODO: this does not cover all of PropName enum yet
                     // TODO: duplicated logic between fn_expr
@@ -324,7 +324,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_method_prop(&mut self, method_prop: &mut MethodProp) {
             let (old, ignore_current) = self.on_enter(method_prop);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     // TODO: this does not cover all of PropName enum yet
                     // TODO: duplicated logic between class_method
@@ -354,7 +354,7 @@ macro_rules! instrumentation_visitor {
             let (old, ignore_current) = self.on_enter(getter_prop);
             use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     // TODO: this does not cover all of PropName enum yet
                     // TODO: duplicated logic between class_method
@@ -411,7 +411,7 @@ macro_rules! instrumentation_visitor {
 
             let (old, ignore_current) = self.on_enter(setter_prop);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     // TODO: this does not cover all of PropName enum yet
                     // TODO: duplicated logic between class_method
@@ -466,7 +466,7 @@ macro_rules! instrumentation_visitor {
             let (old, ignore_current) = self.on_enter(declarator);
 
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     if let Some(init) = &mut declarator.init {
                         let init = &mut **init;
@@ -516,7 +516,7 @@ macro_rules! instrumentation_visitor {
             let (old, ignore_current) = self.on_enter(labeled_stmt);
 
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     // cover_statement's is_stmt prepend logic for individual child stmt visitor
                     self.mark_prepend_stmt_counter(&labeled_stmt.span);
@@ -534,7 +534,7 @@ macro_rules! instrumentation_visitor {
             let (old, ignore_current) = self.on_enter(continue_stmt);
 
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     // cover_statement's is_stmt prepend logic for individual child stmt visitor
                     self.mark_prepend_stmt_counter(&continue_stmt.span);
@@ -550,7 +550,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_switch_stmt(&mut self, switch_stmt: &mut SwitchStmt) {
             let (old, ignore_current) = self.on_enter(switch_stmt);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     // Insert stmt counter for `switch` itself, then create a new branch
                     self.mark_prepend_stmt_counter(&switch_stmt.span);
@@ -591,7 +591,7 @@ macro_rules! instrumentation_visitor {
             let (old, ignore_current) = self.on_enter(if_stmt);
 
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {
                     self.on_exit(old);
                 }
                 _ => {
@@ -658,11 +658,15 @@ macro_rules! instrumentation_visitor {
 
                     // Note: unlike upstream, we do not use setAttr-based approach as it is not easy to
                     // append arbitary dynamic metadata on the parents can be accessed in any childs.
-                    if ignore_current != Some(crate::utils::hint_comments::IgnoreScope::If) {
+                    if ignore_current
+                        != Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::If)
+                    {
                         wrap_with_counter(&mut if_stmt.cons);
                     }
 
-                    if ignore_current != Some(crate::utils::hint_comments::IgnoreScope::Else) {
+                    if ignore_current
+                        != Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Else)
+                    {
                         if let Some(alt) = &mut if_stmt.alt {
                             wrap_with_counter(alt);
                         } else {
@@ -695,9 +699,9 @@ macro_rules! instrumentation_visitor {
             // which we can't pass directly via on_enter() macro
             let old = self.should_ignore;
             let ignore_current = match old {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => old,
                 _ => {
-                    self.should_ignore = crate::utils::hint_comments::should_ignore(
+                    self.should_ignore = istanbul_oxi_instrument::hint_comments::should_ignore(
                         &self.comments,
                         Some(&bin_expr.span),
                     );
@@ -706,7 +710,7 @@ macro_rules! instrumentation_visitor {
             };
 
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {
                     self.nodes.push(istanbul_oxi_instrument::Node::BinExpr);
                     bin_expr.visit_mut_children_with(self);
                     self.on_exit(old);
@@ -749,7 +753,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_assign_pat(&mut self, assign_pat: &mut AssignPat) {
             let (old, ignore_current) = self.on_enter(assign_pat);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
                         self.source_map,
@@ -772,7 +776,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_try_stmt(&mut self, try_stmt: &mut TryStmt) {
             let (old, ignore_current) = self.on_enter(try_stmt);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     self.mark_prepend_stmt_counter(&try_stmt.span);
                     try_stmt.visit_mut_children_with(self);
@@ -786,7 +790,7 @@ macro_rules! instrumentation_visitor {
         fn visit_mut_throw_stmt(&mut self, throw_stmt: &mut ThrowStmt) {
             let (old, ignore_current) = self.on_enter(throw_stmt);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     self.mark_prepend_stmt_counter(&throw_stmt.span);
                     throw_stmt.visit_mut_children_with(self);
@@ -802,7 +806,7 @@ macro_rules! instrumentation_visitor {
 
             let (old, ignore_current) = self.on_enter(with_stmt);
             match ignore_current {
-                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     self.mark_prepend_stmt_counter(&with_stmt.span);
 

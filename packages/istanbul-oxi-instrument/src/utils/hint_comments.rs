@@ -1,8 +1,18 @@
 use once_cell::sync::Lazy;
 use regex::Regex as Regexp;
+
+#[cfg(not(feature = "plugin"))]
+use swc_common::{
+    comments::{Comment, Comments, SingleThreadedComments as CommentsLookup},
+    Span,
+};
+#[cfg(not(feature = "plugin"))]
+use swc_ecma_ast::*;
+
+#[cfg(feature = "plugin")]
 use swc_plugin::{
     ast::*,
-    comments::{Comment, Comments, PluginCommentsProxy},
+    comments::{Comment, Comments, PluginCommentsProxy as CommentsLookup},
     syntax_pos::Span,
 };
 
@@ -17,7 +27,7 @@ static COMMENT_FILE_REGEX: Lazy<Regexp> =
 pub static COMMENT_RE: Lazy<Regexp> =
     Lazy::new(|| Regexp::new(r"^\s*istanbul\s+ignore\s+(if|else|next)(\W|$)").unwrap());
 
-pub fn should_ignore_file(comments: &Option<&PluginCommentsProxy>, program: &Program) -> bool {
+pub fn should_ignore_file(comments: &Option<&CommentsLookup>, program: &Program) -> bool {
     if let Some(comments) = *comments {
         let pos = match program {
             Program::Module(module) => module.span,
@@ -48,7 +58,7 @@ pub fn should_ignore_file(comments: &Option<&PluginCommentsProxy>, program: &Pro
 }
 
 pub fn lookup_hint_comments(
-    comments: &Option<&PluginCommentsProxy>,
+    comments: &Option<&CommentsLookup>,
     span: Option<&Span>,
 ) -> Option<String> {
     if let Some(span) = span {
@@ -91,7 +101,7 @@ pub enum IgnoreScope {
 }
 
 pub fn should_ignore(
-    comments: &Option<&PluginCommentsProxy>,
+    comments: &Option<&CommentsLookup>,
     span: Option<&Span>,
 ) -> Option<IgnoreScope> {
     let comments = lookup_hint_comments(comments, span);
