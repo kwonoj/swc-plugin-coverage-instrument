@@ -12,7 +12,7 @@ macro_rules! instrumentation_stmt_counter_helper {
                     let (old, ignore_current) = self.on_enter(&mut stmt);
 
                     match ignore_current {
-                        Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                        Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
                         _ => {
                             let mut visitor = crate::visitors::stmt_like_visitor::StmtVisitor::new(
                                 self.source_map,

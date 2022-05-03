@@ -25,9 +25,9 @@ impl VisitMut for LogicalExprVisitor<'_> {
         // which we can't pass directly via on_enter() macro
         let old = self.should_ignore;
         let ignore_current = match old {
-            Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
+            Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => old,
             _ => {
-                self.should_ignore = crate::utils::hint_comments::should_ignore(
+                self.should_ignore = istanbul_oxi_instrument::hint_comments::should_ignore(
                     &self.comments,
                     Some(&bin_expr.span),
                 );
@@ -36,7 +36,7 @@ impl VisitMut for LogicalExprVisitor<'_> {
         };
 
         match ignore_current {
-            Some(crate::utils::hint_comments::IgnoreScope::Next) => {
+            Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {
                 self.nodes.push(istanbul_oxi_instrument::Node::BinExpr);
                 bin_expr.visit_mut_children_with(self);
                 self.on_exit(old);

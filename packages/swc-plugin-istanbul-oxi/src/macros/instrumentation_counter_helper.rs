@@ -10,9 +10,10 @@ macro_rules! instrumentation_counter_helper {
             use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
 
             let span = istanbul_oxi_instrument::lookup_range::get_expr_span(expr);
-            let should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
+            let should_ignore =
+                istanbul_oxi_instrument::hint_comments::should_ignore(&self.comments, span);
 
-            if let Some(crate::utils::hint_comments::IgnoreScope::Next) = should_ignore {
+            if let Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) = should_ignore {
                 return;
             }
 

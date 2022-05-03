@@ -25,10 +25,7 @@ use crate::{
         create_coverage_fn_decl::create_coverage_fn_decl,
         create_global_stmt_template::create_global_stmt_template,
     },
-    utils::{
-        hint_comments::{lookup_hint_comments, should_ignore_file},
-        UnknownReserved,
-    },
+    utils::UnknownReserved,
     InstrumentOptions,
 };
 
@@ -119,7 +116,7 @@ impl VisitMut for CoverageVisitor<'_> {
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_program(&mut self, program: &mut Program) {
         self.nodes.push(istanbul_oxi_instrument::Node::Program);
-        if should_ignore_file(&self.comments, program) {
+        if istanbul_oxi_instrument::hint_comments::should_ignore_file(&self.comments, program) {
             return;
         }
 
@@ -205,7 +202,7 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_export_default_decl(&mut self, export_default_decl: &mut ExportDefaultDecl) {
         let (old, ignore_current) = self.on_enter(export_default_decl);
         match ignore_current {
-            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
             _ => {
                 // noop
                 export_default_decl.visit_mut_children_with(self);
@@ -219,7 +216,7 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_export_decl(&mut self, export_named_decl: &mut ExportDecl) {
         let (old, ignore_current) = self.on_enter(export_named_decl);
         match ignore_current {
-            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
             _ => {
                 // noop
                 export_named_decl.visit_mut_children_with(self);
@@ -233,7 +230,7 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_debugger_stmt(&mut self, debugger_stmt: &mut DebuggerStmt) {
         let (old, ignore_current) = self.on_enter(debugger_stmt);
         match ignore_current {
-            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
             _ => {
                 debugger_stmt.visit_mut_children_with(self);
             }
@@ -247,7 +244,7 @@ impl VisitMut for CoverageVisitor<'_> {
         let (old, ignore_current) = self.on_enter(cond_expr);
 
         match ignore_current {
-            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+            Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
             _ => {
                 let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
                     self.source_map,
@@ -255,11 +252,11 @@ impl VisitMut for CoverageVisitor<'_> {
                 );
                 let branch = self.cov.new_branch(BranchType::CondExpr, &range, false);
 
-                let c_hint = lookup_hint_comments(
+                let c_hint = istanbul_oxi_instrument::hint_comments::lookup_hint_comments(
                     &self.comments,
                     istanbul_oxi_instrument::lookup_range::get_expr_span(&*cond_expr.cons),
                 );
-                let a_hint = lookup_hint_comments(
+                let a_hint = istanbul_oxi_instrument::hint_comments::lookup_hint_comments(
                     &self.comments,
                     istanbul_oxi_instrument::lookup_range::get_expr_span(&*cond_expr.alt),
                 );

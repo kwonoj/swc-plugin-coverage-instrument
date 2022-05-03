@@ -21,7 +21,7 @@ macro_rules! create_instrumentation_visitor {
             instrument_options: crate::InstrumentOptions,
             pub before: Vec<swc_plugin::ast::Stmt>,
             nodes: Vec<istanbul_oxi_instrument::Node>,
-            should_ignore: Option<crate::utils::hint_comments::IgnoreScope>,
+            should_ignore: Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>,
             $($vis $field: $t,)*
         }
 
@@ -32,7 +32,7 @@ macro_rules! create_instrumentation_visitor {
                 cov: &'a mut istanbul_oxi_instrument::source_coverage::SourceCoverage,
                 instrument_options: &'a crate::InstrumentOptions,
                 nodes: &'a Vec<istanbul_oxi_instrument::Node>,
-                should_ignore: Option<crate::utils::hint_comments::IgnoreScope>,
+                should_ignore: Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>,
                 $($field: $t,)*
             ) -> $name<'a> {
                 $name {
@@ -65,12 +65,12 @@ macro_rules! create_instrumentation_visitor {
                 }
             }
 
-            fn on_enter_with_span(&mut self, span: Option<&Span>) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+            fn on_enter_with_span(&mut self, span: Option<&Span>) -> (Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>, Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>) {
                 let old = self.should_ignore;
                 let ret = match old {
-                    Some(crate::utils::hint_comments::IgnoreScope::Next) => old,
+                    Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => old,
                     _ => {
-                        self.should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
+                        self.should_ignore = istanbul_oxi_instrument::hint_comments::should_ignore(&self.comments, span);
                         self.should_ignore
                     }
                 };
@@ -78,7 +78,7 @@ macro_rules! create_instrumentation_visitor {
                 (old, ret)
             }
 
-            fn on_exit(&mut self, old: Option<crate::utils::hint_comments::IgnoreScope>) {
+            fn on_exit(&mut self, old: Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>) {
                 self.should_ignore = old;
                 self.nodes.pop();
             }
@@ -90,7 +90,7 @@ macro_rules! create_instrumentation_visitor {
         /// TODO: Can a macro like `on_visit_mut_expr` expands on_enter / exit automatically?
         /// `on_visit_mut_expr!(|expr| {self.xxx})` doesn't seem to work.
         trait CoverageInstrumentationMutVisitEnter<N> {
-            fn on_enter(&mut self, n: &mut N) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>);
+            fn on_enter(&mut self, n: &mut N) -> (Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>, Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>);
         }
 
         // Macro generates trait impl for the type can access span directly.
@@ -98,7 +98,7 @@ macro_rules! create_instrumentation_visitor {
             ($N: tt) => {
                 impl CoverageInstrumentationMutVisitEnter<$N> for $name<'_> {
                     #[inline]
-                    fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+                    fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> (Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>, Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>) {
                         self.nodes.push(istanbul_oxi_instrument::Node::$N);
                         self.on_enter_with_span(Some(&n.span))
                     }
@@ -107,7 +107,7 @@ macro_rules! create_instrumentation_visitor {
         }
 
         impl CoverageInstrumentationMutVisitEnter<Expr> for $name<'_> {
-            fn on_enter(&mut self, n: &mut Expr) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+            fn on_enter(&mut self, n: &mut Expr) -> (Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>, Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>) {
                 self.nodes.push(istanbul_oxi_instrument::Node::Expr);
                 let span = istanbul_oxi_instrument::lookup_range::get_expr_span(n);
                 self.on_enter_with_span(span)
@@ -115,7 +115,7 @@ macro_rules! create_instrumentation_visitor {
          }
 
          impl CoverageInstrumentationMutVisitEnter<Stmt> for $name<'_> {
-            fn on_enter(&mut self, n: &mut Stmt) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+            fn on_enter(&mut self, n: &mut Stmt) -> (Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>, Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>) {
                 self.nodes.push(istanbul_oxi_instrument::Node::Stmt);
                 let span = istanbul_oxi_instrument::lookup_range::get_stmt_span(n);
 
@@ -124,7 +124,7 @@ macro_rules! create_instrumentation_visitor {
          }
 
          impl CoverageInstrumentationMutVisitEnter<ModuleDecl> for $name<'_> {
-            fn on_enter(&mut self, n: &mut ModuleDecl) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+            fn on_enter(&mut self, n: &mut ModuleDecl) -> (Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>, Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>) {
                 self.nodes.push(istanbul_oxi_instrument::Node::ModuleDecl);
                 let span = istanbul_oxi_instrument::lookup_range::get_module_decl_span(n);
 
@@ -133,28 +133,28 @@ macro_rules! create_instrumentation_visitor {
          }
 
          impl CoverageInstrumentationMutVisitEnter<ClassDecl> for $name<'_> {
-            fn on_enter(&mut self, n: &mut ClassDecl) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+            fn on_enter(&mut self, n: &mut ClassDecl) -> (Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>, Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>) {
                 self.nodes.push(istanbul_oxi_instrument::Node::ClassDecl);
                 self.on_enter_with_span(Some(&n.class.span))
             }
          }
 
          impl CoverageInstrumentationMutVisitEnter<FnExpr> for $name<'_> {
-            fn on_enter(&mut self, n: &mut FnExpr) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+            fn on_enter(&mut self, n: &mut FnExpr) -> (Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>, Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>) {
                 self.nodes.push(istanbul_oxi_instrument::Node::FnExpr);
                 self.on_enter_with_span(Some(&n.function.span))
             }
          }
 
          impl CoverageInstrumentationMutVisitEnter<MethodProp> for $name<'_> {
-            fn on_enter(&mut self, n: &mut MethodProp) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+            fn on_enter(&mut self, n: &mut MethodProp) -> (Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>, Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>) {
                 self.nodes.push(istanbul_oxi_instrument::Node::MethodProp);
                 self.on_enter_with_span(Some(&n.function.span))
             }
          }
 
          impl CoverageInstrumentationMutVisitEnter<FnDecl> for $name<'_> {
-            fn on_enter(&mut self, n: &mut FnDecl) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
+            fn on_enter(&mut self, n: &mut FnDecl) -> (Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>, Option<istanbul_oxi_instrument::hint_comments::IgnoreScope>) {
                 self.nodes.push(istanbul_oxi_instrument::Node::FnDecl);
                 self.on_enter_with_span(Some(&n.function.span))
             }
