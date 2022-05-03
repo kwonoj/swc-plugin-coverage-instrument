@@ -8,10 +8,40 @@ use istanbul_oxi_instrument::{
 };
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
 
-use crate::utils::ast_builder::{
-    create_ident_key_value_prop, create_num_lit_expr, create_str_key_value_prop,
-    create_str_lit_expr,
-};
+//TODO: macro, or remove create_* util
+fn create_str(value: &str) -> Str {
+    Str {
+        value: value.clone().into(),
+        raw: Some(format!(r#""{}""#, value).into()),
+        span: DUMMY_SP,
+    }
+}
+
+pub fn create_str_lit_expr(value: &str) -> Expr {
+    Expr::Lit(Lit::Str(create_str(value)))
+}
+
+pub fn create_num_lit_expr(value: u32) -> Expr {
+    Expr::Lit(Lit::Num(Number {
+        value: value.clone().into(),
+        raw: Some(value.to_string().into()),
+        span: DUMMY_SP,
+    }))
+}
+
+pub fn create_ident_key_value_prop(key: &Ident, value: Expr) -> PropOrSpread {
+    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(key.clone()),
+        value: Box::new(value),
+    })))
+}
+
+pub fn create_str_key_value_prop(key: &str, value: Expr) -> PropOrSpread {
+    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Str(create_str(&key)),
+        value: Box::new(value),
+    })))
+}
 
 fn create_range_object_prop(value: &Range) -> Vec<PropOrSpread> {
     vec![
@@ -419,12 +449,11 @@ mod tests {
     use swc_ecma_quote::quote;
     use swc_plugin::{ast::*, utils::take::Take};
 
-    use crate::{
-        template::create_coverage_data_object::create_coverage_data_object,
-        utils::ast_builder::create_ident_key_value_prop,
-    };
+    use crate::template::create_coverage_data_object::create_coverage_data_object;
 
     use pretty_assertions::assert_eq;
+
+    use super::*;
 
     fn adjust_expected_ast_path_raw(e: &mut Expr, idx: usize, value: &str) {
         if let Expr::Object(lit) = e {
