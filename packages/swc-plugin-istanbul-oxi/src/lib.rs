@@ -1,14 +1,12 @@
 use serde_json::Value;
 use swc_plugin::{ast::*, plugin_transform, TransformPluginProgramMetadata};
 
-mod template;
 #[macro_use]
 mod macros;
 mod options;
 mod utils;
 mod visitors;
 pub use options::InstrumentOptions;
-use template::create_coverage_fn_decl::create_coverage_fn_ident;
 use tracing_subscriber::fmt::format::FmtSpan;
 pub use visitors::coverage_visitor;
 
@@ -35,7 +33,7 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
     };
 
     // create a function name ident for the injected coverage instrumentation counters.
-    create_coverage_fn_ident(filename);
+    istanbul_oxi_instrument::create_coverage_fn_decl::create_coverage_fn_ident(filename);
 
     let instrument_options_value: Value = serde_json::from_str(&metadata.plugin_config)
         .expect("Should able to deserialize plugin config");

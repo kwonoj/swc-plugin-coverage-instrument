@@ -3,13 +3,24 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use istanbul_oxi_instrument::{constants::idents::*, FileCoverage};
-use once_cell::sync::OnceCell;
+use istanbul_oxi_coverage::FileCoverage;
+#[cfg(not(feature = "plugin"))]
+use swc_common::{util::take::Take, DUMMY_SP};
+#[cfg(not(feature = "plugin"))]
+use swc_ecma_ast::*;
+#[cfg(not(feature = "plugin"))]
+use swc_ecma_quote::quote;
+
+#[cfg(feature = "plugin")]
 use swc_plugin::{
     ast::*,
     syntax_pos::DUMMY_SP,
     utils::{quote, take::Take},
 };
+
+use once_cell::sync::OnceCell;
+
+use crate::constants::idents::*;
 
 use super::{
     create_assignment_stmt::create_assignment_stmt,

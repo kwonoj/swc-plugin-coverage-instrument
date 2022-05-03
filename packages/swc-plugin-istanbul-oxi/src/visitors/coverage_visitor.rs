@@ -1,6 +1,8 @@
-// TODO: remove
-#![allow(unused)]
-use istanbul_oxi_instrument::{source_coverage::SourceCoverage, BranchType};
+use istanbul_oxi_instrument::{
+    create_coverage_fn_decl::create_coverage_fn_decl,
+    create_global_stmt_template::create_global_stmt_template, source_coverage::SourceCoverage,
+    BranchType,
+};
 
 use once_cell::sync::Lazy;
 use regex::Regex as Regexp;
@@ -19,12 +21,7 @@ use tracing::instrument;
 
 use crate::{
     create_instrumentation_visitor, instrumentation_counter_helper,
-    instrumentation_stmt_counter_helper, instrumentation_visitor,
-    template::{
-        create_coverage_fn_decl::create_coverage_fn_decl,
-        create_global_stmt_template::create_global_stmt_template,
-    },
-    utils::UnknownReserved,
+    instrumentation_stmt_counter_helper, instrumentation_visitor, utils::UnknownReserved,
     InstrumentOptions,
 };
 
