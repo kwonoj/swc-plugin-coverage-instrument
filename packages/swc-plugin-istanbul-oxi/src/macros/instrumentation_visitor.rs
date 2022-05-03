@@ -53,7 +53,7 @@ macro_rules! instrumentation_visitor {
                             &block_stmt.span,
                         );
                         let index = self.cov.new_function(&None, &range, &body_range);
-                        let b = crate::instrument::create_increase_counter_expr(
+                        let b = istanbul_oxi_instrument::create_increase_counter_expr(
                             &istanbul_oxi_instrument::constants::idents::IDENT_F,
                             index,
                             &self.cov_fn_ident,
@@ -84,7 +84,7 @@ macro_rules! instrumentation_visitor {
                                     &span,
                                 );
                             let index = self.cov.new_function(&None, &range, &body_range);
-                            let b = crate::instrument::create_increase_counter_expr(
+                            let b = istanbul_oxi_instrument::create_increase_counter_expr(
                                 &istanbul_oxi_instrument::constants::idents::IDENT_F,
                                 index,
                                 &self.cov_fn_ident,
@@ -382,7 +382,7 @@ macro_rules! instrumentation_visitor {
                                     );
                                 let index = self.cov.new_function(&name, &range, &body_range);
 
-                                let b = crate::instrument::create_increase_counter_expr(
+                                let b = istanbul_oxi_instrument::create_increase_counter_expr(
                                     &istanbul_oxi_instrument::constants::idents::IDENT_F,
                                     index,
                                     &self.cov_fn_ident,
@@ -439,7 +439,7 @@ macro_rules! instrumentation_visitor {
                                     );
                                 let index = self.cov.new_function(&name, &range, &body_range);
 
-                                let b = crate::instrument::create_increase_counter_expr(
+                                let b = istanbul_oxi_instrument::create_increase_counter_expr(
                                     &istanbul_oxi_instrument::constants::idents::IDENT_F,
                                     index,
                                     &self.cov_fn_ident,
@@ -611,7 +611,7 @@ macro_rules! instrumentation_visitor {
 
                         // create a branch path counter
                         let idx = self.cov.add_branch_path(branch, &range);
-                        let expr = crate::instrument::create_increase_counter_expr(
+                        let expr = istanbul_oxi_instrument::create_increase_counter_expr(
                             &istanbul_oxi_instrument::constants::idents::IDENT_B,
                             branch,
                             &self.cov_fn_ident,

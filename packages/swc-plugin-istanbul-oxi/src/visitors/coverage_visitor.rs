@@ -18,9 +18,8 @@ use swc_plugin::{
 use tracing::instrument;
 
 use crate::{
-    create_instrumentation_visitor,
-    instrument::create_increase_counter_expr,
-    instrumentation_counter_helper, instrumentation_stmt_counter_helper, instrumentation_visitor,
+    create_instrumentation_visitor, instrumentation_counter_helper,
+    instrumentation_stmt_counter_helper, instrumentation_visitor,
     template::{
         create_coverage_fn_decl::create_coverage_fn_decl,
         create_global_stmt_template::create_global_stmt_template,
