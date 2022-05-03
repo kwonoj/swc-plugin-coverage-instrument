@@ -222,32 +222,6 @@ impl VisitMut for CoverageVisitor<'_> {
         self.on_exit(old);
     }
 
-    // ThrowStatement: entries(coverStatement),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_throw_stmt(&mut self, throw_stmt: &mut ThrowStmt) {
-        let (old, ignore_current) = self.on_enter(throw_stmt);
-        match ignore_current {
-            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
-            _ => {
-                throw_stmt.visit_mut_children_with(self);
-            }
-        }
-        self.on_exit(old);
-    }
-
-    // TryStatement: entries(coverStatement),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_try_stmt(&mut self, try_stmt: &mut TryStmt) {
-        let (old, ignore_current) = self.on_enter(try_stmt);
-        match ignore_current {
-            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
-            _ => {
-                try_stmt.visit_mut_children_with(self);
-            }
-        }
-        self.on_exit(old);
-    }
-
     // WithStatement: entries(blockProp('body'), coverStatement),
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_with_stmt(&mut self, with_stmt: &mut WithStmt) {

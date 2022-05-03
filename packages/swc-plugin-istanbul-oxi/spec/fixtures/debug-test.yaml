@@ -1,32 +1,51 @@
 ---
-name: ES6 default arguments
-guard: isDefaultArgsAvailable
+name: simple try/catch
 code: |
-  function add(a = 1, b = 2, c = 3, d = 4) {
-    return a + b + c + d;
+  try {
+     if (args[0] === "X") { throw "foo"; }
+     output = args[0];
+  } catch (ex) {
+     output="Y";
+  } finally {
+     output += 1;
   }
-  output = add(args[0], args[1], args[2], args[3])
 tests:
-  - name: everything specified
-    args: [10, 20, 30, 40]
-    out: 100
-    lines: { '2': 1, 4: 1}
-    statements: {'0': 1, '1': 1 }
-    functions: {'0': 1}
-    branches: { '0': [0], '1': [0], '2': [0], '3': [0] }
+  - name: happy path
+    args: [1]
+    out: 2
+    lines: {'1': 1, '2': 1, '3': 1, '5': 0, '7': 1}
+    branches: {'0': [0, 1]}
+    statements: {'0': 1, '1': 1, '2': 0, '3': 1, '4': 0, '5': 1}
 
-  - name: 2 of 4 specified
-    args: [3, 4 ]
-    out: 14
-    lines: { '2': 1, 4: 1}
-    statements: {'0': 1, '1': 1 }
-    functions: {'0': 1}
-    branches: { '0': [0], '1': [0], '2': [1], '3': [1] }
+  - name: sad path
+    args: [X]
+    out: Y1
+    lines: {'1': 1, '2': 1, '3': 0, '5': 1, '7': 1}
+    branches: {'0': [1, 0]}
+    statements: {'0': 1, '1': 1, '2': 1, '3': 0, '4': 1, '5': 1}
+---
+name: optional catch binding
+guard: isOptionalCatchBindingAvailable
+code: |
+  try {
+     if (args[0] === "X") { throw "foo"; }
+     output = args[0];
+  } catch {
+     output="Y";
+  } finally {
+     output += 1;
+  }
+tests:
+  - name: happy path
+    args: [1]
+    out: 2
+    lines: {'1': 1, '2': 1, '3': 1, '5': 0, '7': 1}
+    branches: {'0': [0, 1]}
+    statements: {'0': 1, '1': 1, '2': 0, '3': 1, '4': 0, '5': 1}
 
-  - name: nothing specified
-    args: []
-    out: 10
-    lines: { '2': 1, 4: 1}
-    statements: {'0': 1, '1': 1 }
-    functions: {'0': 1}
-    branches: { '0': [1], '1': [1], '2': [1], '3': [1] }
+  - name: sad path
+    args: [X]
+    out: Y1
+    lines: {'1': 1, '2': 1, '3': 0, '5': 1, '7': 1}
+    branches: {'0': [1, 0]}
+    statements: {'0': 1, '1': 1, '2': 1, '3': 0, '4': 1, '5': 1}
