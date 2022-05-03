@@ -44,11 +44,11 @@ macro_rules! instrumentation_visitor {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
                 _ => match &mut arrow_expr.body {
                     BlockStmtOrExpr::BlockStmt(block_stmt) => {
-                        let range = crate::utils::lookup_range::get_range_from_span(
+                        let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
                             self.source_map,
                             &arrow_expr.span,
                         );
-                        let body_range = crate::utils::lookup_range::get_range_from_span(
+                        let body_range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
                             self.source_map,
                             &block_stmt.span,
                         );
@@ -72,16 +72,17 @@ macro_rules! instrumentation_visitor {
                     }
                     BlockStmtOrExpr::Expr(expr) => {
                         // TODO: refactor common logics creates a blockstmt from single expr
-                        let range = crate::utils::lookup_range::get_range_from_span(
+                        let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
                             self.source_map,
                             &arrow_expr.span,
                         );
-                        let span = crate::utils::lookup_range::get_expr_span(expr);
+                        let span = istanbul_oxi_instrument::lookup_range::get_expr_span(expr);
                         if let Some(span) = span {
-                            let body_range = crate::utils::lookup_range::get_range_from_span(
-                                self.source_map,
-                                &span,
-                            );
+                            let body_range =
+                                istanbul_oxi_instrument::lookup_range::get_range_from_span(
+                                    self.source_map,
+                                    &span,
+                                );
                             let index = self.cov.new_function(&None, &range, &body_range);
                             let b = crate::instrument::create_increase_counter_expr(
                                 &istanbul_oxi_instrument::constants::idents::IDENT_F,
@@ -125,7 +126,7 @@ macro_rules! instrumentation_visitor {
         #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_stmt(&mut self, stmt: &mut Stmt) {
             if !self.is_injected_counter_stmt(stmt) {
-                let span = crate::utils::lookup_range::get_stmt_span(&stmt);
+                let span = istanbul_oxi_instrument::lookup_range::get_stmt_span(&stmt);
                 if let Some(span) = span {
                     let increment_expr = self.create_stmt_increase_counter_expr(span, None);
 
@@ -368,16 +369,17 @@ macro_rules! instrumentation_visitor {
                         if !should_ignore_via_options {
                             let (span, name) = (&ident.span, Some(ident.sym.to_string()));
 
-                            let range = crate::utils::lookup_range::get_range_from_span(
+                            let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
                                 self.source_map,
                                 span,
                             );
                             if let Some(body) = &mut getter_prop.body {
                                 let body_span = body.span;
-                                let body_range = crate::utils::lookup_range::get_range_from_span(
-                                    self.source_map,
-                                    &body_span,
-                                );
+                                let body_range =
+                                    istanbul_oxi_instrument::lookup_range::get_range_from_span(
+                                        self.source_map,
+                                        &body_span,
+                                    );
                                 let index = self.cov.new_function(&name, &range, &body_range);
 
                                 let b = crate::instrument::create_increase_counter_expr(
@@ -424,16 +426,17 @@ macro_rules! instrumentation_visitor {
                         if !should_ignore_via_options {
                             let (span, name) = (&ident.span, Some(ident.sym.to_string()));
 
-                            let range = crate::utils::lookup_range::get_range_from_span(
+                            let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
                                 self.source_map,
                                 span,
                             );
                             if let Some(body) = &mut setter_prop.body {
                                 let body_span = body.span;
-                                let body_range = crate::utils::lookup_range::get_range_from_span(
-                                    self.source_map,
-                                    &body_span,
-                                );
+                                let body_range =
+                                    istanbul_oxi_instrument::lookup_range::get_range_from_span(
+                                        self.source_map,
+                                        &body_span,
+                                    );
                                 let index = self.cov.new_function(&name, &range, &body_range);
 
                                 let b = crate::instrument::create_increase_counter_expr(
@@ -552,7 +555,7 @@ macro_rules! instrumentation_visitor {
                     // Insert stmt counter for `switch` itself, then create a new branch
                     self.mark_prepend_stmt_counter(&switch_stmt.span);
 
-                    let range = crate::utils::lookup_range::get_range_from_span(
+                    let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
                         self.source_map,
                         &switch_stmt.span,
                     );
@@ -595,7 +598,7 @@ macro_rules! instrumentation_visitor {
                     // cover_statement's is_stmt prepend logic for individual child stmt visitor
                     self.mark_prepend_stmt_counter(&if_stmt.span);
 
-                    let range = crate::utils::lookup_range::get_range_from_span(
+                    let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
                         self.source_map,
                         &if_stmt.span,
                     );
@@ -716,7 +719,7 @@ macro_rules! instrumentation_visitor {
                             self.nodes.push(istanbul_oxi_instrument::Node::LogicalExpr);
 
                             // Create a new branch. This id should be reused for any inner logical expr.
-                            let range = crate::utils::lookup_range::get_range_from_span(
+                            let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
                                 self.source_map,
                                 &bin_expr.span,
                             );
@@ -748,7 +751,7 @@ macro_rules! instrumentation_visitor {
             match ignore_current {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
                 _ => {
-                    let range = crate::utils::lookup_range::get_range_from_span(
+                    let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
                         self.source_map,
                         &assign_pat.span,
                     );

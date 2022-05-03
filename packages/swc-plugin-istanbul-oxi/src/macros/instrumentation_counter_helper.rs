@@ -9,7 +9,7 @@ macro_rules! instrumentation_counter_helper {
         fn wrap_bin_expr_with_branch_counter(&mut self, branch: u32, expr: &mut Expr) {
             use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
 
-            let span = crate::utils::lookup_range::get_expr_span(expr);
+            let span = istanbul_oxi_instrument::lookup_range::get_expr_span(expr);
             let should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
 
             if let Some(crate::utils::hint_comments::IgnoreScope::Next) = should_ignore {
@@ -40,8 +40,10 @@ macro_rules! instrumentation_counter_helper {
                 // Wrap it with branch counter.
                 if self.instrument_options.report_logic {
                     if let Some(span) = span {
-                        let range =
-                            crate::utils::lookup_range::get_range_from_span(self.source_map, span);
+                        let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
+                            self.source_map,
+                            span,
+                        );
                         let branch_path_index = self.cov.add_branch_path(branch, &range);
 
                         let increase_expr = crate::instrument::create_increase_counter_expr(
@@ -75,7 +77,8 @@ macro_rules! instrumentation_counter_helper {
 
         #[tracing::instrument(skip(self, span, idx), fields(stmt_id))]
         fn create_stmt_increase_counter_expr(&mut self, span: &Span, idx: Option<u32>) -> Expr {
-            let stmt_range = crate::utils::lookup_range::get_range_from_span(self.source_map, span);
+            let stmt_range =
+                istanbul_oxi_instrument::lookup_range::get_range_from_span(self.source_map, span);
 
             let stmt_id = self.cov.new_statement(&stmt_range);
 
@@ -146,10 +149,12 @@ macro_rules! instrumentation_counter_helper {
         {
             use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
 
-            let span = crate::utils::lookup_range::get_expr_span(expr);
+            let span = istanbul_oxi_instrument::lookup_range::get_expr_span(expr);
             if let Some(span) = span {
-                let init_range =
-                    crate::utils::lookup_range::get_range_from_span(self.source_map, span);
+                let init_range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
+                    self.source_map,
+                    span,
+                );
                 let prepend_expr = get_counter(&mut self.cov, &self.cov_fn_ident, &init_range);
 
                 let paren_expr = Expr::Paren(ParenExpr {
@@ -185,7 +190,8 @@ macro_rules! instrumentation_counter_helper {
                 (&function.span, None)
             };
 
-            let range = crate::utils::lookup_range::get_range_from_span(self.source_map, span);
+            let range =
+                istanbul_oxi_instrument::lookup_range::get_range_from_span(self.source_map, span);
             let body_span = if let Some(body) = &function.body {
                 body.span
             } else {
@@ -193,8 +199,10 @@ macro_rules! instrumentation_counter_helper {
                 function.span
             };
 
-            let body_range =
-                crate::utils::lookup_range::get_range_from_span(self.source_map, &body_span);
+            let body_range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
+                self.source_map,
+                &body_span,
+            );
             let index = self.cov.new_function(&name, &range, &body_range);
 
             match &mut function.body {
@@ -251,7 +259,7 @@ macro_rules! instrumentation_counter_helper {
         }
 
         fn cover_statement(&mut self, expr: &mut Expr) {
-            let span = crate::utils::lookup_range::get_expr_span(expr);
+            let span = istanbul_oxi_instrument::lookup_range::get_expr_span(expr);
             // This is ugly, poor man's substitute to istanbul's `insertCounter` to determine
             // when to replace givn expr to wrapped Paren or prepend stmt counter.
             // We can't do insert parent node's sibling in downstream's child node.

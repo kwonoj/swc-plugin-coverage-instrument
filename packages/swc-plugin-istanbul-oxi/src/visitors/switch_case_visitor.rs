@@ -5,7 +5,6 @@ use tracing::instrument;
 use crate::{
     create_instrumentation_visitor, instrument::create_increase_counter_expr,
     instrumentation_counter_helper, instrumentation_stmt_counter_helper, instrumentation_visitor,
-    utils::lookup_range::get_range_from_span,
 };
 
 create_instrumentation_visitor!(SwitchCaseVisitor { branch: u32 });
@@ -28,7 +27,10 @@ impl VisitMut for SwitchCaseVisitor<'_> {
             Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
             _ => {
                 // TODO: conslidate brach expr creation, i.e ifstmt
-                let range = get_range_from_span(self.source_map, &switch_case.span);
+                let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
+                    self.source_map,
+                    &switch_case.span,
+                );
                 let idx = self.cov.add_branch_path(self.branch, &range);
                 let expr = create_increase_counter_expr(
                     &IDENT_B,
