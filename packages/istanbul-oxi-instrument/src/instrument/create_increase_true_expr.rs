@@ -1,9 +1,17 @@
-use istanbul_oxi_instrument::{constants::idents::IDENT_BT, create_increase_counter_expr};
+#[cfg(not(feature = "plugin"))]
+use swc_common::{util::take::Take, DUMMY_SP};
+#[cfg(not(feature = "plugin"))]
+use swc_ecma_ast::*;
+
+#[cfg(feature = "plugin")]
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
+
+use super::create_increase_counter_expr::create_increase_counter_expr;
+use crate::constants::idents::IDENT_BT;
 
 /// Reads the logic expression conditions and conditionally increments truthy counter.
 /// This is always known to be b_t type counter does not need to accept what type of ident it'll create.
-pub(crate) fn create_increase_true_expr(
+pub fn create_increase_true_expr(
     id: u32,
     idx: u32,
     var_name: &Ident,
