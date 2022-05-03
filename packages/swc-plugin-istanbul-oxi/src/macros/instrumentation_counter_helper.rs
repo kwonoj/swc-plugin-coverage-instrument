@@ -47,12 +47,11 @@ macro_rules! instrumentation_counter_helper {
                             &self.cov_fn_ident,
                             Some(branch_path_index),
                         );
-                        let increase_true_expr =
-                            crate::instrument::create_increase_true_expr::create_increase_true_expr(
-                                branch,
-                                branch_path_index,
-                                &self.cov_fn_ident,
-                            );
+                        let increase_true_expr = crate::instrument::create_increase_true_expr(
+                            branch,
+                            branch_path_index,
+                            &self.cov_fn_ident,
+                        );
                         //this.increaseTrue('bT', branchName, index, path.node)
                         //let increase_true_expr =
                     }
