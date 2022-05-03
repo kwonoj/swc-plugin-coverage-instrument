@@ -276,7 +276,7 @@ macro_rules! instrumentation_counter_helper {
                 let mut hoist = crate::visitors::finders::HoistingFinder::new();
                 expr.visit_with(&mut hoist);
                 let parent = self.nodes.last().unwrap().clone();
-                if hoist.0 && parent == Node::VarDeclarator {
+                if hoist.0 && parent == istanbul_oxi_instrument::Node::VarDeclarator {
                     let parent = self.nodes.get(self.nodes.len() - 3);
                     if let Some(parent) = parent {
                         /*if (parent && T.isExportNamedDeclaration(parent.parentPath)) {
@@ -287,7 +287,8 @@ macro_rules! instrumentation_counter_helper {
                         let parent = self.nodes.get(self.nodes.len() - 4);
                         if let Some(parent) = parent {
                             match parent {
-                                Node::BlockStmt | Node::Program => {
+                                istanbul_oxi_instrument::Node::BlockStmt
+                                | istanbul_oxi_instrument::Node::Program => {
                                     self.mark_prepend_stmt_counter(span);
                                 }
                                 _ => {}

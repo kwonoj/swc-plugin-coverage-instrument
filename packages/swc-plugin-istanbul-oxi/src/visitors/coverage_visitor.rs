@@ -1,6 +1,7 @@
 // TODO: remove
 #![allow(unused)]
 use istanbul_oxi_instrument::{source_coverage::SourceCoverage, BranchType};
+
 use once_cell::sync::Lazy;
 use regex::Regex as Regexp;
 use std::{
@@ -27,7 +28,6 @@ use crate::{
     utils::{
         hint_comments::{lookup_hint_comments, should_ignore_file},
         lookup_range::{get_expr_span, get_range_from_span, get_stmt_span},
-        node::Node,
         UnknownReserved,
     },
     InstrumentOptions,
@@ -119,7 +119,7 @@ impl VisitMut for CoverageVisitor<'_> {
 
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_program(&mut self, program: &mut Program) {
-        self.nodes.push(Node::Program);
+        self.nodes.push(istanbul_oxi_instrument::Node::Program);
         if should_ignore_file(&self.comments, program) {
             return;
         }

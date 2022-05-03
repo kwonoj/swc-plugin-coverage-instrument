@@ -1,7 +1,7 @@
 use swc_plugin::ast::*;
 use tracing::instrument;
 
-use crate::{create_instrumentation_visitor, instrumentation_counter_helper, utils::node::Node};
+use crate::{create_instrumentation_visitor, instrumentation_counter_helper};
 
 create_instrumentation_visitor!(LogicalExprVisitor { branch: u32 });
 
@@ -37,14 +37,14 @@ impl VisitMut for LogicalExprVisitor<'_> {
 
         match ignore_current {
             Some(crate::utils::hint_comments::IgnoreScope::Next) => {
-                self.nodes.push(Node::BinExpr);
+                self.nodes.push(istanbul_oxi_instrument::Node::BinExpr);
                 bin_expr.visit_mut_children_with(self);
                 self.on_exit(old);
             }
             _ => {
                 match &bin_expr.op {
                     BinaryOp::LogicalOr | BinaryOp::LogicalAnd | BinaryOp::NullishCoalescing => {
-                        self.nodes.push(Node::LogicalExpr);
+                        self.nodes.push(istanbul_oxi_instrument::Node::LogicalExpr);
 
                         // Iterate over each expr, wrap it with branch counter.
                         // This does not create new branch counter - should use parent's index instead.
@@ -53,7 +53,7 @@ impl VisitMut for LogicalExprVisitor<'_> {
                     }
                     _ => {
                         // iterate as normal for non loigical expr
-                        self.nodes.push(Node::BinExpr);
+                        self.nodes.push(istanbul_oxi_instrument::Node::BinExpr);
                         bin_expr.visit_mut_children_with(self);
                         self.on_exit(old);
                     }
