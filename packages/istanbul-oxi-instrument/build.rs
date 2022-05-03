@@ -3,6 +3,7 @@ use std::{
     hash::{Hash, Hasher},
 };
 
+/// Create compile-time constant values for the coverage schema hash & coverage lib version hash (magic-value)
 fn main() {
     let magic_key = "_coverageSchema";
     let mut hasher = DefaultHasher::new();
