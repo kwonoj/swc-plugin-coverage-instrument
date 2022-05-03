@@ -19,7 +19,7 @@ use tracing::instrument;
 use crate::{
     constants::idents::*,
     create_instrumentation_visitor,
-    instrument::create_increase_expression_expr,
+    instrument::create_increase_counter_expr,
     instrumentation_counter_helper, instrumentation_stmt_counter_helper, instrumentation_visitor,
     template::{
         create_coverage_fn_decl::create_coverage_fn_decl,

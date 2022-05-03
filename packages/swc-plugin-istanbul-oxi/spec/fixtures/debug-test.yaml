@@ -1,11 +1,15 @@
 ---
-name: object getter
+name: simple expression
 code: |
-  const foo = {get test() { return 'value' }}
-  output = foo.test;
+  var x = args[0] > 0 && args[0] < 5;
+  output = x;
+instrumentOpts:
+  reportLogic: true
 tests:
-  - name: object getter is instrumented
-    out: 'value'
+  - name: covers line and one branch
+    args: [-1]
+    out: false
     lines: {'1': 1, '2': 1}
-    functions: {'0': 1}
-    statements: {'0': 1, '1': 1, '2': 1}
+    branches: {'0': [1, 0]}
+    branchesTrue: {'0': [0, 0]}
+    statements: {'0': 1, '1': 1}

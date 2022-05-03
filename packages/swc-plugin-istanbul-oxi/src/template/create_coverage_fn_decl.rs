@@ -19,6 +19,8 @@ use super::{
 };
 
 pub static COVERAGE_FN_IDENT: OnceCell<Ident> = OnceCell::new();
+/// temporal ident being used for b_t true counter
+pub static COVERAGE_FN_TRUE_TEMP_IDENT: OnceCell<Ident> = OnceCell::new();
 
 /// Create a unique ident for the injected coverage counter fn,
 /// Stores it into a global scope.
@@ -26,13 +28,13 @@ pub static COVERAGE_FN_IDENT: OnceCell<Ident> = OnceCell::new();
 /// Do not use static value directly - create_instrumentation_visitor macro
 /// should inject this into a struct accordingly.
 pub fn create_coverage_fn_ident(value: &str) {
-    COVERAGE_FN_IDENT.get_or_init(|| {
-        let mut s = DefaultHasher::new();
-        value.hash(&mut s);
-        let var_name_hash = format!("cov_{}", s.finish());
+    let mut s = DefaultHasher::new();
+    value.hash(&mut s);
+    let var_name_hash = format!("cov_{}", s.finish());
 
-        Ident::new(var_name_hash.into(), DUMMY_SP)
-    });
+    COVERAGE_FN_IDENT.get_or_init(|| Ident::new(var_name_hash.clone().into(), DUMMY_SP));
+    COVERAGE_FN_TRUE_TEMP_IDENT
+        .get_or_init(|| Ident::new(format!("{}_temp", var_name_hash).into(), DUMMY_SP));
 }
 
 /// Creates a function declaration for actual coverage collection.

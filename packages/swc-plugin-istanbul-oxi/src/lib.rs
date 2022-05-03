@@ -11,7 +11,7 @@ mod options;
 mod utils;
 mod visitors;
 pub use options::InstrumentOptions;
-use template::create_coverage_fn_decl::{create_coverage_fn_ident, COVERAGE_FN_IDENT};
+use template::create_coverage_fn_decl::create_coverage_fn_ident;
 use tracing_subscriber::fmt::format::FmtSpan;
 pub use visitors::coverage_visitor;
 
