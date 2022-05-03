@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-istanbul-oxi-instrument = { version = "0.1.0", path = "../istanbul-oxi-instrument" }
+istanbul-oxi-instrument = { version = "0.1.0", path = "../istanbul-oxi-instrument", features = ["plugin"] }
 once_cell = "1.10.0"
 regex = "1.5.5"
 serde = "1.0.136"

@@ -96,7 +96,7 @@ mod tests {
             &FileCoverage::from_file_path("bar.js".to_string(), false),
         ]);
 
-        let mut second = CoverageMap::from_iter(vec![
+        let second = CoverageMap::from_iter(vec![
             &FileCoverage::from_file_path("foo.js".to_string(), false),
             &FileCoverage::from_file_path("baz.js".to_string(), false),
         ]);
@@ -113,7 +113,7 @@ mod tests {
 
     #[test]
     fn should_able_to_return_file_coverage() {
-        let mut base = CoverageMap::from_iter(vec![
+        let base = CoverageMap::from_iter(vec![
             &FileCoverage::from_file_path("foo.js".to_string(), false),
             &FileCoverage::from_file_path("bar.js".to_string(), false),
         ]);
