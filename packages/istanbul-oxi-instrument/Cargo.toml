@@ -3,6 +3,11 @@ name = "istanbul-oxi-instrument"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+plugin = []
+custom_transform = []
+
 [dependencies]
 istanbul-oxi-coverage = { version = "0.1.0", path = "../istanbul-oxi-coverage" }
 once_cell = "1.10.0"
+swc_plugin = "0.49.0"

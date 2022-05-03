@@ -1,6 +1,5 @@
+use istanbul_oxi_instrument::constants::idents::IDENT_GLOBAL;
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
-
-use crate::constants::idents::IDENT_GLOBAL;
 
 use super::create_assignment_stmt::create_assignment_stmt;
 

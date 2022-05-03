@@ -6,13 +6,15 @@
 #[macro_export]
 macro_rules! create_instrumentation_visitor {
     ($name:ident { $($vis: vis $field:ident: $t:ty),* $(,)? }) => {
+        use swc_plugin::syntax_pos::Span;
+
         // Declare a struct, expand fields commonly used for any instrumentation visitor.
         #[allow(unused)]
         #[derive(Debug)]
         pub struct $name<'a> {
             source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
             comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
-            cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
+            cov: &'a mut istanbul_oxi_instrument::source_coverage::SourceCoverage,
             cov_fn_ident: swc_plugin::ast::Ident,
             cov_fn_temp_ident: swc_plugin::ast::Ident,
             instrument_options: crate::InstrumentOptions,
@@ -26,7 +28,7 @@ macro_rules! create_instrumentation_visitor {
             pub fn new(
                 source_map: &'a swc_plugin::source_map::PluginSourceMapProxy,
                 comments: Option<&'a swc_plugin::comments::PluginCommentsProxy>,
-                cov: &'a mut istanbul_oxi_instrument::SourceCoverage,
+                cov: &'a mut istanbul_oxi_instrument::source_coverage::SourceCoverage,
                 instrument_options: &'a crate::InstrumentOptions,
                 nodes: &'a Vec<Node>,
                 should_ignore: Option<crate::utils::hint_comments::IgnoreScope>,

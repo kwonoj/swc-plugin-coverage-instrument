@@ -302,6 +302,7 @@ version = "0.1.0"
 dependencies = [
  "istanbul-oxi-coverage",
  "once_cell",
+ "swc_plugin",
 ]
 
 [[package]]

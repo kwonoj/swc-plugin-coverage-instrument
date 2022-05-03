@@ -1,8 +1,6 @@
-use istanbul_oxi_instrument::SourceCoverage;
 use serde_json::Value;
 use swc_plugin::{ast::*, plugin_transform, TransformPluginProgramMetadata};
 
-mod constants;
 mod instrument;
 mod template;
 #[macro_use]
@@ -63,7 +61,10 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
             .unwrap_or_default(),
     };
 
-    let mut cov = SourceCoverage::new(filename.to_string(), instrument_options.report_logic);
+    let mut cov = istanbul_oxi_instrument::source_coverage::SourceCoverage::new(
+        filename.to_string(),
+        instrument_options.report_logic,
+    );
     let source_map: Option<istanbul_oxi_instrument::SourceMap> =
         serde_json::from_str(&instrument_options_value["inputSourceMap"].to_string()).ok();
     cov.set_input_source_map(source_map);

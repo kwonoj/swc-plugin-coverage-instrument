@@ -7,7 +7,7 @@ macro_rules! instrumentation_visitor {
         noop_visit_mut_type!();
 
         // BlockStatement: entries(), // ignore processing only
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_block_stmt(&mut self, block_stmt: &mut BlockStmt) {
             let (old, ignore_current) = self.on_enter(block_stmt);
             match ignore_current {
@@ -21,7 +21,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // FunctionDeclaration: entries(coverFunction),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_fn_decl(&mut self, fn_decl: &mut FnDecl) {
             let (old, ignore_current) = self.on_enter(fn_decl);
             match ignore_current {
@@ -35,18 +35,30 @@ macro_rules! instrumentation_visitor {
         }
 
         // ArrowFunctionExpression: entries(convertArrowExpression, coverFunction),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_arrow_expr(&mut self, arrow_expr: &mut ArrowExpr) {
+            use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
+
             let (old, ignore_current) = self.on_enter(arrow_expr);
             match ignore_current {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
                 _ => match &mut arrow_expr.body {
                     BlockStmtOrExpr::BlockStmt(block_stmt) => {
-                        let range = get_range_from_span(self.source_map, &arrow_expr.span);
-                        let body_range = get_range_from_span(self.source_map, &block_stmt.span);
+                        let range = crate::utils::lookup_range::get_range_from_span(
+                            self.source_map,
+                            &arrow_expr.span,
+                        );
+                        let body_range = crate::utils::lookup_range::get_range_from_span(
+                            self.source_map,
+                            &block_stmt.span,
+                        );
                         let index = self.cov.new_function(&None, &range, &body_range);
-                        let b =
-                            create_increase_counter_expr(&IDENT_F, index, &self.cov_fn_ident, None);
+                        let b = crate::instrument::create_increase_counter_expr(
+                            &istanbul_oxi_instrument::constants::idents::IDENT_F,
+                            index,
+                            &self.cov_fn_ident,
+                            None,
+                        );
 
                         // insert fn counter expression
                         let mut new_stmts = vec![Stmt::Expr(ExprStmt {
@@ -60,13 +72,19 @@ macro_rules! instrumentation_visitor {
                     }
                     BlockStmtOrExpr::Expr(expr) => {
                         // TODO: refactor common logics creates a blockstmt from single expr
-                        let range = get_range_from_span(self.source_map, &arrow_expr.span);
-                        let span = get_expr_span(expr);
+                        let range = crate::utils::lookup_range::get_range_from_span(
+                            self.source_map,
+                            &arrow_expr.span,
+                        );
+                        let span = crate::utils::lookup_range::get_expr_span(expr);
                         if let Some(span) = span {
-                            let body_range = get_range_from_span(self.source_map, &span);
+                            let body_range = crate::utils::lookup_range::get_range_from_span(
+                                self.source_map,
+                                &span,
+                            );
                             let index = self.cov.new_function(&None, &range, &body_range);
-                            let b = create_increase_counter_expr(
-                                &IDENT_F,
+                            let b = crate::instrument::create_increase_counter_expr(
+                                &istanbul_oxi_instrument::constants::idents::IDENT_F,
                                 index,
                                 &self.cov_fn_ident,
                                 None,
@@ -104,7 +122,7 @@ macro_rules! instrumentation_visitor {
         }
 
         /*
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_stmt(&mut self, stmt: &mut Stmt) {
             if !self.is_injected_counter_stmt(stmt) {
                 let span = crate::utils::lookup_range::get_stmt_span(&stmt);
@@ -119,7 +137,7 @@ macro_rules! instrumentation_visitor {
             }
         } */
 
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
             // Each Stmt looks up own comments for the hint, we don't
             // do self.on_enter() in here.
@@ -129,7 +147,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // FunctionExpression: entries(coverFunction),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_fn_expr(&mut self, fn_expr: &mut FnExpr) {
             let (old, ignore_current) = self.on_enter(fn_expr);
             match ignore_current {
@@ -159,7 +177,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // ExpressionStatement: entries(coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_expr_stmt(&mut self, expr_stmt: &mut ExprStmt) {
             let (old, ignore_current) = self.on_enter(expr_stmt);
 
@@ -186,7 +204,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // BreakStatement: entries(coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_break_stmt(&mut self, break_stmt: &mut BreakStmt) {
             let (old, ignore_current) = self.on_enter(break_stmt);
 
@@ -202,7 +220,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // ReturnStatement: entries(coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_return_stmt(&mut self, return_stmt: &mut ReturnStmt) {
             let (old, ignore_current) = self.on_enter(return_stmt);
             match ignore_current {
@@ -217,7 +235,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // VariableDeclaration: entries(), // ignore processing only
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_var_decl(&mut self, var_decl: &mut VarDecl) {
             let (old, _ignore_current) = self.on_enter(var_decl);
             //noop?
@@ -226,7 +244,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // ClassDeclaration: entries(parenthesizedExpressionProp('superClass')),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_class_decl(&mut self, class_decl: &mut ClassDecl) {
             let (old, ignore_current) = self.on_enter(class_decl);
             match ignore_current {
@@ -241,7 +259,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // ClassProperty: entries(coverClassPropDeclarator),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_class_prop(&mut self, class_prop: &mut ClassProp) {
             let (old, ignore_current) = self.on_enter(class_prop);
             match ignore_current {
@@ -256,7 +274,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // ClassPrivateProperty: entries(coverClassPropDeclarator),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_private_prop(&mut self, private_prop: &mut PrivateProp) {
             // TODO: this is same as visit_mut_class_prop
             let (old, ignore_current) = self.on_enter(private_prop);
@@ -272,7 +290,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // ClassMethod: entries(coverFunction),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_class_method(&mut self, class_method: &mut ClassMethod) {
             let (old, ignore_current) = self.on_enter(class_method);
             match ignore_current {
@@ -301,7 +319,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // ObjectMethod: entries(coverFunction),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_method_prop(&mut self, method_prop: &mut MethodProp) {
             let (old, ignore_current) = self.on_enter(method_prop);
             match ignore_current {
@@ -330,9 +348,10 @@ macro_rules! instrumentation_visitor {
         }
 
         // ObjectMethod: entries(coverFunction),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_getter_prop(&mut self, getter_prop: &mut GetterProp) {
             let (old, ignore_current) = self.on_enter(getter_prop);
+            use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
             match ignore_current {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
                 _ => {
@@ -349,14 +368,20 @@ macro_rules! instrumentation_visitor {
                         if !should_ignore_via_options {
                             let (span, name) = (&ident.span, Some(ident.sym.to_string()));
 
-                            let range = get_range_from_span(self.source_map, span);
+                            let range = crate::utils::lookup_range::get_range_from_span(
+                                self.source_map,
+                                span,
+                            );
                             if let Some(body) = &mut getter_prop.body {
                                 let body_span = body.span;
-                                let body_range = get_range_from_span(self.source_map, &body_span);
+                                let body_range = crate::utils::lookup_range::get_range_from_span(
+                                    self.source_map,
+                                    &body_span,
+                                );
                                 let index = self.cov.new_function(&name, &range, &body_range);
 
-                                let b = create_increase_counter_expr(
-                                    &IDENT_F,
+                                let b = crate::instrument::create_increase_counter_expr(
+                                    &istanbul_oxi_instrument::constants::idents::IDENT_F,
                                     index,
                                     &self.cov_fn_ident,
                                     None,
@@ -378,8 +403,10 @@ macro_rules! instrumentation_visitor {
 
         // TODO: this is same as visit_mut_getter_prop
         // ObjectMethod: entries(coverFunction),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_setter_prop(&mut self, setter_prop: &mut SetterProp) {
+            use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
+
             let (old, ignore_current) = self.on_enter(setter_prop);
             match ignore_current {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
@@ -397,14 +424,20 @@ macro_rules! instrumentation_visitor {
                         if !should_ignore_via_options {
                             let (span, name) = (&ident.span, Some(ident.sym.to_string()));
 
-                            let range = get_range_from_span(self.source_map, span);
+                            let range = crate::utils::lookup_range::get_range_from_span(
+                                self.source_map,
+                                span,
+                            );
                             if let Some(body) = &mut setter_prop.body {
                                 let body_span = body.span;
-                                let body_range = get_range_from_span(self.source_map, &body_span);
+                                let body_range = crate::utils::lookup_range::get_range_from_span(
+                                    self.source_map,
+                                    &body_span,
+                                );
                                 let index = self.cov.new_function(&name, &range, &body_range);
 
-                                let b = create_increase_counter_expr(
-                                    &IDENT_F,
+                                let b = crate::instrument::create_increase_counter_expr(
+                                    &istanbul_oxi_instrument::constants::idents::IDENT_F,
                                     index,
                                     &self.cov_fn_ident,
                                     None,
@@ -425,7 +458,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // VariableDeclarator: entries(coverVariableDeclarator),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_var_declarator(&mut self, declarator: &mut VarDeclarator) {
             let (old, ignore_current) = self.on_enter(declarator);
 
@@ -445,37 +478,37 @@ macro_rules! instrumentation_visitor {
         }
 
         // ForStatement: entries(blockProp('body'), coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_for_stmt(&mut self, for_stmt: &mut ForStmt) {
             crate::visit_mut_for_like!(self, for_stmt);
         }
 
         // ForInStatement: entries(blockProp('body'), coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_for_in_stmt(&mut self, for_in_stmt: &mut ForInStmt) {
             crate::visit_mut_for_like!(self, for_in_stmt);
         }
 
         // ForOfStatement: entries(blockProp('body'), coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_for_of_stmt(&mut self, for_of_stmt: &mut ForOfStmt) {
             crate::visit_mut_for_like!(self, for_of_stmt);
         }
 
         // WhileStatement: entries(blockProp('body'), coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_while_stmt(&mut self, while_stmt: &mut WhileStmt) {
             crate::visit_mut_for_like!(self, while_stmt);
         }
 
         // DoWhileStatement: entries(blockProp('body'), coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_do_while_stmt(&mut self, do_while_stmt: &mut DoWhileStmt) {
             crate::visit_mut_for_like!(self, do_while_stmt);
         }
 
         //LabeledStatement: entries(coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_labeled_stmt(&mut self, labeled_stmt: &mut LabeledStmt) {
             let (old, ignore_current) = self.on_enter(labeled_stmt);
 
@@ -493,7 +526,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // ContinueStatement: entries(coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_continue_stmt(&mut self, continue_stmt: &mut ContinueStmt) {
             let (old, ignore_current) = self.on_enter(continue_stmt);
 
@@ -510,7 +543,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // SwitchStatement: entries(createSwitchBranch, coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_switch_stmt(&mut self, switch_stmt: &mut SwitchStmt) {
             let (old, ignore_current) = self.on_enter(switch_stmt);
             match ignore_current {
@@ -519,7 +552,10 @@ macro_rules! instrumentation_visitor {
                     // Insert stmt counter for `switch` itself, then create a new branch
                     self.mark_prepend_stmt_counter(&switch_stmt.span);
 
-                    let range = get_range_from_span(self.source_map, &switch_stmt.span);
+                    let range = crate::utils::lookup_range::get_range_from_span(
+                        self.source_map,
+                        &switch_stmt.span,
+                    );
                     let branch = self.cov.new_branch(
                         istanbul_oxi_instrument::BranchType::Switch,
                         &range,
@@ -545,8 +581,10 @@ macro_rules! instrumentation_visitor {
         }
 
         // IfStatement: entries(blockProp('consequent'), blockProp('alternate'), coverStatement, coverIfBranches)
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_if_stmt(&mut self, if_stmt: &mut IfStmt) {
+            use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
+
             let (old, ignore_current) = self.on_enter(if_stmt);
 
             match ignore_current {
@@ -557,7 +595,10 @@ macro_rules! instrumentation_visitor {
                     // cover_statement's is_stmt prepend logic for individual child stmt visitor
                     self.mark_prepend_stmt_counter(&if_stmt.span);
 
-                    let range = get_range_from_span(self.source_map, &if_stmt.span);
+                    let range = crate::utils::lookup_range::get_range_from_span(
+                        self.source_map,
+                        &if_stmt.span,
+                    );
                     let branch =
                         self.cov
                             .new_branch(istanbul_oxi_instrument::BranchType::If, &range, false);
@@ -567,8 +608,8 @@ macro_rules! instrumentation_visitor {
 
                         // create a branch path counter
                         let idx = self.cov.add_branch_path(branch, &range);
-                        let expr = create_increase_counter_expr(
-                            &IDENT_B,
+                        let expr = crate::instrument::create_increase_counter_expr(
+                            &istanbul_oxi_instrument::constants::idents::IDENT_B,
                             branch,
                             &self.cov_fn_ident,
                             Some(idx),
@@ -645,7 +686,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // LogicalExpression: entries(coverLogicalExpression)
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_bin_expr(&mut self, bin_expr: &mut BinExpr) {
             // We don't use self.on_enter() here since Node::LogicalExpr is a dialect of BinExpr
             // which we can't pass directly via on_enter() macro
@@ -675,7 +716,10 @@ macro_rules! instrumentation_visitor {
                             self.nodes.push(Node::LogicalExpr);
 
                             // Create a new branch. This id should be reused for any inner logical expr.
-                            let range = get_range_from_span(self.source_map, &bin_expr.span);
+                            let range = crate::utils::lookup_range::get_range_from_span(
+                                self.source_map,
+                                &bin_expr.span,
+                            );
                             let branch = self.cov.new_branch(
                                 istanbul_oxi_instrument::BranchType::BinaryExpr,
                                 &range,
@@ -698,13 +742,16 @@ macro_rules! instrumentation_visitor {
         }
 
         // AssignmentPattern: entries(coverAssignmentPattern),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_assign_pat(&mut self, assign_pat: &mut AssignPat) {
             let (old, ignore_current) = self.on_enter(assign_pat);
             match ignore_current {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
                 _ => {
-                    let range = get_range_from_span(self.source_map, &assign_pat.span);
+                    let range = crate::utils::lookup_range::get_range_from_span(
+                        self.source_map,
+                        &assign_pat.span,
+                    );
                     let branch = self.cov.new_branch(
                         istanbul_oxi_instrument::BranchType::DefaultArg,
                         &range,
@@ -718,7 +765,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // TryStatement: entries(coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_try_stmt(&mut self, try_stmt: &mut TryStmt) {
             let (old, ignore_current) = self.on_enter(try_stmt);
             match ignore_current {
@@ -732,7 +779,7 @@ macro_rules! instrumentation_visitor {
         }
 
         // ThrowStatement: entries(coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_throw_stmt(&mut self, throw_stmt: &mut ThrowStmt) {
             let (old, ignore_current) = self.on_enter(throw_stmt);
             match ignore_current {
@@ -746,8 +793,10 @@ macro_rules! instrumentation_visitor {
         }
 
         // WithStatement: entries(blockProp('body'), coverStatement),
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_with_stmt(&mut self, with_stmt: &mut WithStmt) {
+            use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
+
             let (old, ignore_current) = self.on_enter(with_stmt);
             match ignore_current {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}

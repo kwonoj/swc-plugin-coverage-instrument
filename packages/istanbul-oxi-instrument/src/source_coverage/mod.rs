@@ -191,7 +191,7 @@ impl SourceCoverage {
 mod tests {
     use istanbul_oxi_coverage::{Branch, BranchType, Function, Range};
 
-    use crate::SourceCoverage;
+    use crate::source_coverage::SourceCoverage;
 
     #[test]
     fn should_insert_new_statement() {
