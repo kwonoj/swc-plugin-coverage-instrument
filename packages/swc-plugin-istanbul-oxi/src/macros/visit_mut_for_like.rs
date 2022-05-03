@@ -3,6 +3,8 @@
 #[macro_export]
 macro_rules! visit_mut_for_like {
     ($self: ident, $for_like_stmt: ident) => {
+        use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
+
         let (old, ignore_current) = $self.on_enter($for_like_stmt);
 
         match ignore_current {

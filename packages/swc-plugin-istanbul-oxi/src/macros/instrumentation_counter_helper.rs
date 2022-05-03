@@ -7,7 +7,9 @@ macro_rules! instrumentation_counter_helper {
         /// Given Expr may be left, or right of the logical expression.
         #[tracing::instrument(skip_all)]
         fn wrap_bin_expr_with_branch_counter(&mut self, branch: u32, expr: &mut Expr) {
-            let span = get_expr_span(expr);
+            use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
+
+            let span = crate::utils::lookup_range::get_expr_span(expr);
             let should_ignore = crate::utils::hint_comments::should_ignore(&self.comments, span);
 
             if let Some(crate::utils::hint_comments::IgnoreScope::Next) = should_ignore {
@@ -38,11 +40,12 @@ macro_rules! instrumentation_counter_helper {
                 // Wrap it with branch counter.
                 if self.instrument_options.report_logic {
                     if let Some(span) = span {
-                        let range = get_range_from_span(self.source_map, span);
+                        let range =
+                            crate::utils::lookup_range::get_range_from_span(self.source_map, span);
                         let branch_path_index = self.cov.add_branch_path(branch, &range);
 
-                        let increase_expr = create_increase_counter_expr(
-                            &IDENT_B,
+                        let increase_expr = crate::instrument::create_increase_counter_expr(
+                            &istanbul_oxi_instrument::constants::idents::IDENT_B,
                             branch,
                             &self.cov_fn_ident,
                             Some(branch_path_index),
@@ -72,14 +75,14 @@ macro_rules! instrumentation_counter_helper {
 
         #[tracing::instrument(skip(self, span, idx), fields(stmt_id))]
         fn create_stmt_increase_counter_expr(&mut self, span: &Span, idx: Option<u32>) -> Expr {
-            let stmt_range = get_range_from_span(self.source_map, span);
+            let stmt_range = crate::utils::lookup_range::get_range_from_span(self.source_map, span);
 
             let stmt_id = self.cov.new_statement(&stmt_range);
 
             tracing::Span::current().record("stmt_id", &stmt_id);
 
             crate::instrument::create_increase_counter_expr(
-                &IDENT_S,
+                &istanbul_oxi_instrument::constants::idents::IDENT_S,
                 stmt_id,
                 &self.cov_fn_ident,
                 idx,
@@ -92,6 +95,8 @@ macro_rules! instrumentation_counter_helper {
         // }
         #[tracing::instrument(skip_all)]
         fn mark_prepend_stmt_counter(&mut self, span: &Span) {
+            use swc_plugin::syntax_pos::DUMMY_SP;
+
             let increment_expr = self.create_stmt_increase_counter_expr(span, None);
             self.before.push(Stmt::Expr(ExprStmt {
                 span: DUMMY_SP,
@@ -106,7 +111,12 @@ macro_rules! instrumentation_counter_helper {
         fn replace_expr_with_stmt_counter(&mut self, expr: &mut Expr) {
             self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {
                 let idx = cov.new_statement(&range);
-                create_increase_counter_expr(&IDENT_S, idx, cov_fn_ident, None)
+                crate::instrument::create_increase_counter_expr(
+                    &istanbul_oxi_instrument::constants::idents::IDENT_S,
+                    idx,
+                    cov_fn_ident,
+                    None,
+                )
             });
         }
 
@@ -115,7 +125,12 @@ macro_rules! instrumentation_counter_helper {
             self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {
                 let idx = cov.add_branch_path(branch, &range);
 
-                create_increase_counter_expr(&IDENT_B, branch, cov_fn_ident, Some(idx))
+                crate::instrument::create_increase_counter_expr(
+                    &istanbul_oxi_instrument::constants::idents::IDENT_B,
+                    branch,
+                    cov_fn_ident,
+                    Some(idx),
+                )
             });
         }
 
@@ -123,11 +138,18 @@ macro_rules! instrumentation_counter_helper {
         #[tracing::instrument(skip_all)]
         fn replace_expr_with_counter<F>(&mut self, expr: &mut Expr, get_counter: F)
         where
-            F: core::ops::Fn(&mut SourceCoverage, &Ident, &istanbul_oxi_instrument::Range) -> Expr,
+            F: core::ops::Fn(
+                &mut istanbul_oxi_instrument::source_coverage::SourceCoverage,
+                &Ident,
+                &istanbul_oxi_instrument::Range,
+            ) -> Expr,
         {
-            let span = get_expr_span(expr);
+            use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
+
+            let span = crate::utils::lookup_range::get_expr_span(expr);
             if let Some(span) = span {
-                let init_range = get_range_from_span(self.source_map, span);
+                let init_range =
+                    crate::utils::lookup_range::get_range_from_span(self.source_map, span);
                 let prepend_expr = get_counter(&mut self.cov, &self.cov_fn_ident, &init_range);
 
                 let paren_expr = Expr::Paren(ParenExpr {
@@ -155,13 +177,15 @@ macro_rules! instrumentation_counter_helper {
         /// Common logics for the fn-like visitors to insert fn instrumentation counters.
         #[tracing::instrument(skip_all)]
         fn create_fn_instrumentation(&mut self, ident: &Option<&Ident>, function: &mut Function) {
+            use swc_plugin::{syntax_pos::DUMMY_SP, utils::take::Take};
+
             let (span, name) = if let Some(ident) = &ident {
                 (&ident.span, Some(ident.sym.to_string()))
             } else {
                 (&function.span, None)
             };
 
-            let range = get_range_from_span(self.source_map, span);
+            let range = crate::utils::lookup_range::get_range_from_span(self.source_map, span);
             let body_span = if let Some(body) = &function.body {
                 body.span
             } else {
@@ -169,12 +193,18 @@ macro_rules! instrumentation_counter_helper {
                 function.span
             };
 
-            let body_range = get_range_from_span(self.source_map, &body_span);
+            let body_range =
+                crate::utils::lookup_range::get_range_from_span(self.source_map, &body_span);
             let index = self.cov.new_function(&name, &range, &body_range);
 
             match &mut function.body {
                 Some(blockstmt) => {
-                    let b = create_increase_counter_expr(&IDENT_F, index, &self.cov_fn_ident, None);
+                    let b = crate::instrument::create_increase_counter_expr(
+                        &istanbul_oxi_instrument::constants::idents::IDENT_F,
+                        index,
+                        &self.cov_fn_ident,
+                        None,
+                    );
                     let mut prepended_vec = vec![Stmt::Expr(ExprStmt {
                         span: DUMMY_SP,
                         expr: Box::new(b),
@@ -221,7 +251,7 @@ macro_rules! instrumentation_counter_helper {
         }
 
         fn cover_statement(&mut self, expr: &mut Expr) {
-            let span = get_expr_span(expr);
+            let span = crate::utils::lookup_range::get_expr_span(expr);
             // This is ugly, poor man's substitute to istanbul's `insertCounter` to determine
             // when to replace givn expr to wrapped Paren or prepend stmt counter.
             // We can't do insert parent node's sibling in downstream's child node.

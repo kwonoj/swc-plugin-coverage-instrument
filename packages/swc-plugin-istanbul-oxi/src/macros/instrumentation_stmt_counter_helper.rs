@@ -3,7 +3,7 @@
 macro_rules! instrumentation_stmt_counter_helper {
     () => {
         /// Visit individual statements with stmt_visitor and update.
-        #[instrument(skip_all, fields(node = %self.print_node()))]
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn insert_stmts_counter(&mut self, stmts: &mut Vec<Stmt>) {
             let mut new_stmts = vec![];
 

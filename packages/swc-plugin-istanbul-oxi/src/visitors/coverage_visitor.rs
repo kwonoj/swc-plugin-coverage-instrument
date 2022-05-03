@@ -1,6 +1,6 @@
 // TODO: remove
 #![allow(unused)]
-use istanbul_oxi_instrument::{BranchType, SourceCoverage};
+use istanbul_oxi_instrument::{source_coverage::SourceCoverage, BranchType};
 use once_cell::sync::Lazy;
 use regex::Regex as Regexp;
 use std::{
@@ -11,13 +11,12 @@ use swc_plugin::{
     ast::*,
     comments::{Comment, CommentKind, Comments, PluginCommentsProxy},
     source_map::PluginSourceMapProxy,
-    syntax_pos::{Span, DUMMY_SP},
+    syntax_pos::DUMMY_SP,
     utils::take::Take,
 };
 use tracing::instrument;
 
 use crate::{
-    constants::idents::*,
     create_instrumentation_visitor,
     instrument::create_increase_counter_expr,
     instrumentation_counter_helper, instrumentation_stmt_counter_helper, instrumentation_visitor,

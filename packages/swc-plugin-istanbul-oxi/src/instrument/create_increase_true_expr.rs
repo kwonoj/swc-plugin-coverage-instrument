@@ -1,8 +1,6 @@
-use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
-
-use crate::constants::idents::IDENT_BT;
-
 use super::create_increase_counter_expr;
+use istanbul_oxi_instrument::constants::idents::IDENT_BT;
+use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
 
 /// Reads the logic expression conditions and conditionally increments truthy counter.
 /// This is always known to be b_t type counter does not need to accept what type of ident it'll create.

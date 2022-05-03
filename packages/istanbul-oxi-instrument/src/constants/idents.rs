@@ -1,6 +1,4 @@
 //! Static ident declarations being used across template
-
-use istanbul_oxi_instrument::COVERAGE_MAGIC_KEY;
 use once_cell::sync::Lazy;
 use swc_plugin::{ast::Ident, utils::take::Take};
 
@@ -90,7 +88,7 @@ pub static IDENT_BT: Lazy<Ident> = Lazy::new(|| Ident {
 });
 
 pub static IDENT_COVERAGE_MAGIC_KEY: Lazy<Ident> = Lazy::new(|| Ident {
-    sym: COVERAGE_MAGIC_KEY.into(),
+    sym: crate::COVERAGE_MAGIC_KEY.into(),
     ..Ident::dummy()
 });
 

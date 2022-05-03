@@ -3,15 +3,13 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use istanbul_oxi_instrument::FileCoverage;
+use istanbul_oxi_instrument::{constants::idents::*, FileCoverage};
 use once_cell::sync::OnceCell;
 use swc_plugin::{
     ast::*,
     syntax_pos::DUMMY_SP,
     utils::{quote, take::Take},
 };
-
-use crate::constants::idents::*;
 
 use super::{
     create_assignment_stmt::create_assignment_stmt,

@@ -3,15 +3,14 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use istanbul_oxi_instrument::{Branch, FileCoverage, Range, COVERAGE_MAGIC_VALUE};
+use istanbul_oxi_instrument::{
+    constants::idents::*, Branch, FileCoverage, Range, COVERAGE_MAGIC_VALUE,
+};
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
 
-use crate::{
-    constants::idents::*,
-    utils::ast_builder::{
-        create_ident_key_value_prop, create_num_lit_expr, create_str_key_value_prop,
-        create_str_lit_expr,
-    },
+use crate::utils::ast_builder::{
+    create_ident_key_value_prop, create_num_lit_expr, create_str_key_value_prop,
+    create_str_lit_expr,
 };
 
 fn create_range_object_prop(value: &Range) -> Vec<PropOrSpread> {
@@ -414,12 +413,13 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
 
 #[cfg(test)]
 mod tests {
-    use istanbul_oxi_instrument::{BranchType, FileCoverage, Range, SourceCoverage};
+    use istanbul_oxi_instrument::{
+        constants::idents::*, source_coverage::SourceCoverage, BranchType, FileCoverage, Range,
+    };
     use swc_ecma_quote::quote;
     use swc_plugin::{ast::*, utils::take::Take};
 
     use crate::{
-        constants::idents::IDENT_PATH,
         template::create_coverage_data_object::create_coverage_data_object,
         utils::ast_builder::create_ident_key_value_prop,
     };

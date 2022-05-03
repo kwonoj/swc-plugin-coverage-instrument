@@ -1,21 +1,7 @@
-use istanbul_oxi_instrument::SourceCoverage;
-use swc_plugin::{
-    ast::*,
-    syntax_pos::{Span, DUMMY_SP},
-    utils::take::Take,
-};
+use swc_plugin::ast::*;
 use tracing::instrument;
 
-use crate::{
-    constants::idents::*,
-    create_instrumentation_visitor,
-    instrument::create_increase_counter_expr,
-    instrumentation_counter_helper,
-    utils::{
-        lookup_range::{get_expr_span, get_range_from_span},
-        node::Node,
-    },
-};
+use crate::{create_instrumentation_visitor, instrumentation_counter_helper, utils::node::Node};
 
 create_instrumentation_visitor!(LogicalExprVisitor { branch: u32 });
 
