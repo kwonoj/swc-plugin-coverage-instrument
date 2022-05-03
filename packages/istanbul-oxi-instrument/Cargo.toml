@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
+default = ["swc_ecma_ast", "swc_common"]
 plugin = ["swc_plugin"]
-custom_transform = []
 
 [dependencies]
 istanbul-oxi-coverage = { version = "0.1.0", path = "../istanbul-oxi-coverage" }
 once_cell = "1.10.0"
+swc_common = { version = "0.17.25", optional = true }
+swc_ecma_ast = { version = "0.76.2", optional = true }
 swc_plugin = { version = "0.49.0", optional = true }

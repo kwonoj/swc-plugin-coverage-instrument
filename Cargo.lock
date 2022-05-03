@@ -302,6 +302,8 @@ version = "0.1.0"
 dependencies = [
  "istanbul-oxi-coverage",
  "once_cell",
+ "swc_common",
+ "swc_ecma_ast",
  "swc_plugin",
 ]
 
@@ -888,9 +890,9 @@ dependencies = [
 
 [[package]]
 name = "swc_common"
-version = "0.17.24"
+version = "0.17.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc46c0dc9baf12a82ccba5d21209d3f5318e6dddc5440fdab4bbf71e2529d72d"
+checksum = "766ad22c1cb8586c038ccba7371a4903a6074b53ee4ba8980a52f502413f120e"
 dependencies = [
  "ahash",
  "anyhow",
@@ -916,9 +918,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_ast"
-version = "0.76.0"
+version = "0.76.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b2a73d43c031effb0cf0b57df28fe87f7b6044304e188eb2f832cea964e9c75"
+checksum = "87eb325cc3e9bcf93dd9fcf14586e56fc502a5c7a9cc80e36c00bfd7c833b189"
 dependencies = [
  "is-macro",
  "num-bigint",
