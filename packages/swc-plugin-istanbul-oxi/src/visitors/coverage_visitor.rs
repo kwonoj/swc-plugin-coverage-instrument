@@ -278,31 +278,4 @@ impl VisitMut for CoverageVisitor<'_> {
         cond_expr.visit_mut_children_with(self);
         self.on_exit(old);
     }
-
-    // ObjectMethod: entries(coverFunction),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_method_prop(&mut self, method_prop: &mut MethodProp) {
-        self.nodes.push(Node::MethodProp);
-        method_prop.visit_mut_children_with(self);
-        self.nodes.pop();
-        // ObjectMethodKind::Method,
-    }
-
-    // ObjectMethod: entries(coverFunction),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_getter_prop(&mut self, getter_prop: &mut GetterProp) {
-        self.nodes.push(Node::GetterProp);
-        getter_prop.visit_mut_children_with(self);
-        self.nodes.pop();
-        // ObjectMethodKind::Get,
-    }
-
-    // ObjectMethod: entries(coverFunction),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_setter_prop(&mut self, setter_prop: &mut SetterProp) {
-        self.nodes.push(Node::SetterProp);
-        setter_prop.visit_mut_children_with(self);
-        self.nodes.pop();
-        //ObjectMethodKind::Set,
-    }
 }

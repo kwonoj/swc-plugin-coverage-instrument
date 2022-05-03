@@ -283,7 +283,7 @@ macro_rules! instrumentation_visitor {
                 Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     // TODO: this does not cover all of PropName enum yet
-                    // TODO: diplicated logic between fn_expr
+                    // TODO: duplicated logic between fn_expr
                     if let PropName::Ident(ident) = &class_method.key {
                         let should_ignore_via_options = self
                             .instrument_options
@@ -297,6 +297,130 @@ macro_rules! instrumentation_visitor {
                                 &mut class_method.function,
                             );
                             class_method.visit_mut_children_with(self);
+                        }
+                    }
+                }
+            }
+            self.on_exit(old);
+        }
+
+        // ObjectMethod: entries(coverFunction),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_method_prop(&mut self, method_prop: &mut MethodProp) {
+            let (old, ignore_current) = self.on_enter(method_prop);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    // TODO: this does not cover all of PropName enum yet
+                    // TODO: duplicated logic between class_method
+                    if let PropName::Ident(ident) = &method_prop.key {
+                        let should_ignore_via_options = self
+                            .instrument_options
+                            .ignore_class_methods
+                            .iter()
+                            .any(|v| v.as_str() == &*ident.sym);
+
+                        if !should_ignore_via_options {
+                            self.create_fn_instrumentation(
+                                &Some(&ident),
+                                &mut method_prop.function,
+                            );
+                            method_prop.visit_mut_children_with(self);
+                        }
+                    }
+                }
+            }
+            self.on_exit(old);
+        }
+
+        // ObjectMethod: entries(coverFunction),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_getter_prop(&mut self, getter_prop: &mut GetterProp) {
+            let (old, ignore_current) = self.on_enter(getter_prop);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    // TODO: this does not cover all of PropName enum yet
+                    // TODO: duplicated logic between class_method
+                    if let PropName::Ident(ident) = &getter_prop.key {
+                        let should_ignore_via_options = self
+                            .instrument_options
+                            .ignore_class_methods
+                            .iter()
+                            .any(|v| v.as_str() == &*ident.sym);
+
+                        // TODO: there are _some_ duplication between create_fn_instrumentation
+                        if !should_ignore_via_options {
+                            let (span, name) = (&ident.span, Some(ident.sym.to_string()));
+
+                            let range = get_range_from_span(self.source_map, span);
+                            if let Some(body) = &mut getter_prop.body {
+                                let body_span = body.span;
+                                let body_range = get_range_from_span(self.source_map, &body_span);
+                                let index = self.cov.new_function(&name, &range, &body_range);
+
+                                let b = create_increase_expression_expr(
+                                    &IDENT_F,
+                                    index,
+                                    &self.cov_fn_ident,
+                                    None,
+                                );
+                                let mut prepended_vec = vec![Stmt::Expr(ExprStmt {
+                                    span: DUMMY_SP,
+                                    expr: Box::new(b),
+                                })];
+                                prepended_vec.extend(body.stmts.take());
+                                body.stmts = prepended_vec;
+                            }
+                            getter_prop.visit_mut_children_with(self);
+                        }
+                    }
+                }
+            }
+            self.on_exit(old);
+        }
+
+        // TODO: this is same as visit_mut_getter_prop
+        // ObjectMethod: entries(coverFunction),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_setter_prop(&mut self, setter_prop: &mut SetterProp) {
+            let (old, ignore_current) = self.on_enter(setter_prop);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    // TODO: this does not cover all of PropName enum yet
+                    // TODO: duplicated logic between class_method
+                    if let PropName::Ident(ident) = &setter_prop.key {
+                        let should_ignore_via_options = self
+                            .instrument_options
+                            .ignore_class_methods
+                            .iter()
+                            .any(|v| v.as_str() == &*ident.sym);
+
+                        // TODO: there are _some_ duplication between create_fn_instrumentation
+                        if !should_ignore_via_options {
+                            let (span, name) = (&ident.span, Some(ident.sym.to_string()));
+
+                            let range = get_range_from_span(self.source_map, span);
+                            if let Some(body) = &mut setter_prop.body {
+                                let body_span = body.span;
+                                let body_range = get_range_from_span(self.source_map, &body_span);
+                                let index = self.cov.new_function(&name, &range, &body_range);
+
+                                let b = create_increase_expression_expr(
+                                    &IDENT_F,
+                                    index,
+                                    &self.cov_fn_ident,
+                                    None,
+                                );
+                                let mut prepended_vec = vec![Stmt::Expr(ExprStmt {
+                                    span: DUMMY_SP,
+                                    expr: Box::new(b),
+                                })];
+                                prepended_vec.extend(body.stmts.take());
+                                body.stmts = prepended_vec;
+                            }
+                            setter_prop.visit_mut_children_with(self);
                         }
                     }
                 }
