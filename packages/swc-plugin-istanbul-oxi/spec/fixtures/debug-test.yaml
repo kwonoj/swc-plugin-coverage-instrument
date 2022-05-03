@@ -1,15 +1,11 @@
+# For easier single test fixture debugging, `npm run test:debug` runs this test only.
+# Place any test want to run.
 ---
-name: simple expression
+name: ignore file comment
 code: |
-  var x = args[0] > 0 && args[0] < 5;
-  output = x;
-instrumentOpts:
-  reportLogic: true
+  /* istanbul ignore file */
+  output = true === true ? "works" : "doesn't work"
+opts:
+  noCoverage: true
 tests:
-  - name: covers line and one branch
-    args: [-1]
-    out: false
-    lines: {'1': 1, '2': 1}
-    branches: {'0': [1, 0]}
-    branchesTrue: {'0': [0, 0]}
-    statements: {'0': 1, '1': 1}
+  - name: file is ignored
