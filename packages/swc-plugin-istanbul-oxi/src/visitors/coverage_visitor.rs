@@ -27,7 +27,6 @@ use crate::{
     },
     utils::{
         hint_comments::{lookup_hint_comments, should_ignore_file},
-        lookup_range::{get_expr_span, get_range_from_span, get_stmt_span},
         UnknownReserved,
     },
     InstrumentOptions,
@@ -250,11 +249,20 @@ impl VisitMut for CoverageVisitor<'_> {
         match ignore_current {
             Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
             _ => {
-                let range = get_range_from_span(self.source_map, &cond_expr.span);
+                let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
+                    self.source_map,
+                    &cond_expr.span,
+                );
                 let branch = self.cov.new_branch(BranchType::CondExpr, &range, false);
 
-                let c_hint = lookup_hint_comments(&self.comments, get_expr_span(&*cond_expr.cons));
-                let a_hint = lookup_hint_comments(&self.comments, get_expr_span(&*cond_expr.alt));
+                let c_hint = lookup_hint_comments(
+                    &self.comments,
+                    istanbul_oxi_instrument::lookup_range::get_expr_span(&*cond_expr.cons),
+                );
+                let a_hint = lookup_hint_comments(
+                    &self.comments,
+                    istanbul_oxi_instrument::lookup_range::get_expr_span(&*cond_expr.alt),
+                );
 
                 if c_hint.as_deref() != Some("next") {
                     // TODO: do we need this?

@@ -109,7 +109,7 @@ macro_rules! create_instrumentation_visitor {
         impl CoverageInstrumentationMutVisitEnter<Expr> for $name<'_> {
             fn on_enter(&mut self, n: &mut Expr) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
                 self.nodes.push(istanbul_oxi_instrument::Node::Expr);
-                let span = crate::utils::lookup_range::get_expr_span(n);
+                let span = istanbul_oxi_instrument::lookup_range::get_expr_span(n);
                 self.on_enter_with_span(span)
             }
          }
@@ -117,7 +117,7 @@ macro_rules! create_instrumentation_visitor {
          impl CoverageInstrumentationMutVisitEnter<Stmt> for $name<'_> {
             fn on_enter(&mut self, n: &mut Stmt) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
                 self.nodes.push(istanbul_oxi_instrument::Node::Stmt);
-                let span = crate::utils::lookup_range::get_stmt_span(n);
+                let span = istanbul_oxi_instrument::lookup_range::get_stmt_span(n);
 
                 self.on_enter_with_span(span)
             }
@@ -126,7 +126,7 @@ macro_rules! create_instrumentation_visitor {
          impl CoverageInstrumentationMutVisitEnter<ModuleDecl> for $name<'_> {
             fn on_enter(&mut self, n: &mut ModuleDecl) -> (Option<crate::utils::hint_comments::IgnoreScope>, Option<crate::utils::hint_comments::IgnoreScope>) {
                 self.nodes.push(istanbul_oxi_instrument::Node::ModuleDecl);
-                let span = crate::utils::lookup_range::get_module_decl_span(n);
+                let span = istanbul_oxi_instrument::lookup_range::get_module_decl_span(n);
 
                 self.on_enter_with_span(span)
             }
