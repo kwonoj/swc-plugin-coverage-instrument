@@ -626,5 +626,41 @@ macro_rules! instrumentation_visitor {
             }
             self.on_exit(old);
         }
+
+        // WithStatement: entries(blockProp('body'), coverStatement),
+        #[instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_with_stmt(&mut self, with_stmt: &mut WithStmt) {
+            let (old, ignore_current) = self.on_enter(with_stmt);
+            match ignore_current {
+                Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    self.mark_prepend_stmt_counter(&with_stmt.span);
+
+                    //TODO: duplicated codes for wrapping block
+                    if let Stmt::Block(body_block) = &mut *with_stmt.body {
+                        self.insert_stmts_counter(&mut body_block.stmts);
+                    } else {
+                        let mut visitor = crate::visitors::stmt_like_visitor::StmtVisitor::new(
+                            self.source_map,
+                            self.comments,
+                            &mut self.cov,
+                            &self.instrument_options,
+                            &self.nodes,
+                            ignore_current,
+                        );
+                        with_stmt.body.visit_mut_with(&mut visitor);
+                        let mut new_stmts = vec![];
+                        new_stmts.extend(visitor.before.drain(..));
+                        new_stmts.push(*with_stmt.body.take());
+
+                        with_stmt.body = Box::new(Stmt::Block(BlockStmt {
+                            span: DUMMY_SP,
+                            stmts: new_stmts,
+                        }));
+                    }
+                }
+            }
+            self.on_exit(old);
+        }
     };
 }

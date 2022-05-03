@@ -14,7 +14,7 @@ import { getCoverageMagicConstants } from "../../../istanbul-oxi-instrument-wasm
 const { key: COVERAGE_MAGIC_KEY, value: COVERAGE_MAGIC_VALUE } =
   getCoverageMagicConstants();
 
-function getAst(code: any): Module {
+function getAst(code: any, options: any): Module {
   if (typeof code === "object" && typeof code.type === "string") {
     // Assume code is already a babel ast.
     return code;
@@ -24,7 +24,11 @@ function getAst(code: any): Module {
     throw new Error("Code must be a string");
   }
 
-  return parseSync(code, { syntax: "ecmascript", script: true });
+  return parseSync(code, {
+    syntax: "ecmascript",
+    script: true,
+    isModule: options?.isModule,
+  });
 }
 
 class CoverageReadVisitor extends Visitor {
@@ -60,8 +64,8 @@ class CoverageReadVisitor extends Visitor {
   }
 }
 
-export function readInitialCoverage(code: any) {
-  const ast = getAst(code);
+export function readInitialCoverage(code: any, options?: any) {
+  const ast = getAst(code, options);
 
   let visitor = new CoverageReadVisitor();
   visitor.visitProgram(ast);

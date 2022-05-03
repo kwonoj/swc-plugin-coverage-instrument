@@ -60,7 +60,8 @@ impl<'a> CoverageVisitor<'a> {
         return false;
     }
 
-    fn on_exit_transform(&mut self, module_items: &mut Vec<ModuleItem>) {
+    /// Create coverage instrumentation template exprs to be injected into the top of the transformed output.
+    fn get_coverage_templates(&mut self) -> (Stmt, Stmt) {
         self.cov.freeze();
 
         //TODO: option: global coverage variable scope. (optional, default `this`)
@@ -102,17 +103,15 @@ impl<'a> CoverageVisitor<'a> {
         );
 
         // explicitly call this.varName to ensure coverage is always initialized
-        let m = ModuleItem::Stmt(Stmt::Expr(ExprStmt {
+        let call_coverage_template_stmt = Stmt::Expr(ExprStmt {
             span: DUMMY_SP,
             expr: Box::new(Expr::Call(CallExpr {
                 callee: Callee::Expr(Box::new(Expr::Ident(self.cov_fn_ident.clone()))),
                 ..CallExpr::dummy()
             })),
-        }));
+        });
 
-        // prepend template to the top of the code
-        module_items.insert(0, coverage_template);
-        module_items.insert(1, m);
+        (coverage_template, call_coverage_template_stmt)
     }
 }
 
@@ -161,7 +160,6 @@ impl VisitMut for CoverageVisitor<'_> {
         }
 
         // TODO: Should module_items need to be added in self.nodes?
-
         let mut new_items = vec![];
         for mut item in items.drain(..) {
             let (old, ignore_current) = match &mut item {
@@ -170,15 +168,38 @@ impl VisitMut for CoverageVisitor<'_> {
             };
             item.visit_mut_children_with(self);
 
-            if self.before.len() > 0 {
-                new_items.extend(self.before.drain(..).map(|v| ModuleItem::Stmt(v)));
-            }
+            new_items.extend(self.before.drain(..).map(|v| ModuleItem::Stmt(v)));
             new_items.push(item);
             self.on_exit(old);
         }
         *items = new_items;
 
-        self.on_exit_transform(items);
+        let (coverage_template, call_coverage_template_stmt) = self.get_coverage_templates();
+
+        // prepend template to the top of the code
+        items.insert(0, ModuleItem::Stmt(coverage_template));
+        items.insert(1, ModuleItem::Stmt(call_coverage_template_stmt));
+    }
+
+    #[instrument(skip_all, fields(node = %self.print_node()))]
+    fn visit_mut_script(&mut self, items: &mut Script) {
+        if self.is_instrumented_already() {
+            return;
+        }
+
+        let mut new_items = vec![];
+        for mut item in items.body.drain(..) {
+            item.visit_mut_children_with(self);
+            new_items.extend(self.before.drain(..));
+            new_items.push(item);
+        }
+        items.body = new_items;
+
+        let (coverage_template, call_coverage_template_stmt) = self.get_coverage_templates();
+
+        // prepend template to the top of the code
+        items.body.insert(0, coverage_template);
+        items.body.insert(1, call_coverage_template_stmt);
     }
 
     // ExportDefaultDeclaration: entries(), // ignore processing only
@@ -217,19 +238,6 @@ impl VisitMut for CoverageVisitor<'_> {
             Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
             _ => {
                 debugger_stmt.visit_mut_children_with(self);
-            }
-        }
-        self.on_exit(old);
-    }
-
-    // WithStatement: entries(blockProp('body'), coverStatement),
-    #[instrument(skip_all, fields(node = %self.print_node()))]
-    fn visit_mut_with_stmt(&mut self, with_stmt: &mut WithStmt) {
-        let (old, ignore_current) = self.on_enter(with_stmt);
-        match ignore_current {
-            Some(crate::utils::hint_comments::IgnoreScope::Next) => {}
-            _ => {
-                with_stmt.visit_mut_children_with(self);
             }
         }
         self.on_exit(old);

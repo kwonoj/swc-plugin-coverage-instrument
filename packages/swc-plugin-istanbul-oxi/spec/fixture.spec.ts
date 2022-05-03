@@ -69,7 +69,7 @@ function generateTests(docs) {
             const opts = doc.opts || {};
             opts.filename = path.resolve(__dirname, doc.file);
             opts.transformOptions = {
-              isModule: doc.file !== "with.yaml" || !process.env.TEST_SCRIPT
+              isModule: doc?.instrumentOpts?.esModules,
             };
             const v = create(
               doc.code,
