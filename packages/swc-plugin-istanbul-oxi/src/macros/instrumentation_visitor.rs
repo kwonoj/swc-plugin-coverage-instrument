@@ -616,15 +616,13 @@ macro_rules! instrumentation_visitor {
                         *stmt = Box::new(Stmt::Block(body));
                     };
 
-                    if ignore_current == Some(crate::utils::hint_comments::IgnoreScope::If) {
-                        //setAttr(if_stmt.cons, 'skip-all', true);
-                    } else {
+                    // Note: unlike upstream, we do not use setAttr-based approach as it is not easy to
+                    // append arbitary dynamic metadata on the parents can be accessed in any childs.
+                    if ignore_current != Some(crate::utils::hint_comments::IgnoreScope::If) {
                         wrap_with_counter(&mut if_stmt.cons);
                     }
 
-                    if ignore_current == Some(crate::utils::hint_comments::IgnoreScope::Else) {
-                        //setAttr(if_stmt.alt, 'skip-all', true);
-                    } else {
+                    if ignore_current != Some(crate::utils::hint_comments::IgnoreScope::Else) {
                         if let Some(alt) = &mut if_stmt.alt {
                             wrap_with_counter(alt);
                         } else {
