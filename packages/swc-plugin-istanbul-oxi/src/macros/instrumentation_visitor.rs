@@ -45,12 +45,8 @@ macro_rules! instrumentation_visitor {
                         let range = get_range_from_span(self.source_map, &arrow_expr.span);
                         let body_range = get_range_from_span(self.source_map, &block_stmt.span);
                         let index = self.cov.new_function(&None, &range, &body_range);
-                        let b = create_increase_expression_expr(
-                            &IDENT_F,
-                            index,
-                            &self.cov_fn_ident,
-                            None,
-                        );
+                        let b =
+                            create_increase_counter_expr(&IDENT_F, index, &self.cov_fn_ident, None);
 
                         // insert fn counter expression
                         let mut new_stmts = vec![Stmt::Expr(ExprStmt {
@@ -69,7 +65,7 @@ macro_rules! instrumentation_visitor {
                         if let Some(span) = span {
                             let body_range = get_range_from_span(self.source_map, &span);
                             let index = self.cov.new_function(&None, &range, &body_range);
-                            let b = create_increase_expression_expr(
+                            let b = create_increase_counter_expr(
                                 &IDENT_F,
                                 index,
                                 &self.cov_fn_ident,
@@ -359,7 +355,7 @@ macro_rules! instrumentation_visitor {
                                 let body_range = get_range_from_span(self.source_map, &body_span);
                                 let index = self.cov.new_function(&name, &range, &body_range);
 
-                                let b = create_increase_expression_expr(
+                                let b = create_increase_counter_expr(
                                     &IDENT_F,
                                     index,
                                     &self.cov_fn_ident,
@@ -407,7 +403,7 @@ macro_rules! instrumentation_visitor {
                                 let body_range = get_range_from_span(self.source_map, &body_span);
                                 let index = self.cov.new_function(&name, &range, &body_range);
 
-                                let b = create_increase_expression_expr(
+                                let b = create_increase_counter_expr(
                                     &IDENT_F,
                                     index,
                                     &self.cov_fn_ident,
@@ -571,7 +567,7 @@ macro_rules! instrumentation_visitor {
 
                         // create a branch path counter
                         let idx = self.cov.add_branch_path(branch, &range);
-                        let expr = create_increase_expression_expr(
+                        let expr = create_increase_counter_expr(
                             &IDENT_B,
                             branch,
                             &self.cov_fn_ident,

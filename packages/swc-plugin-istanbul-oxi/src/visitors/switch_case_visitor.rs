@@ -9,7 +9,7 @@ use tracing::instrument;
 use crate::{
     constants::idents::*,
     create_instrumentation_visitor,
-    instrument::create_increase_expression_expr,
+    instrument::create_increase_counter_expr,
     instrumentation_counter_helper, instrumentation_stmt_counter_helper, instrumentation_visitor,
     utils::{
         lookup_range::{get_expr_span, get_range_from_span},
@@ -39,7 +39,7 @@ impl VisitMut for SwitchCaseVisitor<'_> {
                 // TODO: conslidate brach expr creation, i.e ifstmt
                 let range = get_range_from_span(self.source_map, &switch_case.span);
                 let idx = self.cov.add_branch_path(self.branch, &range);
-                let expr = create_increase_expression_expr(
+                let expr = create_increase_counter_expr(
                     &IDENT_B,
                     self.branch,
                     &self.cov_fn_ident,

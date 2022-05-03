@@ -37,6 +37,26 @@ macro_rules! instrumentation_counter_helper {
                 // Now we believe this expr is the leaf of the logical expr tree.
                 // Wrap it with branch counter.
                 if self.instrument_options.report_logic {
+                    if let Some(span) = span {
+                        let range = get_range_from_span(self.source_map, span);
+                        let branch_path_index = self.cov.add_branch_path(branch, &range);
+
+                        let increase_expr = create_increase_counter_expr(
+                            &IDENT_B,
+                            branch,
+                            &self.cov_fn_ident,
+                            Some(branch_path_index),
+                        );
+                        let increase_true_expr =
+                            crate::instrument::create_increase_true_expr::create_increase_true_expr(
+                                branch,
+                                branch_path_index,
+                                &self.cov_fn_ident,
+                            );
+                        //this.increaseTrue('bT', branchName, index, path.node)
+                        //let increase_true_expr =
+                    }
+
                     /*
                     // TODO
                     const increment = this.getBranchLogicIncrement(
@@ -44,6 +64,7 @@ macro_rules! instrumentation_counter_helper {
                         b,
                         leaf.node.loc
                     );
+
                     if (!increment[0]) {
                         continue;
                     }
@@ -66,7 +87,7 @@ macro_rules! instrumentation_counter_helper {
 
             tracing::Span::current().record("stmt_id", &stmt_id);
 
-            crate::instrument::create_increase_expression_expr(
+            crate::instrument::create_increase_counter_expr(
                 &IDENT_S,
                 stmt_id,
                 &self.cov_fn_ident,
@@ -94,7 +115,7 @@ macro_rules! instrumentation_counter_helper {
         fn replace_expr_with_stmt_counter(&mut self, expr: &mut Expr) {
             self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {
                 let idx = cov.new_statement(&range);
-                create_increase_expression_expr(&IDENT_S, idx, cov_fn_ident, None)
+                create_increase_counter_expr(&IDENT_S, idx, cov_fn_ident, None)
             });
         }
 
@@ -103,7 +124,7 @@ macro_rules! instrumentation_counter_helper {
             self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {
                 let idx = cov.add_branch_path(branch, &range);
 
-                create_increase_expression_expr(&IDENT_B, branch, cov_fn_ident, Some(idx))
+                create_increase_counter_expr(&IDENT_B, branch, cov_fn_ident, Some(idx))
             });
         }
 
@@ -162,8 +183,7 @@ macro_rules! instrumentation_counter_helper {
 
             match &mut function.body {
                 Some(blockstmt) => {
-                    let b =
-                        create_increase_expression_expr(&IDENT_F, index, &self.cov_fn_ident, None);
+                    let b = create_increase_counter_expr(&IDENT_F, index, &self.cov_fn_ident, None);
                     let mut prepended_vec = vec![Stmt::Expr(ExprStmt {
                         span: DUMMY_SP,
                         expr: Box::new(b),

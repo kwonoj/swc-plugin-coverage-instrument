@@ -1,10 +1,12 @@
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
 
+pub(crate) mod create_increase_true_expr;
+
 /// Creates a expr like `cov_17709493053001988098().s[0]++;`
 /// idx indicates index of vec-based counters (i.e branches).
 /// If it exists, creates a expr with idx like
 /// 1cov_17709493053001988098().b[0][idx]++;` instead.
-pub(crate) fn create_increase_expression_expr(
+pub(crate) fn create_increase_counter_expr(
     type_ident: &Ident,
     id: u32,
     var_name: &Ident,
