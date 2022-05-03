@@ -332,19 +332,11 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
                         .map(|v| {
                             Some(ExprOrSpread {
                                 spread: None,
-                                expr: Box::new(Expr::Lit(Lit::Str(Str {
-                                    value: if let Some(v) = v {
-                                        v.clone().into()
-                                    } else {
-                                        "null".into()
-                                    },
-                                    raw: if let Some(_) = v {
-                                        None
-                                    } else {
-                                        Some("null".into())
-                                    },
-                                    ..Str::dummy()
-                                }))),
+                                expr: Box::new(Expr::Lit(if let Some(v) = v {
+                                    Lit::Str(Str::from(v.as_ref()))
+                                } else {
+                                    Lit::Null(Null::dummy())
+                                })),
                             })
                         })
                         .collect(),

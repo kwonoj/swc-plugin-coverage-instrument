@@ -51,27 +51,19 @@ macro_rules! instrumentation_counter_helper {
                             branch,
                             branch_path_index,
                             &self.cov_fn_ident,
+                            &self.cov_fn_temp_ident,
+                            expr.take(),
                         );
-                        //this.increaseTrue('bT', branchName, index, path.node)
-                        //let increase_true_expr =
-                    }
 
-                    /*
-                    // TODO
-                    const increment = this.getBranchLogicIncrement(
-                        leaf,
-                        b,
-                        leaf.node.loc
-                    );
+                        // TODO: duplicated code with replace_expr_with_counter
+                        let paren_expr = Expr::Seq(SeqExpr {
+                            span: DUMMY_SP,
+                            exprs: vec![Box::new(increase_expr), Box::new(increase_true_expr)],
+                        });
 
-                    if (!increment[0]) {
-                        continue;
+                        // replace init with increase expr + init seq
+                        *expr = paren_expr;
                     }
-                    leaf.parent[leaf.property] = T.sequenceExpression([
-                        increment[0],
-                        increment[1]
-                    ]);
-                    */
                 } else {
                     self.replace_expr_with_branch_counter(expr, branch);
                 }
