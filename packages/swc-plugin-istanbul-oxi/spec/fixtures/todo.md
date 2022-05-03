@@ -22,7 +22,7 @@
 - [x] strict
 - [x] switch
 - [ ] truthy
-- [ ] try
+- [x] try
 - [x] while
 - [ ] with
 - [x] yield
