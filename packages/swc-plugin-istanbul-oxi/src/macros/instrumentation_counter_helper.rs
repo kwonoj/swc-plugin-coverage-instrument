@@ -47,7 +47,7 @@ macro_rules! instrumentation_counter_helper {
                         );
                         let branch_path_index = self.cov.add_branch_path(branch, &range);
 
-                        let increase_expr = crate::instrument::create_increase_counter_expr(
+                        let increase_expr = istanbul_oxi_instrument::create_increase_counter_expr(
                             &istanbul_oxi_instrument::constants::idents::IDENT_B,
                             branch,
                             &self.cov_fn_ident,
@@ -85,7 +85,7 @@ macro_rules! instrumentation_counter_helper {
 
             tracing::Span::current().record("stmt_id", &stmt_id);
 
-            crate::instrument::create_increase_counter_expr(
+            istanbul_oxi_instrument::create_increase_counter_expr(
                 &istanbul_oxi_instrument::constants::idents::IDENT_S,
                 stmt_id,
                 &self.cov_fn_ident,
@@ -115,7 +115,7 @@ macro_rules! instrumentation_counter_helper {
         fn replace_expr_with_stmt_counter(&mut self, expr: &mut Expr) {
             self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {
                 let idx = cov.new_statement(&range);
-                crate::instrument::create_increase_counter_expr(
+                istanbul_oxi_instrument::create_increase_counter_expr(
                     &istanbul_oxi_instrument::constants::idents::IDENT_S,
                     idx,
                     cov_fn_ident,
@@ -129,7 +129,7 @@ macro_rules! instrumentation_counter_helper {
             self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {
                 let idx = cov.add_branch_path(branch, &range);
 
-                crate::instrument::create_increase_counter_expr(
+                istanbul_oxi_instrument::create_increase_counter_expr(
                     &istanbul_oxi_instrument::constants::idents::IDENT_B,
                     branch,
                     cov_fn_ident,
@@ -208,7 +208,7 @@ macro_rules! instrumentation_counter_helper {
 
             match &mut function.body {
                 Some(blockstmt) => {
-                    let b = crate::instrument::create_increase_counter_expr(
+                    let b = istanbul_oxi_instrument::create_increase_counter_expr(
                         &istanbul_oxi_instrument::constants::idents::IDENT_F,
                         index,
                         &self.cov_fn_ident,

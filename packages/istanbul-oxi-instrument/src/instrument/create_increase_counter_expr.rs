@@ -1,10 +1,16 @@
+#[cfg(not(feature = "plugin"))]
+use swc_common::DUMMY_SP;
+#[cfg(not(feature = "plugin"))]
+use swc_ecma_ast::*;
+
+#[cfg(feature = "plugin")]
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
 
 /// Creates a expr like `cov_17709493053001988098().s[0]++;`
 /// idx indicates index of vec-based counters (i.e branches).
 /// If it exists, creates a expr with idx like
 /// 1cov_17709493053001988098().b[0][idx]++;` instead.
-pub(crate) fn create_increase_counter_expr(
+pub fn create_increase_counter_expr(
     type_ident: &Ident,
     id: u32,
     var_name: &Ident,

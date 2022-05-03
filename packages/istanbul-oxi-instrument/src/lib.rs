@@ -8,6 +8,8 @@ mod utils;
 pub use utils::hint_comments;
 pub use utils::lookup_range;
 pub use utils::node::Node;
+mod instrument;
+pub use instrument::create_increase_counter_expr::create_increase_counter_expr;
 
 // Reexports
 pub use istanbul_oxi_coverage::types::*;

@@ -3,8 +3,8 @@ use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
 use tracing::instrument;
 
 use crate::{
-    create_instrumentation_visitor, instrument::create_increase_counter_expr,
-    instrumentation_counter_helper, instrumentation_stmt_counter_helper, instrumentation_visitor,
+    create_instrumentation_visitor, instrumentation_counter_helper,
+    instrumentation_stmt_counter_helper, instrumentation_visitor,
 };
 
 create_instrumentation_visitor!(SwitchCaseVisitor { branch: u32 });
@@ -32,7 +32,7 @@ impl VisitMut for SwitchCaseVisitor<'_> {
                     &switch_case.span,
                 );
                 let idx = self.cov.add_branch_path(self.branch, &range);
-                let expr = create_increase_counter_expr(
+                let expr = istanbul_oxi_instrument::create_increase_counter_expr(
                     &IDENT_B,
                     self.branch,
                     &self.cov_fn_ident,
