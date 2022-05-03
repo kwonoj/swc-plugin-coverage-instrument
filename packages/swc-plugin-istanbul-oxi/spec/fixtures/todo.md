@@ -3,7 +3,7 @@
 - [x] classes
 - [x] default-args
 - [x] do-while
-- [ ] es6-modules
+- [x] es6-modules
 - [x] expressions
 - [x] for-in
 - [x] for-of
