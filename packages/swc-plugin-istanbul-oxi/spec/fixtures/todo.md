@@ -15,7 +15,7 @@
 - [x] input-source-map
 - [x] jsx
 - [x] meta-property
-- [ ] object-method
+- [x] object-method
 - [x] object-spread
 - [x] statement-hints
 - [x] statement
