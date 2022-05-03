@@ -42,7 +42,7 @@ pub fn create_coverage_fn_decl(
     cov_fn_ident: &Ident,
     file_path: &str,
     coverage_data: &FileCoverage,
-) -> ModuleItem {
+) -> Stmt {
     // Actual fn body statements will be injected
     let mut stmts = vec![];
 
@@ -148,7 +148,7 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
     }));
 
     // moduleitem for fn decl includes body defined above
-    ModuleItem::Stmt(Stmt::Decl(Decl::Fn(FnDecl {
+    Stmt::Decl(Decl::Fn(FnDecl {
         ident: cov_fn_ident.clone(),
         declare: false,
         function: Function {
@@ -158,5 +158,5 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
             }),
             ..Function::dummy()
         },
-    })))
+    }))
 }

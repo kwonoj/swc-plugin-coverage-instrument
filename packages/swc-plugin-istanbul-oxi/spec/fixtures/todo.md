@@ -24,5 +24,5 @@
 - [ ] truthy
 - [x] try
 - [x] while
-- [ ] with
+- [x] with
 - [x] yield

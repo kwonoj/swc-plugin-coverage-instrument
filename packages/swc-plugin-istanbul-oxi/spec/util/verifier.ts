@@ -27,7 +27,7 @@ const instrumentSync = (
       }
     : instrumentOptions ?? {};
 
-  const ret = transformSync(code, {
+  const options = {
     filename: filename ?? "unknown",
     jsc: {
       parser: {
@@ -41,9 +41,13 @@ const instrumentSync = (
       preserveAllComments: true,
     },
     isModule: transformOptions?.isModule ?? true,
-  });
+    module: {
+      type: "commonjs",
+      strict: transformOptions?.isModule ?? false,
+    },
+  };
 
-  return ret;
+  return transformSync(code, options);
 };
 
 /**
@@ -116,7 +120,10 @@ class Verifier {
       "Input source map mismatch"
     );
 
-    const initial = readInitialCoverage(this.getGeneratedCode());
+    const initial = readInitialCoverage(
+      this.getGeneratedCode(),
+      this.result.transformOptions
+    );
     assert.ok(initial);
     assert.deepEqual(initial.coverageData, this.result.emptyCoverage);
     assert.ok(initial.path);
@@ -135,6 +142,7 @@ class Verifier {
     const cov = this.getCoverage();
 
     const { _coverageSchema, hash, ...fileCoverage } = cov[Object.keys(cov)[0]];
+
     return new FileCoverageInterop(fileCoverage);
   }
 
@@ -201,7 +209,6 @@ const create = (code, options = {}, instrumentOptions = {}, inputSourceMap) => {
   }
 
   try {
-    console.log(inputSourceMap);
     let out = instrumentSync(
       code,
       file,
@@ -262,7 +269,8 @@ const create = (code, options = {}, instrumentOptions = {}, inputSourceMap) => {
     generatedCode: instrumenterOutput,
     coverageVariable,
     baseline: clone(g[coverageVariable]),
-    emptyCoverage: lastFileCoverage(instrumenterOutput), //mimic instrumenter.getLastFileCoverage()
+    emptyCoverage: lastFileCoverage(instrumenterOutput), //instrumenter.getLastFileCoverage()
+    transformOptions: options.transformOptions,
   });
 };
 
