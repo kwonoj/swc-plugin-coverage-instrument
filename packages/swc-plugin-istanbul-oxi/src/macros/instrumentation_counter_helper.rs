@@ -53,7 +53,7 @@ macro_rules! instrumentation_counter_helper {
                             &self.cov_fn_ident,
                             Some(branch_path_index),
                         );
-                        let increase_true_expr = crate::instrument::create_increase_true_expr(
+                        let increase_true_expr = istanbul_oxi_instrument::create_increase_true_expr(
                             branch,
                             branch_path_index,
                             &self.cov_fn_ident,

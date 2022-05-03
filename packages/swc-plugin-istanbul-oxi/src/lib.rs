@@ -1,7 +1,6 @@
 use serde_json::Value;
 use swc_plugin::{ast::*, plugin_transform, TransformPluginProgramMetadata};
 
-mod instrument;
 mod template;
 #[macro_use]
 mod macros;

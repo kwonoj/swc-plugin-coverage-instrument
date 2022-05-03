@@ -10,6 +10,7 @@ pub use utils::lookup_range;
 pub use utils::node::Node;
 mod instrument;
 pub use instrument::create_increase_counter_expr::create_increase_counter_expr;
+pub use instrument::create_increase_true_expr::create_increase_true_expr;
 
 // Reexports
 pub use istanbul_oxi_coverage::types::*;
