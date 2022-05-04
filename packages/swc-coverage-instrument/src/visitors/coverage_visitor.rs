@@ -23,13 +23,13 @@ create_instrumentation_visitor!(CoverageVisitor { file_path: String });
 /// Public interface to create a visitor performs transform to inject
 /// coverage instrumentation counter.
 pub fn create_coverage_instrumentation_visitor<C: Clone + Comments>(
-    source_map: &std::sync::Arc<SourceMapImpl>,
+    source_map: std::sync::Arc<SourceMapImpl>,
     comments: C,
-    instrument_options: &InstrumentOptions,
-    filename: &str,
+    instrument_options: InstrumentOptions,
+    filename: String,
 ) -> CoverageVisitor<C> {
     // create a function name ident for the injected coverage instrumentation counters.
-    crate::create_coverage_fn_ident(filename);
+    crate::create_coverage_fn_ident(&filename);
 
     let mut cov = crate::SourceCoverage::new(filename.to_string(), instrument_options.report_logic);
     cov.set_input_source_map(&instrument_options.input_source_map);
@@ -37,11 +37,11 @@ pub fn create_coverage_instrumentation_visitor<C: Clone + Comments>(
     CoverageVisitor::new(
         source_map,
         comments.clone(),
-        &std::rc::Rc::new(std::cell::RefCell::new(cov)),
-        &instrument_options,
-        &vec![],
+        std::rc::Rc::new(std::cell::RefCell::new(cov)),
+        instrument_options,
+        vec![],
         None,
-        filename.to_string(),
+        filename,
     )
 }
 

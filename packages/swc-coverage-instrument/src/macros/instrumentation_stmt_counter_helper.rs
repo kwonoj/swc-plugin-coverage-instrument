@@ -15,11 +15,11 @@ macro_rules! instrumentation_stmt_counter_helper {
                         Some(crate::hint_comments::IgnoreScope::Next) => {}
                         _ => {
                             let mut visitor = crate::visitors::stmt_like_visitor::StmtVisitor::new(
-                                &self.source_map,
+                                self.source_map.clone(),
                                 self.comments.clone(),
-                                &mut self.cov,
-                                &self.instrument_options,
-                                &self.nodes,
+                                self.cov.clone(),
+                                self.instrument_options.clone(),
+                                self.nodes.clone(),
                                 ignore_current,
                             );
                             stmt.visit_mut_children_with(&mut visitor);

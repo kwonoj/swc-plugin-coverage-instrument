@@ -41,23 +41,23 @@ macro_rules! create_instrumentation_visitor {
 
         impl<C: Clone + Comments> $name<C> {
             pub fn new(
-                source_map: &std::sync::Arc<SourceMapImpl>,
+                source_map: std::sync::Arc<SourceMapImpl>,
                 comments: C,
-                cov: &std::rc::Rc<std::cell::RefCell<crate::SourceCoverage>>,
-                instrument_options: &crate::InstrumentOptions,
-                nodes: &Vec<crate::Node>,
+                cov: std::rc::Rc<std::cell::RefCell<crate::SourceCoverage>>,
+                instrument_options: crate::InstrumentOptions,
+                nodes: Vec<crate::Node>,
                 should_ignore: Option<crate::hint_comments::IgnoreScope>,
                 $($field: $t,)*
             ) -> $name<C> {
                 $name {
-                    source_map: source_map.clone(),
-                    comments: comments.clone(),
-                    cov: cov.clone(),
+                    source_map: source_map,
+                    comments: comments,
+                    cov: cov,
                     cov_fn_ident: crate::COVERAGE_FN_IDENT.get().expect("Coverage fn Ident should be initialized already").clone(),
                     cov_fn_temp_ident: crate::COVERAGE_FN_TRUE_TEMP_IDENT.get().expect("Coverage fn Ident should be initialized already").clone(),
-                    instrument_options: instrument_options.clone(),
+                    instrument_options: instrument_options,
                     before: vec![],
-                    nodes: nodes.clone(),
+                    nodes: nodes,
                     should_ignore,
                     $($field,)*
                 }

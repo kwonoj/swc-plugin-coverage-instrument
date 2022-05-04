@@ -80,11 +80,11 @@ macro_rules! instrumentation_branch_wrap_counter_helper {
             // If current expr have inner logical expr, traverse until reaches to the leaf
             if has_inner_logical_expr.0 {
                 let mut visitor = crate::visitors::logical_expr_visitor::LogicalExprVisitor::new(
-                    &self.source_map,
+                    self.source_map.clone(),
                     self.comments.clone(),
-                    &mut self.cov,
-                    &self.instrument_options,
-                    &self.nodes,
+                    self.cov.clone(),
+                    self.instrument_options.clone(),
+                    self.nodes.clone(),
                     should_ignore,
                     branch,
                 );
