@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # instruct dep to use swc_plugin as dependency to access necessary imports
-istanbul-oxi-instrument = { version = "0.1.0", path = "../istanbul-oxi-instrument", features = [
+swc-coverage-instrument = { version = "0.1.0", path = "../swc-coverage-instrument", features = [
   "plugin",
 ], default-features = false }
 serde_json = "1.0.79"

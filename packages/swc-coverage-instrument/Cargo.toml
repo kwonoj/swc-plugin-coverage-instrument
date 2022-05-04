@@ -1,7 +1,10 @@
 [package]
-name = "istanbul-oxi-instrument"
+name = "swc-coverage-instrument"
 version = "0.1.0"
 edition = "2021"
+description = "Istanbul compatible coverage instrumentation visitor for SWC"
+license = "MIT"
+repository = "https://github.com/kwonoj/swc-coverage-instrument"
 
 [features]
 default = ["swc_ecma_ast", "swc_ecma_visit", "swc_common"]

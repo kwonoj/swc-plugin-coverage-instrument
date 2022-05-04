@@ -1,8 +1,8 @@
-use istanbul_oxi_instrument::FileCoverage;
-use istanbul_oxi_instrument::COVERAGE_MAGIC_KEY;
-use istanbul_oxi_instrument::COVERAGE_MAGIC_VALUE;
 use serde::Deserialize;
 use serde::Serialize;
+use swc_coverage_instrument::FileCoverage;
+use swc_coverage_instrument::COVERAGE_MAGIC_KEY;
+use swc_coverage_instrument::COVERAGE_MAGIC_VALUE;
 use wasm_bindgen::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

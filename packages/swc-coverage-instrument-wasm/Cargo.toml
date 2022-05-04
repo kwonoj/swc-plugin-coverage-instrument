@@ -1,5 +1,5 @@
 [package]
-name = "istanbul-oxi-instrument-wasm"
+name = "swc-coverage-instrument-wasm"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,5 +9,5 @@ crate-type = ["cdylib"]
 [dependencies]
 serde = { version = "1.0.136", features = ["derive"] }
 wasm-bindgen = { version = "0.2.80", features = ["serde-serialize"] }
-istanbul-oxi-instrument = { version = "0.1.0", path = "../istanbul-oxi-instrument" }
+swc-coverage-instrument = { version = "0.1.0", path = "../swc-coverage-instrument" }
 serde-wasm-bindgen = "0.4.2"
