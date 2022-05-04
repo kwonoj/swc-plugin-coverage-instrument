@@ -3,13 +3,13 @@ import * as path from "path";
 import { assert } from "chai";
 import { readInitialCoverage } from "./read-coverage";
 import { EOL } from "os";
-import { FileCoverageInterop } from "../../../istanbul-oxi-instrument-wasm/pkg";
+import { FileCoverageInterop } from "../../../swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm";
 
 const clone: typeof import("lodash.clone") = require("lodash.clone");
 
 const pluginBinary = path.resolve(
   __dirname,
-  "../../../../target/wasm32-wasi/debug/swc_plugin_istanbul_oxi.wasm"
+  "../../../../target/wasm32-wasi/debug/swc_plugin_coverage.wasm"
 );
 
 /// Mimic instrumenter.

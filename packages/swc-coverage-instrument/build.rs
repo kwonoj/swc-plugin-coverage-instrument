@@ -28,7 +28,7 @@ pub static COVERAGE_MAGIC_VALUE: &'static str = "{}";"#,
 
     let out_dir = std::env::var_os("CARGO_MANIFEST_DIR").unwrap();
     let path = std::path::PathBuf::from(&out_dir)
-        .join("../../packages/swc-plugin-istanbul-oxi/spec/util/")
+        .join("../../packages/swc-plugin-coverage/spec/util/")
         .join("constants.ts");
 
     std::fs::write(

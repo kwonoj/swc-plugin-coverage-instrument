@@ -4,7 +4,7 @@ import * as yaml from "js-yaml";
 import { create, instrumentSync } from "./util/verifier";
 import * as guards from "./util/guards";
 import { assert } from "chai";
-import { getCoverageMagicConstants } from "../../istanbul-oxi-instrument-wasm/pkg";
+import { getCoverageMagicConstants } from "../../swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm";
 
 // dummy: initiate wasm compilation before any test runs
 getCoverageMagicConstants();

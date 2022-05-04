@@ -1,7 +1,7 @@
-use istanbul_oxi_instrument::{
+use serde_json::Value;
+use swc_coverage_instrument::{
     create_coverage_instrumentation_visitor, InstrumentLogOptions, InstrumentOptions,
 };
-use serde_json::Value;
 use swc_plugin::{
     ast::{as_folder, FoldWith, Program},
     plugin_transform, TransformPluginProgramMetadata,
