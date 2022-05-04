@@ -1581,6 +1581,8 @@ dependencies = [
  "indexmap",
  "json_comments",
  "lru",
+ "napi",
+ "napi-derive",
  "once_cell",
  "parking_lot",
  "pathdiff",
@@ -1617,12 +1619,16 @@ dependencies = [
 name = "swc-coverage-custom-transform"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "backtrace",
  "napi",
  "napi-build",
  "napi-derive",
+ "serde",
+ "serde_json",
  "swc",
  "swc_common",
+ "swc_ecma_ast",
  "swc_node_base",
 ]
 

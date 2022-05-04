@@ -1,6 +1,8 @@
 #![recursion_limit = "2048"]
 #![allow(dead_code)]
 
+mod util;
+
 #[macro_use]
 extern crate napi_derive;
 /// Explicit extern crate to use allocator.
@@ -11,6 +13,16 @@ use std::{env, panic::set_hook, sync::Arc};
 use backtrace::Backtrace;
 use swc::Compiler;
 use swc_common::{self, sync::Lazy, FilePathMapping, SourceMap};
+
+use std::path::Path;
+
+use anyhow::Context as _;
+use napi::bindgen_prelude::Buffer;
+use swc::{config::Options, TransformOutput};
+use swc_common::FileName;
+use swc_ecma_ast::Program;
+
+use crate::util::{deserialize_json, get_deserialized, try_with, MapErr};
 
 static COMPILER: Lazy<Arc<Compiler>> = Lazy::new(|| {
     let cm = Arc::new(SourceMap::new(FilePathMapping::empty()));
@@ -50,9 +62,34 @@ impl JsCompiler {
 
 pub type ArcCompiler = Arc<Compiler>;
 
-/// Hack for `Type Generation`
-#[napi(object)]
-pub struct TransformOutput {
-    pub code: String,
-    pub map: Option<String>,
+#[napi]
+pub fn transform_sync(s: String, is_module: bool, opts: Buffer) -> napi::Result<TransformOutput> {
+    let c = get_compiler();
+
+    let mut options: Options = get_deserialized(&opts)?;
+
+    if !options.filename.is_empty() {
+        options.config.adjust(Path::new(&options.filename));
+    }
+
+    try_with(c.cm.clone(), !options.config.error.filename, |handler| {
+        c.run(|| {
+            if is_module {
+                let program: Program =
+                    deserialize_json(s.as_str()).context("failed to deserialize Program")?;
+                c.process_js(handler, program, &options)
+            } else {
+                let fm = c.cm.new_source_file(
+                    if options.filename.is_empty() {
+                        FileName::Anon
+                    } else {
+                        FileName::Real(options.filename.clone().into())
+                    },
+                    s,
+                );
+                c.process_js_file(fm, handler, &options)
+            }
+        })
+    })
+    .convert_err()
 }
