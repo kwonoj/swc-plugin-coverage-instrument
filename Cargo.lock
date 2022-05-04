@@ -289,7 +289,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "istanbul-oxi-coverage"
+name = "istanbul-oxide"
 version = "0.1.0"
 dependencies = [
  "indexmap",
@@ -845,7 +845,7 @@ checksum = "6446ced80d6c486436db5c078dde11a9f73d42b57fb273121e160b84f63d894c"
 name = "swc-coverage-instrument"
 version = "0.1.0"
 dependencies = [
- "istanbul-oxi-coverage",
+ "istanbul-oxide",
  "once_cell",
  "pretty_assertions",
  "regex",

@@ -266,7 +266,7 @@ impl VisitMut for CoverageVisitor {
                 let range =
                     crate::lookup_range::get_range_from_span(&self.source_map, &cond_expr.span);
                 let branch = self.cov.borrow_mut().new_branch(
-                    istanbul_oxi_coverage::BranchType::CondExpr,
+                    istanbul_oxide::BranchType::CondExpr,
                     &range,
                     false,
                 );

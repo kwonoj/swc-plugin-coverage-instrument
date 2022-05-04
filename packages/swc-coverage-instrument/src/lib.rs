@@ -28,7 +28,7 @@ use utils::lookup_range;
 pub use utils::node::Node;
 
 // Reexports
-pub use istanbul_oxi_coverage::types::*;
-pub use istanbul_oxi_coverage::FileCoverage;
-pub use istanbul_oxi_coverage::Range;
-pub use istanbul_oxi_coverage::SourceMap;
+pub use istanbul_oxide::types::*;
+pub use istanbul_oxide::FileCoverage;
+pub use istanbul_oxide::Range;
+pub use istanbul_oxide::SourceMap;

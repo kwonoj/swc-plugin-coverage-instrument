@@ -1,4 +1,4 @@
-use istanbul_oxi_coverage::{Branch, BranchType, FileCoverage, Function, Range, SourceMap};
+use istanbul_oxide::{Branch, BranchType, FileCoverage, Function, Range, SourceMap};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct SourceCoverageMetaHitCount {
@@ -189,7 +189,7 @@ impl SourceCoverage {
 
 #[cfg(test)]
 mod tests {
-    use istanbul_oxi_coverage::{Branch, BranchType, Function, Range};
+    use istanbul_oxide::{Branch, BranchType, Function, Range};
 
     use crate::source_coverage::SourceCoverage;
 

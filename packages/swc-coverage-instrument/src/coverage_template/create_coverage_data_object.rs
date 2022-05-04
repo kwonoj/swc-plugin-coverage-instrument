@@ -3,7 +3,7 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use istanbul_oxi_coverage::{Branch, FileCoverage, Range};
+use istanbul_oxide::{Branch, FileCoverage, Range};
 #[cfg(not(feature = "plugin"))]
 use swc_common::{util::take::Take, DUMMY_SP};
 #[cfg(not(feature = "plugin"))]
@@ -88,7 +88,7 @@ fn create_range_object_lit(value: &Range) -> Expr {
     })
 }
 
-fn create_fn_prop(key: &str, value: &istanbul_oxi_coverage::types::Function) -> PropOrSpread {
+fn create_fn_prop(key: &str, value: &istanbul_oxide::types::Function) -> PropOrSpread {
     create_str_key_value_prop(
         key,
         Expr::Object(ObjectLit {
@@ -450,7 +450,7 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
 
 #[cfg(test)]
 mod tests {
-    use istanbul_oxi_coverage::BranchType;
+    use istanbul_oxide::BranchType;
     use swc_ecma_quote::quote;
     use swc_plugin::{ast::*, utils::take::Take};
 
