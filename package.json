@@ -1,5 +1,5 @@
 {
-  "name": "istanbul-oxi",
+  "name": "swc-plugin-coverage",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",

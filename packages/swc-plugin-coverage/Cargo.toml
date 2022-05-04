@@ -1,6 +1,6 @@
 [package]
 name = "swc-plugin-coverage"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 authors = ["OJ Kwon <kwon.ohjoong@gmail.com>"]
 description = "Istanbul compatible coverage instrumentation plugin for SWC"
@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # instruct dep to use swc_plugin as dependency to access necessary imports
-swc-coverage-instrument = { version = "0.1.0", path = "../swc-coverage-instrument", features = [
+swc-coverage-instrument = { version = "0.0.1", path = "../swc-coverage-instrument", features = [
   "plugin",
 ], default-features = false }
 serde_json = "1.0.79"
