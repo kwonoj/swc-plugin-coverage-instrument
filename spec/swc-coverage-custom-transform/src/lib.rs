@@ -12,24 +12,20 @@ use std::{env, panic::set_hook, sync::Arc};
 
 use backtrace::Backtrace;
 use swc::Compiler;
-use swc_common::{
-    self, chain, comments::SingleThreadedComments, sync::Lazy, FilePathMapping, SourceMap,
-};
+use swc_common::{self, comments::SingleThreadedComments, sync::Lazy, FilePathMapping, SourceMap};
 use swc_coverage_instrument::{create_coverage_instrumentation_visitor, InstrumentOptions};
 
 use std::path::Path;
 
-use anyhow::Context as _;
 use napi::bindgen_prelude::Buffer;
 use swc::{config::Options, TransformOutput};
 use swc_common::FileName;
-use swc_ecma_ast::Program;
 use swc_ecmascript::{
     transforms::pass::noop,
     visit::{as_folder, Fold},
 };
 
-use crate::util::{deserialize_json, get_deserialized, try_with, MapErr};
+use crate::util::{get_deserialized, try_with, MapErr};
 
 static COMPILER: Lazy<Arc<Compiler>> = Lazy::new(|| {
     let cm = Arc::new(SourceMap::new(FilePathMapping::empty()));
@@ -93,13 +89,13 @@ pub fn transform_sync(
                 FileName::Real(options.filename.clone().into())
             };
 
-            let fm = c.cm.new_source_file(filename, s);
+            let fm = c.cm.new_source_file(filename.clone(), s);
             c.process_js_with_custom_pass(
                 fm,
                 None,
                 handler,
                 &options,
-                |program, comments| {
+                |_program, comments| {
                     coverage_instrument(&c.cm, comments, &instrument_option, &filename.to_string())
                 },
                 |_, _| noop(),

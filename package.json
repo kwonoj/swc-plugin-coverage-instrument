@@ -22,7 +22,7 @@
     }
   },
   "scripts": {
-    "build:customtransform": "napi build --platform --cargo-name swc_coverage_custom_transform",
+    "build:customtransform": "napi build --platform --cargo-cwd ./spec/swc-coverage-custom-transform",
     "build:instrument": "wasm-pack build spec/swc-coverage-instrument-wasm --target nodejs",
     "build:plugin": "cargo build -p swc-plugin-coverage --target wasm32-wasi",
     "test": "npm-run-all build:instrument build:plugin && mocha",

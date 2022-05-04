@@ -6,3 +6,5 @@ node_modules/
 *.node
 index.d.ts
 index.js
+spec/swc-coverage-custom-transform/target/
+a.js
