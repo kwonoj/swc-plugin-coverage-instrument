@@ -31,7 +31,7 @@ pub static COVERAGE_MAGIC_VALUE: &'static str = "{}";"#,
         .join("../../spec/util/")
         .join("constants.ts");
 
-    std::fs::write(
+    let _ = std::fs::write(
         &path,
         format!(
             r#"const COVERAGE_MAGIC_KEY = "{}";
@@ -43,6 +43,5 @@ export {{
 }}"#,
             magic_key, magic_value
         ),
-    )
-    .unwrap();
+    );
 }
