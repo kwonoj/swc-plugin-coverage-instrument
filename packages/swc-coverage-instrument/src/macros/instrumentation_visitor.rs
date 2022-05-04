@@ -566,7 +566,7 @@ macro_rules! instrumentation_visitor {
                     // branch increase counter accordingly
                     let mut visitor = crate::visitors::switch_case_visitor::SwitchCaseVisitor::new(
                         &self.source_map,
-                        &self.comments,
+                        self.comments.clone(),
                         &mut self.cov,
                         &self.instrument_options,
                         &self.nodes,
@@ -630,7 +630,7 @@ macro_rules! instrumentation_visitor {
                             let mut stmts = vec![expr];
                             let mut visitor = crate::visitors::stmt_like_visitor::StmtVisitor::new(
                                 &self.source_map,
-                                &self.comments,
+                                self.comments.clone(),
                                 &mut self.cov,
                                 &self.instrument_options,
                                 &self.nodes,
@@ -802,7 +802,7 @@ macro_rules! instrumentation_visitor {
                     } else {
                         let mut visitor = crate::visitors::stmt_like_visitor::StmtVisitor::new(
                             &self.source_map,
-                            &self.comments,
+                            self.comments.clone(),
                             &mut self.cov,
                             &self.instrument_options,
                             &self.nodes,

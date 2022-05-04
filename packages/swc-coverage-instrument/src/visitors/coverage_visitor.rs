@@ -22,12 +22,12 @@ create_instrumentation_visitor!(CoverageVisitor { file_path: String });
 
 /// Public interface to create a visitor performs transform to inject
 /// coverage instrumentation counter.
-pub fn create_coverage_instrumentation_visitor(
+pub fn create_coverage_instrumentation_visitor<C: Clone + Comments>(
     source_map: &std::sync::Arc<SourceMapImpl>,
-    comments: Option<&CommentsLookup>,
+    comments: C,
     instrument_options: &InstrumentOptions,
     filename: &str,
-) -> CoverageVisitor {
+) -> CoverageVisitor<C> {
     // create a function name ident for the injected coverage instrumentation counters.
     crate::create_coverage_fn_ident(filename);
 
@@ -36,7 +36,7 @@ pub fn create_coverage_instrumentation_visitor(
 
     CoverageVisitor::new(
         source_map,
-        &comments.cloned(),
+        comments.clone(),
         &std::rc::Rc::new(std::cell::RefCell::new(cov)),
         &instrument_options,
         &vec![],
@@ -45,7 +45,7 @@ pub fn create_coverage_instrumentation_visitor(
     )
 }
 
-impl CoverageVisitor {
+impl<C: Clone + Comments> CoverageVisitor<C> {
     instrumentation_counter_helper!();
     instrumentation_stmt_counter_helper!();
 
@@ -95,7 +95,7 @@ impl CoverageVisitor {
             &self.cov_fn_ident,
             &self.file_path,
             self.cov.borrow().as_ref(),
-            self.comments.as_ref(),
+            &self.comments,
             self.instrument_options.debug_initial_coverage_comment,
         );
 
@@ -112,7 +112,7 @@ impl CoverageVisitor {
     }
 }
 
-impl VisitMut for CoverageVisitor {
+impl<C: Clone + Comments> VisitMut for CoverageVisitor<C> {
     instrumentation_visitor!();
 
     #[instrument(skip_all, fields(node = %self.print_node()))]

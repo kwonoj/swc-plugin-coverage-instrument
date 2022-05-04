@@ -15,11 +15,11 @@ create_instrumentation_visitor!(LogicalExprVisitor { branch: u32 });
 
 /// A visitor to traverse down given logical expr's value (left / right) with existing branch idx.
 /// This is required to preserve branch id to recursively traverse logical expr's inner child.
-impl LogicalExprVisitor {
+impl<C: Clone + Comments> LogicalExprVisitor<C> {
     instrumentation_branch_wrap_counter_helper!();
 }
 
-impl VisitMut for LogicalExprVisitor {
+impl<C: Clone + Comments> VisitMut for LogicalExprVisitor<C> {
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
         let (old, _ignore_current) = self.on_enter(expr);
         expr.visit_mut_children_with(self);

@@ -3,7 +3,7 @@ use regex::Regex as Regexp;
 
 #[cfg(not(feature = "plugin"))]
 use swc_common::{
-    comments::{Comment, Comments, SingleThreadedComments as CommentsLookup},
+    comments::{Comment, Comments},
     Span,
 };
 #[cfg(not(feature = "plugin"))]
@@ -12,7 +12,7 @@ use swc_ecma_ast::*;
 #[cfg(feature = "plugin")]
 use swc_plugin::{
     ast::*,
-    comments::{Comment, Comments, PluginCommentsProxy as CommentsLookup},
+    comments::{Comment, Comments},
     syntax_pos::Span,
 };
 
@@ -27,38 +27,34 @@ static COMMENT_FILE_REGEX: Lazy<Regexp> =
 pub static COMMENT_RE: Lazy<Regexp> =
     Lazy::new(|| Regexp::new(r"^\s*istanbul\s+ignore\s+(if|else|next)(\W|$)").unwrap());
 
-pub fn should_ignore_file(comments: &Option<CommentsLookup>, program: &Program) -> bool {
-    if let Some(comments) = &*comments {
-        let pos = match program {
-            Program::Module(module) => module.span,
-            Program::Script(script) => script.span,
-        };
+pub fn should_ignore_file<C: Clone + Comments>(comments: &C, program: &Program) -> bool {
+    let pos = match program {
+        Program::Module(module) => module.span,
+        Program::Script(script) => script.span,
+    };
 
-        let validate_comments = |comments: &Option<Vec<Comment>>| {
-            if let Some(comments) = comments {
-                comments
-                    .iter()
-                    .any(|comment| COMMENT_FILE_REGEX.is_match(&comment.text))
-            } else {
-                false
-            }
-        };
+    let validate_comments = |comments: &Option<Vec<Comment>>| {
+        if let Some(comments) = comments {
+            comments
+                .iter()
+                .any(|comment| COMMENT_FILE_REGEX.is_match(&comment.text))
+        } else {
+            false
+        }
+    };
 
-        vec![
-            comments.get_leading(pos.lo),
-            comments.get_leading(pos.hi),
-            comments.get_trailing(pos.lo),
-            comments.get_trailing(pos.hi),
-        ]
-        .iter()
-        .any(|c| validate_comments(c))
-    } else {
-        false
-    }
+    vec![
+        comments.get_leading(pos.lo),
+        comments.get_leading(pos.hi),
+        comments.get_trailing(pos.lo),
+        comments.get_trailing(pos.hi),
+    ]
+    .iter()
+    .any(|c| validate_comments(c))
 }
 
-pub fn lookup_hint_comments(
-    comments: &Option<CommentsLookup>,
+pub fn lookup_hint_comments<C: Clone + Comments>(
+    comments: &C,
     span: Option<&Span>,
 ) -> Option<String> {
     if let Some(span) = span {
@@ -100,8 +96,8 @@ pub enum IgnoreScope {
     Else,
 }
 
-pub fn should_ignore(
-    comments: &Option<CommentsLookup>,
+pub fn should_ignore<C: Clone + Comments>(
+    comments: &C,
     span: Option<&Span>,
 ) -> Option<IgnoreScope> {
     let comments = lookup_hint_comments(comments, span);

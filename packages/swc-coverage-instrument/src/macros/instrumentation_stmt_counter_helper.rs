@@ -16,7 +16,7 @@ macro_rules! instrumentation_stmt_counter_helper {
                         _ => {
                             let mut visitor = crate::visitors::stmt_like_visitor::StmtVisitor::new(
                                 &self.source_map,
-                                &self.comments,
+                                self.comments.clone(),
                                 &mut self.cov,
                                 &self.instrument_options,
                                 &self.nodes,

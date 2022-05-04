@@ -8,7 +8,7 @@ macro_rules! create_instrumentation_visitor {
     ($name:ident { $($vis: vis $field:ident: $t:ty),* $(,)? }) => {
         #[cfg(not(feature = "plugin"))]
         use swc_common::{Span as SyntaxPosSpan,
-            comments::{SingleThreadedComments as CommentsLookup},
+            comments::Comments,
             SourceMap as SourceMapImpl
         };
         #[cfg(not(feature = "plugin"))]
@@ -17,17 +17,17 @@ macro_rules! create_instrumentation_visitor {
         #[cfg(feature = "plugin")]
         use swc_plugin::{syntax_pos::Span as SyntaxPosSpan,
             source_map::PluginSourceMapProxy as SourceMapImpl,
-            comments::{PluginCommentsProxy as CommentsLookup}
+            comments::Comments
         };
         #[cfg(feature = "plugin")]
         use swc_plugin::ast::{Stmt, Ident};
 
         // Declare a struct, expand fields commonly used for any instrumentation visitor.
-        pub struct $name {
+        pub struct $name<C: Clone + Comments> {
             // We may not need Arc in the plugin context - this is only to preserve isomorphic interface
             // between plugin & custom transform pass.
             source_map: std::sync::Arc<SourceMapImpl>,
-            comments: Option<CommentsLookup>,
+            comments: C,
             cov: std::rc::Rc<std::cell::RefCell<crate::SourceCoverage>>,
             cov_fn_ident: Ident,
             cov_fn_temp_ident: Ident,
@@ -39,16 +39,16 @@ macro_rules! create_instrumentation_visitor {
             $($vis $field: $t,)*
         }
 
-        impl $name {
+        impl<C: Clone + Comments> $name<C> {
             pub fn new(
                 source_map: &std::sync::Arc<SourceMapImpl>,
-                comments: &Option<CommentsLookup>,
+                comments: C,
                 cov: &std::rc::Rc<std::cell::RefCell<crate::SourceCoverage>>,
                 instrument_options: &crate::InstrumentOptions,
                 nodes: &Vec<crate::Node>,
                 should_ignore: Option<crate::hint_comments::IgnoreScope>,
                 $($field: $t,)*
-            ) -> $name {
+            ) -> $name<C> {
                 $name {
                     source_map: source_map.clone(),
                     comments: comments.clone(),
@@ -110,7 +110,7 @@ macro_rules! create_instrumentation_visitor {
         // Macro generates trait impl for the type can access span directly.
         macro_rules! on_enter {
             ($N: tt) => {
-                impl CoverageInstrumentationMutVisitEnter<$N> for $name {
+                impl<C: Clone + Comments> CoverageInstrumentationMutVisitEnter<$N> for $name<C> {
                     #[cfg(feature = "plugin")]
                     #[inline]
                     fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
@@ -128,7 +128,7 @@ macro_rules! create_instrumentation_visitor {
             }
         }
 
-        impl CoverageInstrumentationMutVisitEnter<Expr> for $name {
+        impl<C: Clone + Comments> CoverageInstrumentationMutVisitEnter<Expr> for $name<C> {
             fn on_enter(&mut self, n: &mut Expr) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::Expr);
                 let span = crate::lookup_range::get_expr_span(n);
@@ -136,7 +136,7 @@ macro_rules! create_instrumentation_visitor {
             }
          }
 
-         impl CoverageInstrumentationMutVisitEnter<Stmt> for $name {
+         impl<C: Clone + Comments> CoverageInstrumentationMutVisitEnter<Stmt> for $name<C> {
             fn on_enter(&mut self, n: &mut Stmt) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::Stmt);
                 let span = crate::lookup_range::get_stmt_span(n);
@@ -145,7 +145,7 @@ macro_rules! create_instrumentation_visitor {
             }
          }
 
-         impl CoverageInstrumentationMutVisitEnter<ModuleDecl> for $name {
+         impl<C: Clone + Comments> CoverageInstrumentationMutVisitEnter<ModuleDecl> for $name<C> {
             fn on_enter(&mut self, n: &mut ModuleDecl) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::ModuleDecl);
                 let span = crate::lookup_range::get_module_decl_span(n);
@@ -154,28 +154,28 @@ macro_rules! create_instrumentation_visitor {
             }
          }
 
-         impl CoverageInstrumentationMutVisitEnter<ClassDecl> for $name {
+         impl<C: Clone + Comments> CoverageInstrumentationMutVisitEnter<ClassDecl> for $name<C> {
             fn on_enter(&mut self, n: &mut ClassDecl) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::ClassDecl);
                 self.on_enter_with_span(Some(&n.class.span))
             }
          }
 
-         impl CoverageInstrumentationMutVisitEnter<FnExpr> for $name {
+         impl<C: Clone + Comments> CoverageInstrumentationMutVisitEnter<FnExpr> for $name<C> {
             fn on_enter(&mut self, n: &mut FnExpr) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::FnExpr);
                 self.on_enter_with_span(Some(&n.function.span))
             }
          }
 
-         impl CoverageInstrumentationMutVisitEnter<MethodProp> for $name {
+         impl<C: Clone + Comments> CoverageInstrumentationMutVisitEnter<MethodProp> for $name<C> {
             fn on_enter(&mut self, n: &mut MethodProp) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::MethodProp);
                 self.on_enter_with_span(Some(&n.function.span))
             }
          }
 
-         impl CoverageInstrumentationMutVisitEnter<FnDecl> for $name {
+         impl<C: Clone + Comments> CoverageInstrumentationMutVisitEnter<FnDecl> for $name<C> {
             fn on_enter(&mut self, n: &mut FnDecl) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::FnDecl);
                 self.on_enter_with_span(Some(&n.function.span))

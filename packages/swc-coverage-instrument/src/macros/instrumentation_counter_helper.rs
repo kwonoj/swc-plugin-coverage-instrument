@@ -81,7 +81,7 @@ macro_rules! instrumentation_branch_wrap_counter_helper {
             if has_inner_logical_expr.0 {
                 let mut visitor = crate::visitors::logical_expr_visitor::LogicalExprVisitor::new(
                     &self.source_map,
-                    &self.comments,
+                    self.comments.clone(),
                     &mut self.cov,
                     &self.instrument_options,
                     &self.nodes,
