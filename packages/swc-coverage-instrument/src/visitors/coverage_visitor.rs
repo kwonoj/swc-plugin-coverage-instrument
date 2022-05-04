@@ -1,9 +1,5 @@
 #[cfg(not(feature = "plugin"))]
-use swc_common::{
-    comments::{Comment, CommentKind, Comments},
-    util::take::Take,
-    Span, DUMMY_SP,
-};
+use swc_common::{util::take::Take, Span, DUMMY_SP};
 #[cfg(not(feature = "plugin"))]
 use swc_ecma_ast::*;
 #[cfg(not(feature = "plugin"))]
@@ -12,7 +8,6 @@ use swc_ecma_visit::*;
 #[cfg(feature = "plugin")]
 use swc_plugin::{
     ast::*,
-    comments::{Comment, CommentKind, Comments},
     syntax_pos::{Span, DUMMY_SP},
     utils::take::Take,
 };
@@ -100,6 +95,8 @@ impl CoverageVisitor {
             &self.cov_fn_ident,
             &self.file_path,
             self.cov.borrow().as_ref(),
+            self.comments.as_ref(),
+            self.instrument_options.debug_initial_coverage_comment,
         );
 
         // explicitly call this.varName to ensure coverage is always initialized
@@ -130,31 +127,6 @@ impl VisitMut for CoverageVisitor {
         }
 
         program.visit_mut_children_with(self);
-
-        let span = match &program {
-            Program::Module(m) => m.span,
-            Program::Script(s) => s.span,
-        };
-
-        let coverage_data_json_str = serde_json::to_string(self.cov.borrow().as_ref())
-            .expect("Should able to serialize coverage data");
-
-        //debug_initial_coverage_comment
-        if self.instrument_options.debug_initial_coverage_comment {
-            // Append coverage data as stringified JSON comments at the bottom of transformed code.
-            // Currently plugin does not have way to pass any other data to the host except transformed program.
-            // This attaches arbitary data to the transformed code itself to retrieve it.
-            self.comments.add_trailing(
-                span.hi,
-                Comment {
-                    kind: CommentKind::Block,
-                    span: DUMMY_SP,
-                    text: format!("__coverage_data_json_comment__::{}", coverage_data_json_str)
-                        .into(),
-                },
-            );
-        }
-
         self.nodes.pop();
     }
 
