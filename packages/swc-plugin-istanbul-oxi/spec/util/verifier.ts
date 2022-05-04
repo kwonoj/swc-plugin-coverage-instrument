@@ -206,6 +206,10 @@ const create = (code, options = {}, instrumentOptions = {}, inputSourceMap) => {
 
   if (debug) {
     instrumentOptions.compact = false;
+    instrumentOptions.instrumentLog = {
+      logLevel: "trace",
+      enable_trace: true,
+    };
   }
 
   try {
