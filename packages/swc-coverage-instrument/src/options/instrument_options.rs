@@ -1,4 +1,4 @@
-use istanbul_oxi_coverage::SourceMap;
+use istanbul_oxide::SourceMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

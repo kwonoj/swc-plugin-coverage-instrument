@@ -1,4 +1,4 @@
-use istanbul_oxi_coverage::Range;
+use istanbul_oxide::Range;
 
 #[cfg(not(feature = "plugin"))]
 use swc_common::{SourceMap, Span};

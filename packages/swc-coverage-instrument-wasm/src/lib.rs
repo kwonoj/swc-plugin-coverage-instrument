@@ -21,8 +21,7 @@ pub fn get_coverage_magic_constants() -> JsValue {
     .unwrap()
 }
 
-/// Wraps FileCoverage for the wasm-bindgen to allow to use oxi-coverage in JS context
-/// without oxi-coverage requires wasm-bindgen directly.
+/// Wraps FileCoverage for the wasm-bindgen to allow to use coverage struct in JS context.
 #[wasm_bindgen]
 pub struct FileCoverageInterop {
     inner: FileCoverage,

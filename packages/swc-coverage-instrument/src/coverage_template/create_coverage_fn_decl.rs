@@ -3,7 +3,7 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use istanbul_oxi_coverage::FileCoverage;
+use istanbul_oxide::FileCoverage;
 #[cfg(not(feature = "plugin"))]
 use swc_common::{util::take::Take, DUMMY_SP};
 #[cfg(not(feature = "plugin"))]
