@@ -1,9 +1,5 @@
 #[cfg(not(feature = "plugin"))]
-use swc_common::{
-    comments::{Comment, CommentKind, Comments},
-    util::take::Take,
-    Span, DUMMY_SP,
-};
+use swc_common::{util::take::Take, Span, DUMMY_SP};
 #[cfg(not(feature = "plugin"))]
 use swc_ecma_ast::*;
 #[cfg(not(feature = "plugin"))]
@@ -12,7 +8,6 @@ use swc_ecma_visit::*;
 #[cfg(feature = "plugin")]
 use swc_plugin::{
     ast::*,
-    comments::{Comment, CommentKind, Comments},
     syntax_pos::{Span, DUMMY_SP},
     utils::take::Take,
 };
@@ -27,10 +22,9 @@ create_instrumentation_visitor!(CoverageVisitor { file_path: String });
 
 /// Public interface to create a visitor performs transform to inject
 /// coverage instrumentation counter.
-///
 pub fn create_coverage_instrumentation_visitor(
-    source_map: &std::rc::Rc<SourceMapImpl>,
-    comments: &Option<CommentsLookup>,
+    source_map: &std::sync::Arc<SourceMapImpl>,
+    comments: Option<&CommentsLookup>,
     instrument_options: &InstrumentOptions,
     filename: &str,
 ) -> CoverageVisitor {
@@ -42,7 +36,7 @@ pub fn create_coverage_instrumentation_visitor(
 
     CoverageVisitor::new(
         source_map,
-        comments,
+        &comments.cloned(),
         &std::rc::Rc::new(std::cell::RefCell::new(cov)),
         &instrument_options,
         &vec![],
@@ -101,6 +95,8 @@ impl CoverageVisitor {
             &self.cov_fn_ident,
             &self.file_path,
             self.cov.borrow().as_ref(),
+            self.comments.as_ref(),
+            self.instrument_options.debug_initial_coverage_comment,
         );
 
         // explicitly call this.varName to ensure coverage is always initialized
@@ -131,26 +127,6 @@ impl VisitMut for CoverageVisitor {
         }
 
         program.visit_mut_children_with(self);
-
-        let span = match &program {
-            Program::Module(m) => m.span,
-            Program::Script(s) => s.span,
-        };
-
-        let coverage_data_json_str = serde_json::to_string(self.cov.borrow().as_ref())
-            .expect("Should able to serialize coverage data");
-
-        // Append coverage data as stringified JSON comments at the bottom of transformed code.
-        // Currently plugin does not have way to pass any other data to the host except transformed program.
-        // This attaches arbitary data to the transformed code itself to retrieve it.
-        self.comments.add_trailing(
-            span.hi,
-            Comment {
-                kind: CommentKind::Block,
-                span: DUMMY_SP,
-                text: format!("__coverage_data_json_comment__::{}", coverage_data_json_str).into(),
-            },
-        );
         self.nodes.pop();
     }
 
@@ -158,6 +134,20 @@ impl VisitMut for CoverageVisitor {
     fn visit_mut_module_items(&mut self, items: &mut Vec<ModuleItem>) {
         if self.is_instrumented_already() {
             return;
+        }
+
+        let root_exists = match self.nodes.get(0) {
+            Some(node) => node == &crate::Node::Program,
+            _ => false,
+        };
+
+        // Articulate root by injecting Program node if visut_mut_program is not called.
+        // TODO: Need to figure out why custom_js_pass doesn't hit visit_mut_program
+        // instead of manually injecting node here
+        if !root_exists {
+            let mut new_nodes = vec![crate::Node::Program];
+            new_nodes.extend(self.nodes.drain(..));
+            self.nodes = new_nodes;
         }
 
         // TODO: Should module_items need to be added in self.nodes?
@@ -180,6 +170,10 @@ impl VisitMut for CoverageVisitor {
         // prepend template to the top of the code
         items.insert(0, ModuleItem::Stmt(coverage_template));
         items.insert(1, ModuleItem::Stmt(call_coverage_template_stmt));
+
+        if !root_exists {
+            self.nodes.pop();
+        }
     }
 
     #[instrument(skip_all, fields(node = %self.print_node()))]

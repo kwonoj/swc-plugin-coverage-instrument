@@ -3,3 +3,8 @@ Cargo.lock
 node_modules/
 .swc/
 *.log
+*.node
+index.d.ts
+index.js
+spec/swc-coverage-custom-transform/target/
+a.js

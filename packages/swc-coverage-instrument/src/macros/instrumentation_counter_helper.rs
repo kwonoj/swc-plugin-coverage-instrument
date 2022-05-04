@@ -266,9 +266,23 @@ macro_rules! instrumentation_counter_helper {
                 expr.visit_with(&mut hoist);
                 let parent = self.nodes.last().unwrap().clone();
                 if hoist.0 && parent == crate::Node::VarDeclarator {
-                    let parent = self.nodes.get(self.nodes.len() - 3);
+                    // TODO: need to polish logic to determine prepending instead of traversing parent node types
+                    let nodes_len = self.nodes.len();
+                    let parent_index = if nodes_len >= (3 as usize) {
+                        nodes_len - 3
+                    } else {
+                        0
+                    };
+                    let parent = self.nodes.get(parent_index);
+
                     if parent.is_some() {
-                        let parent = self.nodes.get(self.nodes.len() - 4);
+                        let parent_index = if nodes_len >= (4 as usize) {
+                            nodes_len - 4
+                        } else {
+                            0
+                        };
+                        let parent = self.nodes.get(parent_index);
+
                         if let Some(parent) = parent {
                             match parent {
                                 crate::Node::BlockStmt | crate::Node::Program => {

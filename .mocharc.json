@@ -4,5 +4,5 @@
   "extensions": ["ts", "js"],
   "recursive": true,
   "enable-source-maps": true,
-  "spec": "./packages/**/*.spec.*"
+  "spec": "./spec/**/*.spec.*"
 }

@@ -55,8 +55,8 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
     initialize_instrumentation_log(&instrument_options.instrument_log);
 
     let visitor = create_coverage_instrumentation_visitor(
-        &std::rc::Rc::new(metadata.source_map),
-        &metadata.comments,
+        &std::sync::Arc::new(metadata.source_map),
+        metadata.comments.as_ref(),
         &instrument_options,
         filename,
     );

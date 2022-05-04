@@ -1,0 +1,29 @@
+[package]
+name = "swc-coverage-custom-transform"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[build-dependencies]
+napi-build = { version = "1" }
+
+[dependencies]
+napi = { version = "2", default-features = false, features = [
+  "napi3",
+  "serde-json",
+] }
+napi-derive = { version = "2", default-features = false, features = [
+  "type-def",
+] }
+swc = { version = "0.174.0", features = ["node"] }
+backtrace = "0.3"
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["unbounded_depth"] }
+swc_common = { version = "0.17.18", features = ["concurrent", "sourcemap"] }
+swc_ecmascript = { version = "0.150.0", features = ["codegen", "optimization", "parser", "react", "transforms", "typescript", "utils", "visit"] }
+swc_node_base = "0.5.1"
+swc_ecma_ast = "0.76.2"
+swc-coverage-instrument = { version = "0.1.0", path = "../../packages/swc-coverage-instrument" }

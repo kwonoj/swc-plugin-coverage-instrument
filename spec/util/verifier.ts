@@ -3,13 +3,13 @@ import * as path from "path";
 import { assert } from "chai";
 import { readInitialCoverage } from "./read-coverage";
 import { EOL } from "os";
-import { FileCoverageInterop } from "../../../swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm";
+import { FileCoverageInterop } from "../swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm";
 
 const clone: typeof import("lodash.clone") = require("lodash.clone");
 
 const pluginBinary = path.resolve(
   __dirname,
-  "../../../../target/wasm32-wasi/debug/swc_plugin_coverage.wasm"
+  "../../target/wasm32-wasi/debug/swc_plugin_coverage.wasm"
 );
 
 /// Mimic instrumenter.
@@ -35,9 +35,6 @@ const instrumentSync = (
         jsx: true,
       },
       target: "es2022",
-      experimental: {
-        plugins: [[pluginBinary, pluginOptions]],
-      },
       preserveAllComments: true,
     },
     isModule: transformOptions?.isModule ?? true,
@@ -45,6 +42,33 @@ const instrumentSync = (
       type: "commonjs",
       strict: transformOptions?.isModule ?? false,
     },
+  };
+
+  if (process.env.SWC_TRANSFORM_CUSTOM === "1") {
+    const { transformSync } = require("../../index");
+    return transformSync(
+      code,
+      true,
+      Buffer.from(JSON.stringify(options)),
+      Buffer.from(
+        JSON.stringify({
+          ...pluginOptions,
+          debugInitialCoverageComment: true,
+        })
+      )
+    );
+  }
+
+  options.jsc.experimental = {
+    plugins: [
+      [
+        pluginBinary,
+        {
+          ...pluginOptions,
+          debugInitialCoverageComment: true,
+        },
+      ],
+    ],
   };
 
   return transformSync(code, options);
