@@ -23,9 +23,10 @@ macro_rules! create_instrumentation_visitor {
         use swc_plugin::ast::{Stmt, Ident};
 
         // Declare a struct, expand fields commonly used for any instrumentation visitor.
-        #[allow(unused)]
         pub struct $name {
-            source_map: std::rc::Rc<SourceMapImpl>,
+            // We may not need Arc in the plugin context - this is only to preserve isomorphic interface
+            // between plugin & custom transform pass.
+            source_map: std::sync::Arc<SourceMapImpl>,
             comments: Option<CommentsLookup>,
             cov: std::rc::Rc<std::cell::RefCell<crate::SourceCoverage>>,
             cov_fn_ident: Ident,
@@ -40,7 +41,7 @@ macro_rules! create_instrumentation_visitor {
 
         impl $name {
             pub fn new(
-                source_map: &std::rc::Rc<SourceMapImpl>,
+                source_map: &std::sync::Arc<SourceMapImpl>,
                 comments: &Option<CommentsLookup>,
                 cov: &std::rc::Rc<std::cell::RefCell<crate::SourceCoverage>>,
                 instrument_options: &crate::InstrumentOptions,

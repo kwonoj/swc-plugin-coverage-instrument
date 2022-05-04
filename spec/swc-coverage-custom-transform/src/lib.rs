@@ -12,7 +12,10 @@ use std::{env, panic::set_hook, sync::Arc};
 
 use backtrace::Backtrace;
 use swc::Compiler;
-use swc_common::{self, sync::Lazy, FilePathMapping, SourceMap};
+use swc_common::{
+    self, chain, comments::SingleThreadedComments, sync::Lazy, FilePathMapping, SourceMap,
+};
+use swc_coverage_instrument::{create_coverage_instrumentation_visitor, InstrumentOptions};
 
 use std::path::Path;
 
@@ -21,6 +24,10 @@ use napi::bindgen_prelude::Buffer;
 use swc::{config::Options, TransformOutput};
 use swc_common::FileName;
 use swc_ecma_ast::Program;
+use swc_ecmascript::{
+    transforms::pass::noop,
+    visit::{as_folder, Fold},
+};
 
 use crate::util::{deserialize_json, get_deserialized, try_with, MapErr};
 
@@ -63,10 +70,16 @@ impl JsCompiler {
 pub type ArcCompiler = Arc<Compiler>;
 
 #[napi]
-pub fn transform_sync(s: String, is_module: bool, opts: Buffer) -> napi::Result<TransformOutput> {
+pub fn transform_sync(
+    s: String,
+    _is_module: bool,
+    opts: Buffer,
+    instrument_opts: Buffer,
+) -> napi::Result<TransformOutput> {
     let c = get_compiler();
 
     let mut options: Options = get_deserialized(&opts)?;
+    let instrument_option: InstrumentOptions = get_deserialized(&instrument_opts)?;
 
     if !options.filename.is_empty() {
         options.config.adjust(Path::new(&options.filename));
@@ -74,22 +87,40 @@ pub fn transform_sync(s: String, is_module: bool, opts: Buffer) -> napi::Result<
 
     try_with(c.cm.clone(), !options.config.error.filename, |handler| {
         c.run(|| {
-            if is_module {
-                let program: Program =
-                    deserialize_json(s.as_str()).context("failed to deserialize Program")?;
-                c.process_js(handler, program, &options)
+            let filename = if options.filename.is_empty() {
+                FileName::Anon
             } else {
-                let fm = c.cm.new_source_file(
-                    if options.filename.is_empty() {
-                        FileName::Anon
-                    } else {
-                        FileName::Real(options.filename.clone().into())
-                    },
-                    s,
-                );
-                c.process_js_file(fm, handler, &options)
-            }
+                FileName::Real(options.filename.clone().into())
+            };
+
+            let fm = c.cm.new_source_file(filename, s);
+            c.process_js_with_custom_pass(
+                fm,
+                None,
+                handler,
+                &options,
+                |program, comments| {
+                    coverage_instrument(&c.cm, comments, &instrument_option, &filename.to_string())
+                },
+                |_, _| noop(),
+            )
         })
     })
     .convert_err()
+}
+
+fn coverage_instrument(
+    source_map: &Arc<SourceMap>,
+    comments: &SingleThreadedComments,
+    instrument_options: &InstrumentOptions,
+    filename: &str,
+) -> impl Fold {
+    let visitor = create_coverage_instrumentation_visitor(
+        source_map,
+        Some(comments),
+        instrument_options,
+        filename,
+    );
+
+    as_folder(visitor)
 }

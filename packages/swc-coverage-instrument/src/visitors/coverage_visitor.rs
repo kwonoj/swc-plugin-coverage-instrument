@@ -27,10 +27,9 @@ create_instrumentation_visitor!(CoverageVisitor { file_path: String });
 
 /// Public interface to create a visitor performs transform to inject
 /// coverage instrumentation counter.
-///
 pub fn create_coverage_instrumentation_visitor(
-    source_map: &std::rc::Rc<SourceMapImpl>,
-    comments: &Option<CommentsLookup>,
+    source_map: &std::sync::Arc<SourceMapImpl>,
+    comments: Option<&CommentsLookup>,
     instrument_options: &InstrumentOptions,
     filename: &str,
 ) -> CoverageVisitor {
@@ -42,7 +41,7 @@ pub fn create_coverage_instrumentation_visitor(
 
     CoverageVisitor::new(
         source_map,
-        comments,
+        &comments.cloned(),
         &std::rc::Rc::new(std::cell::RefCell::new(cov)),
         &instrument_options,
         &vec![],

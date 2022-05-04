@@ -3,6 +3,5 @@ members = [
   "packages/swc-plugin-coverage",
   "packages/istanbul-oxide",
   "packages/swc-coverage-instrument",
-  "spec/swc-coverage-instrument-wasm",
-  "spec/swc-coverage-custom-transform"
+  "spec/swc-coverage-instrument-wasm"
 ]
