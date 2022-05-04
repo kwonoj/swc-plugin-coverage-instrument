@@ -22,30 +22,30 @@ create_instrumentation_visitor!(CoverageVisitor { file_path: String });
 
 /// Public interface to create a visitor performs transform to inject
 /// coverage instrumentation counter.
-pub fn create_coverage_instrumentation_visitor(
-    source_map: &std::sync::Arc<SourceMapImpl>,
-    comments: Option<&CommentsLookup>,
-    instrument_options: &InstrumentOptions,
-    filename: &str,
-) -> CoverageVisitor {
+pub fn create_coverage_instrumentation_visitor<C: Clone + Comments>(
+    source_map: std::sync::Arc<SourceMapImpl>,
+    comments: C,
+    instrument_options: InstrumentOptions,
+    filename: String,
+) -> CoverageVisitor<C> {
     // create a function name ident for the injected coverage instrumentation counters.
-    crate::create_coverage_fn_ident(filename);
+    crate::create_coverage_fn_ident(&filename);
 
     let mut cov = crate::SourceCoverage::new(filename.to_string(), instrument_options.report_logic);
     cov.set_input_source_map(&instrument_options.input_source_map);
 
     CoverageVisitor::new(
         source_map,
-        &comments.cloned(),
-        &std::rc::Rc::new(std::cell::RefCell::new(cov)),
-        &instrument_options,
-        &vec![],
+        comments.clone(),
+        std::rc::Rc::new(std::cell::RefCell::new(cov)),
+        instrument_options,
+        vec![],
         None,
-        filename.to_string(),
+        filename,
     )
 }
 
-impl CoverageVisitor {
+impl<C: Clone + Comments> CoverageVisitor<C> {
     instrumentation_counter_helper!();
     instrumentation_stmt_counter_helper!();
 
@@ -95,7 +95,7 @@ impl CoverageVisitor {
             &self.cov_fn_ident,
             &self.file_path,
             self.cov.borrow().as_ref(),
-            self.comments.as_ref(),
+            &self.comments,
             self.instrument_options.debug_initial_coverage_comment,
         );
 
@@ -112,7 +112,7 @@ impl CoverageVisitor {
     }
 }
 
-impl VisitMut for CoverageVisitor {
+impl<C: Clone + Comments> VisitMut for CoverageVisitor<C> {
     instrumentation_visitor!();
 
     #[instrument(skip_all, fields(node = %self.print_node()))]

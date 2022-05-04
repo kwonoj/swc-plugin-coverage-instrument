@@ -1,6 +1,6 @@
 [package]
 name = "istanbul-oxide"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 authors = ["OJ Kwon <kwon.ohjoong@gmail.com>"]
 description = "Istanbul compatible coverage data struct"

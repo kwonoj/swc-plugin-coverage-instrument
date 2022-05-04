@@ -55,10 +55,10 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
     initialize_instrumentation_log(&instrument_options.instrument_log);
 
     let visitor = create_coverage_instrumentation_visitor(
-        &std::sync::Arc::new(metadata.source_map),
+        std::sync::Arc::new(metadata.source_map),
         metadata.comments.as_ref(),
-        &instrument_options,
-        filename,
+        instrument_options,
+        filename.to_string(),
     );
 
     program.fold_with(&mut as_folder(visitor))

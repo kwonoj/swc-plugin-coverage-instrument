@@ -19,11 +19,11 @@ use swc_plugin::{
 
 create_instrumentation_visitor!(StmtVisitor {});
 
-impl StmtVisitor {
+impl<C: Clone + Comments> StmtVisitor<C> {
     instrumentation_counter_helper!();
     instrumentation_stmt_counter_helper!();
 }
 
-impl VisitMut for StmtVisitor {
+impl<C: Clone + Comments> VisitMut for StmtVisitor<C> {
     instrumentation_visitor!();
 }

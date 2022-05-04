@@ -565,11 +565,11 @@ macro_rules! instrumentation_visitor {
                     // traverse `case` with a visitor contains branch idx, insert new
                     // branch increase counter accordingly
                     let mut visitor = crate::visitors::switch_case_visitor::SwitchCaseVisitor::new(
-                        &self.source_map,
-                        &self.comments,
-                        &mut self.cov,
-                        &self.instrument_options,
-                        &self.nodes,
+                        self.source_map.clone(),
+                        self.comments.clone(),
+                        self.cov.clone(),
+                        self.instrument_options.clone(),
+                        self.nodes.clone(),
                         ignore_current,
                         branch,
                     );
@@ -629,11 +629,11 @@ macro_rules! instrumentation_visitor {
                         } else {
                             let mut stmts = vec![expr];
                             let mut visitor = crate::visitors::stmt_like_visitor::StmtVisitor::new(
-                                &self.source_map,
-                                &self.comments,
-                                &mut self.cov,
-                                &self.instrument_options,
-                                &self.nodes,
+                                self.source_map.clone(),
+                                self.comments.clone(),
+                                self.cov.clone(),
+                                self.instrument_options.clone(),
+                                self.nodes.clone(),
                                 ignore_current,
                             );
                             stmt_body.visit_mut_with(&mut visitor);
@@ -801,11 +801,11 @@ macro_rules! instrumentation_visitor {
                         self.insert_stmts_counter(&mut body_block.stmts);
                     } else {
                         let mut visitor = crate::visitors::stmt_like_visitor::StmtVisitor::new(
-                            &self.source_map,
-                            &self.comments,
-                            &mut self.cov,
-                            &self.instrument_options,
-                            &self.nodes,
+                            self.source_map.clone(),
+                            self.comments.clone(),
+                            self.cov.clone(),
+                            self.instrument_options.clone(),
+                            self.nodes.clone(),
                             ignore_current,
                         );
                         with_stmt.body.visit_mut_with(&mut visitor);

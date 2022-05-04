@@ -6,7 +6,6 @@ use std::{
 use istanbul_oxide::FileCoverage;
 #[cfg(not(feature = "plugin"))]
 use swc_common::{
-    comments::SingleThreadedComments as CommentsLookup,
     comments::{Comment, CommentKind, Comments},
     util::take::Take,
     Span, DUMMY_SP,
@@ -19,7 +18,7 @@ use swc_ecma_quote::quote;
 #[cfg(feature = "plugin")]
 use swc_plugin::{
     ast::*,
-    comments::{Comment, CommentKind, Comments, PluginCommentsProxy as CommentsLookup},
+    comments::{Comment, CommentKind, Comments},
     syntax_pos::{Span, DUMMY_SP},
     utils::{quote, take::Take},
 };
@@ -50,13 +49,13 @@ pub fn create_coverage_fn_ident(value: &str) {
 }
 
 /// Creates a function declaration for actual coverage collection.
-pub fn create_coverage_fn_decl(
+pub fn create_coverage_fn_decl<C: Clone + Comments>(
     coverage_variable: &str,
     coverage_template: Stmt,
     cov_fn_ident: &Ident,
     file_path: &str,
     coverage_data: &FileCoverage,
-    comments: Option<&CommentsLookup>,
+    comments: &C,
     attach_debug_comment: bool,
 ) -> Stmt {
     // Actual fn body statements will be injected
@@ -170,17 +169,14 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
         // Append coverage data as stringified JSON comments at the bottom of transformed code.
         // Currently plugin does not have way to pass any other data to the host except transformed program.
         // This attaches arbitary data to the transformed code itself to retrieve it.
-        if let Some(comments) = comments {
-            comments.add_trailing(
-                Span::dummy_with_cmt().hi,
-                Comment {
-                    kind: CommentKind::Block,
-                    span: Span::dummy_with_cmt(),
-                    text: format!("__coverage_data_json_comment__::{}", coverage_data_json_str)
-                        .into(),
-                },
-            );
-        }
+        comments.add_trailing(
+            Span::dummy_with_cmt().hi,
+            Comment {
+                kind: CommentKind::Block,
+                span: Span::dummy_with_cmt(),
+                text: format!("__coverage_data_json_comment__::{}", coverage_data_json_str).into(),
+            },
+        );
     }
 
     stmts.push(Stmt::Return(ret));

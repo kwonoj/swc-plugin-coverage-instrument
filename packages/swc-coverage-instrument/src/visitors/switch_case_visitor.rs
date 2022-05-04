@@ -23,12 +23,12 @@ create_instrumentation_visitor!(SwitchCaseVisitor { branch: u32 });
 
 /// A visitor to traverse down given logical expr's value (left / right) with existing branch idx.
 /// This is required to preserve branch id to recursively traverse logical expr's inner child.
-impl SwitchCaseVisitor {
+impl<C: Clone + Comments> SwitchCaseVisitor<C> {
     instrumentation_counter_helper!();
     instrumentation_stmt_counter_helper!();
 }
 
-impl VisitMut for SwitchCaseVisitor {
+impl<C: Clone + Comments> VisitMut for SwitchCaseVisitor<C> {
     instrumentation_visitor!();
 
     // SwitchCase: entries(coverSwitchCase),
@@ -60,8 +60,6 @@ impl VisitMut for SwitchCaseVisitor {
                 new_stmts.extend(switch_case.cons.drain(..));
 
                 switch_case.cons = new_stmts;
-                //const increment = this.getBranchIncrement(b, path.node.loc);
-                //path.node.consequent.unshift(T.expressionStatement(increment));
             }
         }
         self.on_exit(old);

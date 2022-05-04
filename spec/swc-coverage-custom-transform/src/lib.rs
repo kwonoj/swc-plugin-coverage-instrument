@@ -12,7 +12,7 @@ use std::{env, panic::set_hook, sync::Arc};
 
 use backtrace::Backtrace;
 use swc::Compiler;
-use swc_common::{self, comments::SingleThreadedComments, sync::Lazy, FilePathMapping, SourceMap};
+use swc_common::{self, comments::Comments, sync::Lazy, FilePathMapping, SourceMap};
 use swc_coverage_instrument::{create_coverage_instrumentation_visitor, InstrumentOptions};
 
 use std::path::Path;
@@ -96,7 +96,12 @@ pub fn transform_sync(
                 handler,
                 &options,
                 |_program, comments| {
-                    coverage_instrument(&c.cm, comments, &instrument_option, &filename.to_string())
+                    coverage_instrument(
+                        c.cm.clone(),
+                        comments.clone(),
+                        instrument_option,
+                        filename.to_string(),
+                    )
                 },
                 |_, _| noop(),
             )
@@ -105,18 +110,14 @@ pub fn transform_sync(
     .convert_err()
 }
 
-fn coverage_instrument(
-    source_map: &Arc<SourceMap>,
-    comments: &SingleThreadedComments,
-    instrument_options: &InstrumentOptions,
-    filename: &str,
+fn coverage_instrument<C: Clone + Comments>(
+    source_map: Arc<SourceMap>,
+    comments: C,
+    instrument_options: InstrumentOptions,
+    filename: String,
 ) -> impl Fold {
-    let visitor = create_coverage_instrumentation_visitor(
-        source_map,
-        Some(comments),
-        instrument_options,
-        filename,
-    );
+    let visitor =
+        create_coverage_instrumentation_visitor(source_map, comments, instrument_options, filename);
 
     as_folder(visitor)
 }
