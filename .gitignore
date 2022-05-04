@@ -3,3 +3,5 @@ Cargo.lock
 node_modules/
 .swc/
 *.log
+*.node
+index.d.ts

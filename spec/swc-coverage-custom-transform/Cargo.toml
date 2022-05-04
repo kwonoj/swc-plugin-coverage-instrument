@@ -1,0 +1,23 @@
+[package]
+name = "swc-coverage-custom-transform"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[build-dependencies]
+napi-build = { version = "1" }
+
+[dependencies]
+napi = { version = "2", default-features = false, features = [
+  "napi3",
+  "serde-json",
+] }
+napi-derive = { version = "2", default-features = false, features = [
+  "type-def",
+] }
+swc = "0.174.0"
+backtrace = "0.3"
+swc_common = { version = "0.17.18", features = ["concurrent", "sourcemap"] }
+swc_node_base = "0.5.1"

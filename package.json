@@ -3,11 +3,30 @@
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
+  "napi": {
+    "name": "swc",
+    "triples": {
+      "defaults": true,
+      "additional": [
+        "x86_64-unknown-linux-musl",
+        "x86_64-unknown-freebsd",
+        "i686-pc-windows-msvc",
+        "aarch64-unknown-linux-gnu",
+        "armv7-unknown-linux-gnueabihf",
+        "aarch64-apple-darwin",
+        "aarch64-linux-android",
+        "aarch64-unknown-linux-musl",
+        "aarch64-pc-windows-msvc",
+        "armv7-linux-androideabi"
+      ]
+    }
+  },
   "scripts": {
-    "build:inst:spec": "wasm-pack build spec/swc-coverage-instrument-wasm --target nodejs",
+    "build:customtransform": "napi build --platform --cargo-name swc_coverage_custom_transform",
+    "build:instrument": "wasm-pack build spec/swc-coverage-instrument-wasm --target nodejs",
     "build:plugin": "cargo build -p swc-plugin-coverage --target wasm32-wasi",
-    "test": "npm-run-all build:inst:spec build:plugin && mocha",
-    "test:debug": "npm-run-all build:inst:spec build:plugin && cross-env FILTER=\"debug-test\" DEBUG=1 mocha",
+    "test": "npm-run-all build:instrument build:plugin && mocha",
+    "test:debug": "npm-run-all build:instrument build:plugin && cross-env FILTER=\"debug-test\" DEBUG=1 mocha",
     "prepare": "husky install"
   },
   "repository": {
@@ -22,6 +41,7 @@
   },
   "homepage": "https://github.com/kwonoj/istanbul-oxi#readme",
   "devDependencies": {
+    "@napi-rs/cli": "^2.7.0",
     "@swc-node/register": "^1.4.2",
     "@swc/core": "^1.2.171",
     "@taplo/cli": "^0.3.2",
