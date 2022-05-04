@@ -1,8 +1,3 @@
-use std::{
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
-};
-
 #[cfg(not(feature = "plugin"))]
 use swc_common::{
     comments::{Comment, CommentKind, Comments},
@@ -59,12 +54,6 @@ pub fn create_coverage_instrumentation_visitor(
 impl CoverageVisitor {
     instrumentation_counter_helper!();
     instrumentation_stmt_counter_helper!();
-
-    fn get_var_name_hash(name: &str) -> String {
-        let mut s = DefaultHasher::new();
-        name.hash(&mut s);
-        return format!("cov_{}", s.finish());
-    }
 
     /// Not implemented.
     /// TODO: is this required?
@@ -174,7 +163,7 @@ impl VisitMut for CoverageVisitor {
         // TODO: Should module_items need to be added in self.nodes?
         let mut new_items = vec![];
         for mut item in items.drain(..) {
-            let (old, ignore_current) = match &mut item {
+            let (old, _ignore_current) = match &mut item {
                 ModuleItem::ModuleDecl(decl) => self.on_enter(decl),
                 ModuleItem::Stmt(stmt) => self.on_enter(stmt),
             };

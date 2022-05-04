@@ -1,16 +1,12 @@
 #[cfg(not(feature = "plugin"))]
-use swc_common::{util::take::Take, Span, DUMMY_SP};
+use swc_common::{util::take::Take, DUMMY_SP};
 #[cfg(not(feature = "plugin"))]
 use swc_ecma_ast::*;
 #[cfg(not(feature = "plugin"))]
 use swc_ecma_visit::*;
 
 #[cfg(feature = "plugin")]
-use swc_plugin::{
-    ast::*,
-    syntax_pos::{Span, DUMMY_SP},
-    utils::take::Take,
-};
+use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
 use tracing::instrument;
 
 use crate::{create_instrumentation_visitor, instrumentation_branch_wrap_counter_helper};
