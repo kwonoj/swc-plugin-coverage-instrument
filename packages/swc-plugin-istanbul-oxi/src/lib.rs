@@ -1,18 +1,10 @@
+use istanbul_oxi_instrument::{create_coverage_instrumentation_visitor, InstrumentOptions};
 use serde_json::Value;
 use swc_plugin::{ast::*, plugin_transform, TransformPluginProgramMetadata};
 
-#[macro_use]
-mod macros;
-mod options;
-mod utils;
-mod visitors;
-pub use options::InstrumentOptions;
 use tracing_subscriber::fmt::format::FmtSpan;
-pub use visitors::coverage_visitor;
 
 use tracing::Level;
-
-use visitors::coverage_visitor::CoverageVisitor;
 
 #[plugin_transform]
 pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Program {
@@ -31,9 +23,6 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
     } else {
         "unknown.js"
     };
-
-    // create a function name ident for the injected coverage instrumentation counters.
-    istanbul_oxi_instrument::create_coverage_fn_decl::create_coverage_fn_ident(filename);
 
     let instrument_options_value: Value = serde_json::from_str(&metadata.plugin_config)
         .expect("Should able to deserialize plugin config");
@@ -56,29 +45,17 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
                     .collect()
             })
             .unwrap_or_default(),
+        input_source_map: serde_json::from_str(
+            &instrument_options_value["inputSourceMap"].to_string(),
+        )
+        .ok(),
     };
 
-    let mut cov = istanbul_oxi_instrument::source_coverage::SourceCoverage::new(
-        filename.to_string(),
-        instrument_options.report_logic,
-    );
-    let source_map: Option<istanbul_oxi_instrument::SourceMap> =
-        serde_json::from_str(&instrument_options_value["inputSourceMap"].to_string()).ok();
-    cov.set_input_source_map(source_map);
-
-    let nodes = vec![];
-    let visitor = CoverageVisitor::new(
-        &metadata.source_map,
-        metadata.comments.as_ref(),
-        &mut cov,
+    let visitor = create_coverage_instrumentation_visitor(
+        &std::rc::Rc::new(metadata.source_map),
+        &metadata.comments,
         &instrument_options,
-        &nodes,
-        None,
-        filename.to_string(),
-        Default::default(),
-        None,
-        Default::default(),
-        None,
+        filename,
     );
 
     program.fold_with(&mut as_folder(visitor))

@@ -1,41 +1,62 @@
-use istanbul_oxi_instrument::{
-    create_coverage_fn_decl::create_coverage_fn_decl,
-    create_global_stmt_template::create_global_stmt_template, source_coverage::SourceCoverage,
-    BranchType,
-};
-
-use once_cell::sync::Lazy;
-use regex::Regex as Regexp;
 use std::{
     collections::hash_map::DefaultHasher,
     hash::{Hash, Hasher},
 };
+
+#[cfg(not(feature = "plugin"))]
+use swc_common::{
+    comments::{Comment, CommentKind, Comments},
+    util::take::Take,
+    Span, DUMMY_SP,
+};
+#[cfg(not(feature = "plugin"))]
+use swc_ecma_ast::*;
+#[cfg(not(feature = "plugin"))]
+use swc_ecma_visit::*;
+
+#[cfg(feature = "plugin")]
 use swc_plugin::{
     ast::*,
-    comments::{Comment, CommentKind, Comments, PluginCommentsProxy},
-    source_map::PluginSourceMapProxy,
-    syntax_pos::DUMMY_SP,
+    comments::{Comment, CommentKind, Comments},
+    syntax_pos::{Span, DUMMY_SP},
     utils::take::Take,
 };
 use tracing::instrument;
 
 use crate::{
     create_instrumentation_visitor, instrumentation_counter_helper,
-    instrumentation_stmt_counter_helper, instrumentation_visitor, utils::UnknownReserved,
-    InstrumentOptions,
+    instrumentation_stmt_counter_helper, instrumentation_visitor, InstrumentOptions,
 };
 
-use super::stmt_like_visitor::StmtVisitor;
+create_instrumentation_visitor!(CoverageVisitor { file_path: String });
 
-create_instrumentation_visitor!(CoverageVisitor {
-    file_path: String,
-    attrs: UnknownReserved,
-    next_ignore: Option<UnknownReserved>,
-    types: UnknownReserved,
-    source_mapping_url: Option<UnknownReserved>,
-});
+/// Public interface to create a visitor performs transform to inject
+/// coverage instrumentation counter.
+///
+pub fn create_coverage_instrumentation_visitor(
+    source_map: &std::rc::Rc<SourceMapImpl>,
+    comments: &Option<CommentsLookup>,
+    instrument_options: &InstrumentOptions,
+    filename: &str,
+) -> CoverageVisitor {
+    // create a function name ident for the injected coverage instrumentation counters.
+    crate::create_coverage_fn_ident(filename);
 
-impl<'a> CoverageVisitor<'a> {
+    let mut cov = crate::SourceCoverage::new(filename.to_string(), instrument_options.report_logic);
+    cov.set_input_source_map(&instrument_options.input_source_map);
+
+    CoverageVisitor::new(
+        source_map,
+        comments,
+        &std::rc::Rc::new(std::cell::RefCell::new(cov)),
+        &instrument_options,
+        &vec![],
+        None,
+        filename.to_string(),
+    )
+}
+
+impl CoverageVisitor {
     instrumentation_counter_helper!();
     instrumentation_stmt_counter_helper!();
 
@@ -53,7 +74,7 @@ impl<'a> CoverageVisitor<'a> {
 
     /// Create coverage instrumentation template exprs to be injected into the top of the transformed output.
     fn get_coverage_templates(&mut self) -> (Stmt, Stmt) {
-        self.cov.freeze();
+        self.cov.borrow_mut().freeze();
 
         //TODO: option: global coverage variable scope. (optional, default `this`)
         let coverage_global_scope = "this";
@@ -74,7 +95,7 @@ impl<'a> CoverageVisitor<'a> {
                  */
                 unimplemented!("");
             } else {
-                create_global_stmt_template(coverage_global_scope)
+                crate::create_global_stmt_template(coverage_global_scope)
             }
         } else {
             unimplemented!("");
@@ -85,12 +106,12 @@ impl<'a> CoverageVisitor<'a> {
             */
         };
 
-        let coverage_template = create_coverage_fn_decl(
+        let coverage_template = crate::create_coverage_fn_decl(
             &self.instrument_options.coverage_variable,
             gv_template,
             &self.cov_fn_ident,
             &self.file_path,
-            self.cov.as_ref(),
+            self.cov.borrow().as_ref(),
         );
 
         // explicitly call this.varName to ensure coverage is always initialized
@@ -106,13 +127,13 @@ impl<'a> CoverageVisitor<'a> {
     }
 }
 
-impl VisitMut for CoverageVisitor<'_> {
+impl VisitMut for CoverageVisitor {
     instrumentation_visitor!();
 
     #[instrument(skip_all, fields(node = %self.print_node()))]
     fn visit_mut_program(&mut self, program: &mut Program) {
-        self.nodes.push(istanbul_oxi_instrument::Node::Program);
-        if istanbul_oxi_instrument::hint_comments::should_ignore_file(&self.comments, program) {
+        self.nodes.push(crate::Node::Program);
+        if crate::hint_comments::should_ignore_file(&self.comments, program) {
             return;
         }
 
@@ -127,7 +148,7 @@ impl VisitMut for CoverageVisitor<'_> {
             Program::Script(s) => s.span,
         };
 
-        let coverage_data_json_str = serde_json::to_string(self.cov.as_ref())
+        let coverage_data_json_str = serde_json::to_string(self.cov.borrow().as_ref())
             .expect("Should able to serialize coverage data");
 
         // Append coverage data as stringified JSON comments at the bottom of transformed code.
@@ -198,7 +219,7 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_export_default_decl(&mut self, export_default_decl: &mut ExportDefaultDecl) {
         let (old, ignore_current) = self.on_enter(export_default_decl);
         match ignore_current {
-            Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
+            Some(crate::hint_comments::IgnoreScope::Next) => {}
             _ => {
                 // noop
                 export_default_decl.visit_mut_children_with(self);
@@ -212,7 +233,7 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_export_decl(&mut self, export_named_decl: &mut ExportDecl) {
         let (old, ignore_current) = self.on_enter(export_named_decl);
         match ignore_current {
-            Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
+            Some(crate::hint_comments::IgnoreScope::Next) => {}
             _ => {
                 // noop
                 export_named_decl.visit_mut_children_with(self);
@@ -226,7 +247,7 @@ impl VisitMut for CoverageVisitor<'_> {
     fn visit_mut_debugger_stmt(&mut self, debugger_stmt: &mut DebuggerStmt) {
         let (old, ignore_current) = self.on_enter(debugger_stmt);
         match ignore_current {
-            Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
+            Some(crate::hint_comments::IgnoreScope::Next) => {}
             _ => {
                 debugger_stmt.visit_mut_children_with(self);
             }
@@ -240,21 +261,23 @@ impl VisitMut for CoverageVisitor<'_> {
         let (old, ignore_current) = self.on_enter(cond_expr);
 
         match ignore_current {
-            Some(istanbul_oxi_instrument::hint_comments::IgnoreScope::Next) => {}
+            Some(crate::hint_comments::IgnoreScope::Next) => {}
             _ => {
-                let range = istanbul_oxi_instrument::lookup_range::get_range_from_span(
-                    self.source_map,
-                    &cond_expr.span,
+                let range =
+                    crate::lookup_range::get_range_from_span(&self.source_map, &cond_expr.span);
+                let branch = self.cov.borrow_mut().new_branch(
+                    istanbul_oxi_coverage::BranchType::CondExpr,
+                    &range,
+                    false,
                 );
-                let branch = self.cov.new_branch(BranchType::CondExpr, &range, false);
 
-                let c_hint = istanbul_oxi_instrument::hint_comments::lookup_hint_comments(
+                let c_hint = crate::hint_comments::lookup_hint_comments(
                     &self.comments,
-                    istanbul_oxi_instrument::lookup_range::get_expr_span(&*cond_expr.cons),
+                    crate::lookup_range::get_expr_span(&*cond_expr.cons),
                 );
-                let a_hint = istanbul_oxi_instrument::hint_comments::lookup_hint_comments(
+                let a_hint = crate::hint_comments::lookup_hint_comments(
                     &self.comments,
-                    istanbul_oxi_instrument::lookup_range::get_expr_span(&*cond_expr.alt),
+                    crate::lookup_range::get_expr_span(&*cond_expr.alt),
                 );
 
                 if c_hint.as_deref() != Some("next") {

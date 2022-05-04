@@ -22,10 +22,7 @@ use once_cell::sync::OnceCell;
 
 use crate::constants::idents::*;
 
-use super::{
-    create_assignment_stmt::create_assignment_stmt,
-    create_coverage_data_object::create_coverage_data_object,
-};
+use crate::{create_assignment_stmt, create_coverage_data_object};
 
 pub static COVERAGE_FN_IDENT: OnceCell<Ident> = OnceCell::new();
 /// temporal ident being used for b_t true counter

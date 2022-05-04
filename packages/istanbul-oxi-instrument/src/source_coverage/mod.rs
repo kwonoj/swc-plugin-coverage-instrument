@@ -163,8 +163,8 @@ impl SourceCoverage {
         }
     }
 
-    pub fn set_input_source_map(&mut self, source_map: Option<SourceMap>) {
-        self.inner.input_source_map = source_map;
+    pub fn set_input_source_map(&mut self, source_map: &Option<SourceMap>) {
+        self.inner.input_source_map = source_map.clone();
     }
 
     pub fn freeze(&mut self) {
