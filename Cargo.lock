@@ -873,12 +873,7 @@ name = "swc-plugin-istanbul-oxi"
 version = "0.1.0"
 dependencies = [
  "istanbul-oxi-instrument",
- "once_cell",
- "pretty_assertions",
- "regex",
- "serde",
  "serde_json",
- "swc_ecma_quote",
  "swc_plugin",
  "tracing",
  "tracing-subscriber",
