@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build:inst:spec": "wasm-pack build packages/swc-coverage-instrument-wasm --target nodejs",
+    "build:inst:spec": "wasm-pack build spec/swc-coverage-instrument-wasm --target nodejs",
     "build:plugin": "cargo build -p swc-plugin-coverage --target wasm32-wasi",
     "test": "npm-run-all build:inst:spec build:plugin && mocha",
     "test:debug": "npm-run-all build:inst:spec build:plugin && cross-env FILTER=\"debug-test\" DEBUG=1 mocha",
