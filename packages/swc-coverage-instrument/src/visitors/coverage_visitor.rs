@@ -136,6 +136,20 @@ impl VisitMut for CoverageVisitor {
             return;
         }
 
+        let root_exists = match self.nodes.get(0) {
+            Some(node) => node == &crate::Node::Program,
+            _ => false,
+        };
+
+        // Articulate root by injecting Program node if visut_mut_program is not called.
+        // TODO: Need to figure out why custom_js_pass doesn't hit visit_mut_program
+        // instead of manually injecting node here
+        if !root_exists {
+            let mut new_nodes = vec![crate::Node::Program];
+            new_nodes.extend(self.nodes.drain(..));
+            self.nodes = new_nodes;
+        }
+
         // TODO: Should module_items need to be added in self.nodes?
         let mut new_items = vec![];
         for mut item in items.drain(..) {
@@ -156,6 +170,10 @@ impl VisitMut for CoverageVisitor {
         // prepend template to the top of the code
         items.insert(0, ModuleItem::Stmt(coverage_template));
         items.insert(1, ModuleItem::Stmt(call_coverage_template_stmt));
+
+        if !root_exists {
+            self.nodes.pop();
+        }
     }
 
     #[instrument(skip_all, fields(node = %self.print_node()))]

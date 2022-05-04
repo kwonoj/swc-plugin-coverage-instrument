@@ -35,17 +35,6 @@ const instrumentSync = (
         jsx: true,
       },
       target: "es2022",
-      experimental: {
-        plugins: [
-          [
-            pluginBinary,
-            {
-              ...pluginOptions,
-              debugInitialCoverageComment: true,
-            },
-          ],
-        ],
-      },
       preserveAllComments: true,
     },
     isModule: transformOptions?.isModule ?? true,
@@ -53,6 +42,33 @@ const instrumentSync = (
       type: "commonjs",
       strict: transformOptions?.isModule ?? false,
     },
+  };
+
+  if (process.env.SWC_TRANSFORM_CUSTOM === "1") {
+    const { transformSync } = require("../../index");
+    return transformSync(
+      code,
+      true,
+      Buffer.from(JSON.stringify(options)),
+      Buffer.from(
+        JSON.stringify({
+          ...pluginOptions,
+          debugInitialCoverageComment: true,
+        })
+      )
+    );
+  }
+
+  options.jsc.experimental = {
+    plugins: [
+      [
+        pluginBinary,
+        {
+          ...pluginOptions,
+          debugInitialCoverageComment: true,
+        },
+      ],
+    ],
   };
 
   return transformSync(code, options);

@@ -22,11 +22,14 @@
     }
   },
   "scripts": {
+    "build:all": "npm-run-all build:customtransform build:instrument build:plugin",
     "build:customtransform": "napi build --platform --cargo-cwd ./spec/swc-coverage-custom-transform",
     "build:instrument": "wasm-pack build spec/swc-coverage-instrument-wasm --target nodejs",
     "build:plugin": "cargo build -p swc-plugin-coverage --target wasm32-wasi",
-    "test": "npm-run-all build:instrument build:plugin && mocha",
-    "test:debug": "npm-run-all build:instrument build:plugin && cross-env FILTER=\"debug-test\" DEBUG=1 mocha",
+    "test:plugin": "npm-run-all build:all && mocha",
+    "test:customtransform": "npm-run-all build:all && cross-env SWC_TRANSFORM_CUSTOM=1 mocha",
+    "test": "npm-run-all test:plugin test:customtransform",
+    "test:debug": "npm-run-all build:all && cross-env FILTER=\"debug-test\" DEBUG=1 mocha",
     "prepare": "husky install"
   },
   "repository": {
