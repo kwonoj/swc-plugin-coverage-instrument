@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build:inst:spec": "wasm-pack build packages/istanbul-oxi-instrument-wasm --target nodejs",
-    "build:plugin": "cargo build -p swc-plugin-istanbul-oxi --target wasm32-wasi",
+    "build:plugin": "cargo build -p swc-plugin-coverage --target wasm32-wasi",
     "test": "npm-run-all build:inst:spec build:plugin && mocha",
     "test:debug": "npm-run-all build:inst:spec build:plugin && cross-env FILTER=\"debug-test\" DEBUG=1 mocha",
     "prepare": "husky install"

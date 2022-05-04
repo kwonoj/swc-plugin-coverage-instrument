@@ -870,7 +870,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6446ced80d6c486436db5c078dde11a9f73d42b57fb273121e160b84f63d894c"
 
 [[package]]
-name = "swc-plugin-istanbul-oxi"
+name = "swc-plugin-coverage"
 version = "0.1.0"
 dependencies = [
  "istanbul-oxi-instrument",

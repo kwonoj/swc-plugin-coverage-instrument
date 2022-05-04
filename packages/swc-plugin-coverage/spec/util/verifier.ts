@@ -3,7 +3,7 @@ import * as path from "path";
 import { assert } from "chai";
 import { readInitialCoverage } from "./read-coverage";
 import { EOL } from "os";
-import { FileCoverageInterop } from "../../../istanbul-oxi-instrument-wasm/pkg";
+import { FileCoverageInterop } from "../../../istanbul-oxi-instrument-wasm/pkg/istanbul_oxi_instrument_wasm";
 
 const clone: typeof import("lodash.clone") = require("lodash.clone");
 

@@ -9,7 +9,7 @@ import {
   VariableDeclaration,
 } from "@swc/core";
 import { Visitor } from "@swc/core/Visitor";
-import { getCoverageMagicConstants } from "../../../istanbul-oxi-instrument-wasm/pkg";
+import { getCoverageMagicConstants } from "../../../istanbul-oxi-instrument-wasm/pkg/istanbul_oxi_instrument_wasm";
 
 const { key: COVERAGE_MAGIC_KEY, value: COVERAGE_MAGIC_VALUE } =
   getCoverageMagicConstants();
