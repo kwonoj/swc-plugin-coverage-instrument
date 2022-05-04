@@ -3,18 +3,26 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use istanbul_oxi_instrument::{constants::idents::*, FileCoverage};
-use once_cell::sync::OnceCell;
+use istanbul_oxi_coverage::FileCoverage;
+#[cfg(not(feature = "plugin"))]
+use swc_common::{util::take::Take, DUMMY_SP};
+#[cfg(not(feature = "plugin"))]
+use swc_ecma_ast::*;
+#[cfg(not(feature = "plugin"))]
+use swc_ecma_quote::quote;
+
+#[cfg(feature = "plugin")]
 use swc_plugin::{
     ast::*,
     syntax_pos::DUMMY_SP,
     utils::{quote, take::Take},
 };
 
-use super::{
-    create_assignment_stmt::create_assignment_stmt,
-    create_coverage_data_object::create_coverage_data_object,
-};
+use once_cell::sync::OnceCell;
+
+use crate::constants::idents::*;
+
+use crate::{create_assignment_stmt, create_coverage_data_object};
 
 pub static COVERAGE_FN_IDENT: OnceCell<Ident> = OnceCell::new();
 /// temporal ident being used for b_t true counter

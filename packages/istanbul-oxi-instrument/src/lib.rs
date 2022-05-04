@@ -1,16 +1,31 @@
 // Include prebuilt constant values with build script
 include!(concat!(env!("OUT_DIR"), "/constants.rs"));
-pub mod constants;
-pub mod source_coverage;
+mod constants;
+mod source_coverage;
+
+mod instrument;
+use instrument::create_increase_counter_expr::create_increase_counter_expr;
+use instrument::create_increase_true_expr::create_increase_true_expr;
+
+mod coverage_template;
+use coverage_template::create_assignment_stmt::create_assignment_stmt;
+use coverage_template::create_coverage_data_object::create_coverage_data_object;
+use coverage_template::create_coverage_fn_decl::*;
+use coverage_template::create_global_stmt_template::create_global_stmt_template;
+use source_coverage::SourceCoverage;
+
+#[macro_use]
+mod macros;
+
+mod visitors;
+pub use visitors::coverage_visitor::create_coverage_instrumentation_visitor;
+mod options;
+pub use options::instrument_options::*;
 
 mod utils;
-//TODO: can this be private?
-pub use utils::hint_comments;
-pub use utils::lookup_range;
+use utils::hint_comments;
+use utils::lookup_range;
 pub use utils::node::Node;
-mod instrument;
-pub use instrument::create_increase_counter_expr::create_increase_counter_expr;
-pub use instrument::create_increase_true_expr::create_increase_true_expr;
 
 // Reexports
 pub use istanbul_oxi_coverage::types::*;

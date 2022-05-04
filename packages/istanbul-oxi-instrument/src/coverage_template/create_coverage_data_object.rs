@@ -3,10 +3,17 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use istanbul_oxi_instrument::{
-    constants::idents::*, Branch, FileCoverage, Range, COVERAGE_MAGIC_VALUE,
-};
+use istanbul_oxi_coverage::{Branch, FileCoverage, Range};
+#[cfg(not(feature = "plugin"))]
+use swc_common::{util::take::Take, DUMMY_SP};
+#[cfg(not(feature = "plugin"))]
+use swc_ecma_ast::*;
+
+#[cfg(feature = "plugin")]
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
+
+use crate::constants::idents::*;
+use crate::COVERAGE_MAGIC_VALUE;
 
 //TODO: macro, or remove create_* util
 fn create_str(value: &str) -> Str {
@@ -81,7 +88,7 @@ fn create_range_object_lit(value: &Range) -> Expr {
     })
 }
 
-fn create_fn_prop(key: &str, value: &istanbul_oxi_instrument::Function) -> PropOrSpread {
+fn create_fn_prop(key: &str, value: &istanbul_oxi_coverage::types::Function) -> PropOrSpread {
     create_str_key_value_prop(
         key,
         Expr::Object(ObjectLit {
@@ -443,13 +450,11 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
 
 #[cfg(test)]
 mod tests {
-    use istanbul_oxi_instrument::{
-        constants::idents::*, source_coverage::SourceCoverage, BranchType, FileCoverage, Range,
-    };
+    use istanbul_oxi_coverage::BranchType;
     use swc_ecma_quote::quote;
     use swc_plugin::{ast::*, utils::take::Take};
 
-    use crate::template::create_coverage_data_object::create_coverage_data_object;
+    use crate::source_coverage::SourceCoverage;
 
     use pretty_assertions::assert_eq;
 

@@ -27,8 +27,8 @@ static COMMENT_FILE_REGEX: Lazy<Regexp> =
 pub static COMMENT_RE: Lazy<Regexp> =
     Lazy::new(|| Regexp::new(r"^\s*istanbul\s+ignore\s+(if|else|next)(\W|$)").unwrap());
 
-pub fn should_ignore_file(comments: &Option<&CommentsLookup>, program: &Program) -> bool {
-    if let Some(comments) = *comments {
+pub fn should_ignore_file(comments: &Option<CommentsLookup>, program: &Program) -> bool {
+    if let Some(comments) = &*comments {
         let pos = match program {
             Program::Module(module) => module.span,
             Program::Script(script) => script.span,
@@ -58,7 +58,7 @@ pub fn should_ignore_file(comments: &Option<&CommentsLookup>, program: &Program)
 }
 
 pub fn lookup_hint_comments(
-    comments: &Option<&CommentsLookup>,
+    comments: &Option<CommentsLookup>,
     span: Option<&Span>,
 ) -> Option<String> {
     if let Some(span) = span {
@@ -101,7 +101,7 @@ pub enum IgnoreScope {
 }
 
 pub fn should_ignore(
-    comments: &Option<&CommentsLookup>,
+    comments: &Option<CommentsLookup>,
     span: Option<&Span>,
 ) -> Option<IgnoreScope> {
     let comments = lookup_hint_comments(comments, span);
