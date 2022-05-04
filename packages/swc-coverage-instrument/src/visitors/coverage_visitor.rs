@@ -139,17 +139,22 @@ impl VisitMut for CoverageVisitor {
         let coverage_data_json_str = serde_json::to_string(self.cov.borrow().as_ref())
             .expect("Should able to serialize coverage data");
 
-        // Append coverage data as stringified JSON comments at the bottom of transformed code.
-        // Currently plugin does not have way to pass any other data to the host except transformed program.
-        // This attaches arbitary data to the transformed code itself to retrieve it.
-        self.comments.add_trailing(
-            span.hi,
-            Comment {
-                kind: CommentKind::Block,
-                span: DUMMY_SP,
-                text: format!("__coverage_data_json_comment__::{}", coverage_data_json_str).into(),
-            },
-        );
+        //debug_initial_coverage_comment
+        if self.instrument_options.debug_initial_coverage_comment {
+            // Append coverage data as stringified JSON comments at the bottom of transformed code.
+            // Currently plugin does not have way to pass any other data to the host except transformed program.
+            // This attaches arbitary data to the transformed code itself to retrieve it.
+            self.comments.add_trailing(
+                span.hi,
+                Comment {
+                    kind: CommentKind::Block,
+                    span: DUMMY_SP,
+                    text: format!("__coverage_data_json_comment__::{}", coverage_data_json_str)
+                        .into(),
+                },
+            );
+        }
+
         self.nodes.pop();
     }
 

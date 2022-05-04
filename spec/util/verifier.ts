@@ -36,7 +36,15 @@ const instrumentSync = (
       },
       target: "es2022",
       experimental: {
-        plugins: [[pluginBinary, pluginOptions]],
+        plugins: [
+          [
+            pluginBinary,
+            {
+              ...pluginOptions,
+              debugInitialCoverageComment: true,
+            },
+          ],
+        ],
       },
       preserveAllComments: true,
     },

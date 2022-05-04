@@ -26,6 +26,7 @@ pub struct InstrumentOptions {
     pub ignore_class_methods: Vec<String>,
     pub input_source_map: Option<SourceMap>,
     pub instrument_log: InstrumentLogOptions,
+    pub debug_initial_coverage_comment: bool,
 }
 
 impl Default for InstrumentOptions {
@@ -37,6 +38,7 @@ impl Default for InstrumentOptions {
             ignore_class_methods: Default::default(),
             input_source_map: Default::default(),
             instrument_log: Default::default(),
+            debug_initial_coverage_comment: false,
         }
     }
 }
