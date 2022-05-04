@@ -8,7 +8,7 @@ macro_rules! create_instrumentation_visitor {
     ($name:ident { $($vis: vis $field:ident: $t:ty),* $(,)? }) => {
         #[cfg(not(feature = "plugin"))]
         use swc_common::{Span as SyntaxPosSpan,
-            comments::{SingleThreadedComments as CommentsLookup},
+            comments::{Comments},
             SourceMap as SourceMapImpl
         };
         #[cfg(not(feature = "plugin"))]
@@ -17,17 +17,17 @@ macro_rules! create_instrumentation_visitor {
         #[cfg(feature = "plugin")]
         use swc_plugin::{syntax_pos::Span as SyntaxPosSpan,
             source_map::PluginSourceMapProxy as SourceMapImpl,
-            comments::{PluginCommentsProxy as CommentsLookup}
+            comments::{Comments}
         };
         #[cfg(feature = "plugin")]
         use swc_plugin::ast::{Stmt, Ident};
 
         // Declare a struct, expand fields commonly used for any instrumentation visitor.
-        pub struct $name {
+        pub struct $name<'a> {
             // We may not need Arc in the plugin context - this is only to preserve isomorphic interface
             // between plugin & custom transform pass.
             source_map: std::sync::Arc<SourceMapImpl>,
-            comments: Option<CommentsLookup>,
+            comments: Option<&'a dyn Comments>,
             cov: std::rc::Rc<std::cell::RefCell<crate::SourceCoverage>>,
             cov_fn_ident: Ident,
             cov_fn_temp_ident: Ident,
@@ -39,16 +39,16 @@ macro_rules! create_instrumentation_visitor {
             $($vis $field: $t,)*
         }
 
-        impl $name {
-            pub fn new(
-                source_map: &std::sync::Arc<SourceMapImpl>,
-                comments: &Option<CommentsLookup>,
-                cov: &std::rc::Rc<std::cell::RefCell<crate::SourceCoverage>>,
-                instrument_options: &crate::InstrumentOptions,
-                nodes: &Vec<crate::Node>,
+        impl<'a> $name<'a> {
+            pub fn new<'b>(
+                source_map: std::sync::Arc<SourceMapImpl>,
+                comments: Option<&'b dyn Comments>,
+                cov: std::rc::Rc<std::cell::RefCell<crate::SourceCoverage>>,
+                instrument_options: crate::InstrumentOptions,
+                nodes: Vec<crate::Node>,
                 should_ignore: Option<crate::hint_comments::IgnoreScope>,
                 $($field: $t,)*
-            ) -> $name {
+            ) -> $name<'a> {
                 $name {
                     source_map: source_map.clone(),
                     comments: comments.clone(),
