@@ -1,8 +1,65 @@
-/// Interfaces to mark counters. Parent node visitor should pick up and insert marked counter accordingly.
-/// Unlike istanbul we can't have single insert logic to be called in any arbitary child node.
 #[macro_export]
-macro_rules! instrumentation_counter_helper {
+macro_rules! instrumentation_branch_wrap_counter_helper {
     () => {
+        // if (path.isExpression()) {
+        //    path.replaceWith(T.sequenceExpression([increment, path.node]));
+        //}
+        #[tracing::instrument(skip_all)]
+        fn replace_expr_with_stmt_counter(&mut self, expr: &mut Expr) {
+            self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {
+                let idx = cov.new_statement(&range);
+                crate::create_increase_counter_expr(
+                    &crate::constants::idents::IDENT_S,
+                    idx,
+                    cov_fn_ident,
+                    None,
+                )
+            });
+        }
+
+        #[tracing::instrument(skip_all)]
+        fn replace_expr_with_branch_counter(&mut self, expr: &mut Expr, branch: u32) {
+            self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {
+                let idx = cov.add_branch_path(branch, &range);
+
+                crate::create_increase_counter_expr(
+                    &crate::constants::idents::IDENT_B,
+                    branch,
+                    cov_fn_ident,
+                    Some(idx),
+                )
+            });
+        }
+
+        // Base wrapper fn to replace given expr to wrapped paren expr with counter
+        #[tracing::instrument(skip_all)]
+        fn replace_expr_with_counter<F>(&mut self, expr: &mut Expr, get_counter: F)
+        where
+            F: core::ops::Fn(
+                &mut crate::source_coverage::SourceCoverage,
+                &Ident,
+                &crate::Range,
+            ) -> Expr,
+        {
+            let span = crate::lookup_range::get_expr_span(expr);
+            if let Some(span) = span {
+                let init_range = crate::lookup_range::get_range_from_span(&self.source_map, span);
+                let prepend_expr =
+                    get_counter(&mut self.cov.borrow_mut(), &self.cov_fn_ident, &init_range);
+
+                let paren_expr = Expr::Paren(ParenExpr {
+                    span: DUMMY_SP,
+                    expr: Box::new(Expr::Seq(SeqExpr {
+                        span: DUMMY_SP,
+                        exprs: vec![Box::new(prepend_expr), Box::new(expr.take())],
+                    })),
+                });
+
+                // replace init with increase expr + init seq
+                *expr = paren_expr;
+            }
+        }
+
         /// Attempt to wrap expression with branch increase counter.
         /// Given Expr may be left, or right of the logical expression.
         #[tracing::instrument(skip_all)]
@@ -71,6 +128,15 @@ macro_rules! instrumentation_counter_helper {
                 }
             }
         }
+    };
+}
+
+/// Interfaces to mark counters. Parent node visitor should pick up and insert marked counter accordingly.
+/// Unlike istanbul we can't have single insert logic to be called in any arbitary child node.
+#[macro_export]
+macro_rules! instrumentation_counter_helper {
+    () => {
+        crate::instrumentation_branch_wrap_counter_helper!();
 
         #[tracing::instrument(skip(self, span, idx), fields(stmt_id))]
         fn create_stmt_increase_counter_expr(&mut self, span: &Span, idx: Option<u32>) -> Expr {
@@ -100,74 +166,6 @@ macro_rules! instrumentation_counter_helper {
                 expr: Box::new(increment_expr),
             }));
         }
-
-        // if (path.isExpression()) {
-        //    path.replaceWith(T.sequenceExpression([increment, path.node]));
-        //}
-        #[tracing::instrument(skip_all)]
-        fn replace_expr_with_stmt_counter(&mut self, expr: &mut Expr) {
-            self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {
-                let idx = cov.new_statement(&range);
-                crate::create_increase_counter_expr(
-                    &crate::constants::idents::IDENT_S,
-                    idx,
-                    cov_fn_ident,
-                    None,
-                )
-            });
-        }
-
-        #[tracing::instrument(skip_all)]
-        fn replace_expr_with_branch_counter(&mut self, expr: &mut Expr, branch: u32) {
-            self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {
-                let idx = cov.add_branch_path(branch, &range);
-
-                crate::create_increase_counter_expr(
-                    &crate::constants::idents::IDENT_B,
-                    branch,
-                    cov_fn_ident,
-                    Some(idx),
-                )
-            });
-        }
-
-        // Base wrapper fn to replace given expr to wrapped paren expr with counter
-        #[tracing::instrument(skip_all)]
-        fn replace_expr_with_counter<F>(&mut self, expr: &mut Expr, get_counter: F)
-        where
-            F: core::ops::Fn(
-                &mut crate::source_coverage::SourceCoverage,
-                &Ident,
-                &crate::Range,
-            ) -> Expr,
-        {
-            let span = crate::lookup_range::get_expr_span(expr);
-            if let Some(span) = span {
-                let init_range = crate::lookup_range::get_range_from_span(&self.source_map, span);
-                let prepend_expr =
-                    get_counter(&mut self.cov.borrow_mut(), &self.cov_fn_ident, &init_range);
-
-                let paren_expr = Expr::Paren(ParenExpr {
-                    span: DUMMY_SP,
-                    expr: Box::new(Expr::Seq(SeqExpr {
-                        span: DUMMY_SP,
-                        exprs: vec![Box::new(prepend_expr), Box::new(expr.take())],
-                    })),
-                });
-
-                // replace init with increase expr + init seq
-                *expr = paren_expr;
-            }
-        }
-
-        // if (path.isBlockStatement()) {
-        //    path.node.body.unshift(T.expressionStatement(increment));
-        // }
-        fn mark_prepend_stmt_counter_for_body(&mut self) {
-            todo!("not implemented");
-        }
-
-        fn mark_prepend_stmt_counter_for_hoisted(&mut self) {}
 
         /// Common logics for the fn-like visitors to insert fn instrumentation counters.
         #[tracing::instrument(skip_all)]
@@ -269,12 +267,7 @@ macro_rules! instrumentation_counter_helper {
                 let parent = self.nodes.last().unwrap().clone();
                 if hoist.0 && parent == crate::Node::VarDeclarator {
                     let parent = self.nodes.get(self.nodes.len() - 3);
-                    if let Some(parent) = parent {
-                        /*if (parent && T.isExportNamedDeclaration(parent.parentPath)) {
-                            parent.parentPath.insertBefore(
-                                T.expressionStatement(increment)
-                            );
-                        }  */
+                    if parent.is_some() {
                         let parent = self.nodes.get(self.nodes.len() - 4);
                         if let Some(parent) = parent {
                             match parent {
