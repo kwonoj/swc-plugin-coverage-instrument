@@ -1,7 +1,8 @@
 [package]
 name = "istanbul-oxide"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
+authors = ["OJ Kwon <kwon.ohjoong@gmail.com>"]
 description = "Istanbul compatible coverage data struct"
 license = "MIT"
 repository = "https://github.com/kwonoj/swc-coverage-instrument"
