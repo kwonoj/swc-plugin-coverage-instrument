@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # instruct dep to use swc_plugin as dependency to access necessary imports
-swc-coverage-instrument = { version = "0.0.2", path = "../swc-coverage-instrument", features = [
+swc-coverage-instrument = { version = "0.0.3", path = "../swc-coverage-instrument", features = [
   "plugin",
 ], default-features = false }
 serde_json = "1.0.79"
