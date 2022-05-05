@@ -8,3 +8,4 @@ index.d.ts
 index.js
 spec/swc-coverage-custom-transform/target/
 a.js
+swc-plugin-coverage-*.tgz
