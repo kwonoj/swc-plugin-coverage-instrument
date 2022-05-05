@@ -1,6 +1,6 @@
 {
   "name": "swc-plugin-coverage-instrument",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "SWC coverage instrumentation plugin",
   "main": "./target/wasm32-wasi/release/swc_plugin_coverage.wasm",
   "napi": {
@@ -36,15 +36,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kwonoj/istanbul-oxi.git"
+    "url": "git+https://github.com/kwonoj/swc-coverage-instrument.git"
   },
   "keywords": ["SWC", "plugin", "istanbul", "coverage"],
   "author": "OJ Kwon <kwon.ohjoong@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/kwonoj/istanbul-oxi/issues"
+    "url": "https://github.com/kwonoj/swc-coverage-instrument/issues"
   },
-  "homepage": "https://github.com/kwonoj/istanbul-oxi#readme",
+  "homepage": "https://github.com/kwonoj/swc-coverage-instrument#readme",
   "devDependencies": {
     "@napi-rs/cli": "^2.7.0",
     "@swc-node/register": "^1.4.2",
