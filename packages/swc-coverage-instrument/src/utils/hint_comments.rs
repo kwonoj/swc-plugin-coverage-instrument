@@ -1,15 +1,6 @@
 use once_cell::sync::Lazy;
 use regex::Regex as Regexp;
 
-#[cfg(not(feature = "plugin"))]
-use swc_common::{
-    comments::{Comment, Comments},
-    Span,
-};
-#[cfg(not(feature = "plugin"))]
-use swc_ecma_ast::*;
-
-#[cfg(feature = "plugin")]
 use swc_plugin::{
     ast::*,
     comments::{Comment, Comments},

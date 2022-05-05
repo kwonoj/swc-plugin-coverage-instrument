@@ -1,9 +1,3 @@
-#[cfg(not(feature = "plugin"))]
-use swc_ecma_ast::*;
-#[cfg(not(feature = "plugin"))]
-use swc_ecma_visit::*;
-
-#[cfg(feature = "plugin")]
 use swc_plugin::ast::*;
 
 /// A visitor to check if counter need to be `hoisted` for certain types of nodes.

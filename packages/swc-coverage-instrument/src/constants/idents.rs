@@ -1,12 +1,5 @@
 //! Static ident declarations being used across template
 use once_cell::sync::Lazy;
-
-#[cfg(not(feature = "plugin"))]
-use swc_common::util::take::Take;
-#[cfg(not(feature = "plugin"))]
-use swc_ecma_ast::Ident;
-
-#[cfg(feature = "plugin")]
 use swc_plugin::{ast::Ident, utils::take::Take};
 
 pub static IDENT_ALL: Lazy<Ident> = Lazy::new(|| Ident {
