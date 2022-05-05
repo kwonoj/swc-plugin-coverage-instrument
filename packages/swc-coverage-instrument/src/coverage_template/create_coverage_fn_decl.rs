@@ -4,18 +4,6 @@ use std::{
 };
 
 use istanbul_oxide::FileCoverage;
-#[cfg(not(feature = "plugin"))]
-use swc_common::{
-    comments::{Comment, CommentKind, Comments},
-    util::take::Take,
-    Span, DUMMY_SP,
-};
-#[cfg(not(feature = "plugin"))]
-use swc_ecma_ast::*;
-#[cfg(not(feature = "plugin"))]
-use swc_ecma_quote::quote;
-
-#[cfg(feature = "plugin")]
 use swc_plugin::{
     ast::*,
     comments::{Comment, CommentKind, Comments},

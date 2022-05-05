@@ -6,21 +6,17 @@
 #[macro_export]
 macro_rules! create_instrumentation_visitor {
     ($name:ident { $($vis: vis $field:ident: $t:ty),* $(,)? }) => {
+        use swc_plugin::{ast::{Stmt, Ident}, syntax_pos::Span, comments::Comments};
+
         #[cfg(not(feature = "plugin"))]
-        use swc_common::{Span as SyntaxPosSpan,
-            comments::Comments,
+        use swc_common::{
             SourceMap as SourceMapImpl
         };
-        #[cfg(not(feature = "plugin"))]
-        use swc_ecma_ast::{Stmt, Ident};
 
         #[cfg(feature = "plugin")]
-        use swc_plugin::{syntax_pos::Span as SyntaxPosSpan,
+        use swc_plugin::{
             source_map::PluginSourceMapProxy as SourceMapImpl,
-            comments::Comments
         };
-        #[cfg(feature = "plugin")]
-        use swc_plugin::ast::{Stmt, Ident};
 
         // Declare a struct, expand fields commonly used for any instrumentation visitor.
         pub struct $name<C: Clone + Comments> {
@@ -79,7 +75,7 @@ macro_rules! create_instrumentation_visitor {
                 }
             }
 
-            fn on_enter_with_span(&mut self, span: Option<&SyntaxPosSpan>) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
+            fn on_enter_with_span(&mut self, span: Option<&Span>) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 let old = self.should_ignore;
                 let ret = match old {
                     Some(crate::hint_comments::IgnoreScope::Next) => old,
@@ -111,16 +107,8 @@ macro_rules! create_instrumentation_visitor {
         macro_rules! on_enter {
             ($N: tt) => {
                 impl<C: Clone + Comments> CoverageInstrumentationMutVisitEnter<$N> for $name<C> {
-                    #[cfg(feature = "plugin")]
                     #[inline]
                     fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
-                        self.nodes.push(crate::Node::$N);
-                        self.on_enter_with_span(Some(&n.span))
-                    }
-
-                    #[cfg(not(feature = "plugin"))]
-                    #[inline]
-                    fn on_enter(&mut self, n: &mut swc_ecma_ast::$N) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                         self.nodes.push(crate::Node::$N);
                         self.on_enter_with_span(Some(&n.span))
                     }

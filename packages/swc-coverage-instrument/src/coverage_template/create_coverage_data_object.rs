@@ -4,12 +4,6 @@ use std::{
 };
 
 use istanbul_oxide::{Branch, FileCoverage, Range};
-#[cfg(not(feature = "plugin"))]
-use swc_common::{util::take::Take, DUMMY_SP};
-#[cfg(not(feature = "plugin"))]
-use swc_ecma_ast::*;
-
-#[cfg(feature = "plugin")]
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
 
 use crate::constants::idents::*;

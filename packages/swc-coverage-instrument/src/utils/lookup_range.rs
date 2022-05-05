@@ -1,12 +1,12 @@
 use istanbul_oxide::Range;
 
 #[cfg(not(feature = "plugin"))]
-use swc_common::{SourceMap, Span};
-#[cfg(not(feature = "plugin"))]
-use swc_ecma_ast::*;
+use swc_common::SourceMap;
 
 #[cfg(feature = "plugin")]
-use swc_plugin::{ast::*, source_map::PluginSourceMapProxy as SourceMap, syntax_pos::Span};
+use swc_plugin::source_map::PluginSourceMapProxy as SourceMap;
+
+use swc_plugin::{ast::*, syntax_pos::Span};
 
 pub fn get_range_from_span(source_map: &SourceMap, span: &Span) -> Range {
     let span_hi_loc = source_map.lookup_char_pos(span.hi);

@@ -1,9 +1,3 @@
-#[cfg(not(feature = "plugin"))]
-use swc_common::DUMMY_SP;
-#[cfg(not(feature = "plugin"))]
-use swc_ecma_ast::*;
-
-#[cfg(feature = "plugin")]
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
 
 /// Creates a expr like `cov_17709493053001988098().s[0]++;`

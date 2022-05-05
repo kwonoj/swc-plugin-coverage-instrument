@@ -1,9 +1,3 @@
-#[cfg(not(feature = "plugin"))]
-use swc_common::{util::take::Take, DUMMY_SP};
-#[cfg(not(feature = "plugin"))]
-use swc_ecma_ast::*;
-
-#[cfg(feature = "plugin")]
 use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
 
 use super::create_increase_counter_expr::create_increase_counter_expr;
