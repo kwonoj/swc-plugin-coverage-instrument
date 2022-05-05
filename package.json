@@ -1,8 +1,8 @@
 {
   "name": "swc-plugin-coverage",
   "version": "0.0.1",
-  "description": "",
-  "main": "index.js",
+  "description": "SWC coverage instrumentation plugin",
+  "main": "./target/wasm32-wasi/release/swc_plugin_coverage.wasm",
   "napi": {
     "name": "swc",
     "triples": {
@@ -21,7 +21,9 @@
       ]
     }
   },
+  "files": ["package.json", "README.md", "target/wasm32-wasi/release/swc_plugin_coverage.wasm"],
   "scripts": {
+    "prepublishOnly": "npm-run-all test && npm run build:plugin -- --release",
     "build:all": "npm-run-all build:customtransform build:instrument build:plugin",
     "build:customtransform": "napi build --platform --cargo-cwd ./spec/swc-coverage-custom-transform",
     "build:instrument": "wasm-pack build spec/swc-coverage-instrument-wasm --target nodejs",
@@ -36,9 +38,9 @@
     "type": "git",
     "url": "git+https://github.com/kwonoj/istanbul-oxi.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "",
+  "keywords": ["SWC", "plugin", "istanbul", "coverage"],
+  "author": "OJ Kwon <kwon.ohjoong@gmail.com>",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/kwonoj/istanbul-oxi/issues"
   },
