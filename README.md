@@ -4,7 +4,7 @@
 
 ## What does compatible exactly means?
 
-This instrumentation will generate a data struct mimics istanbuljs's `FileCoverage` [object] (https://github.com/istanbuljs/istanbuljs/blob/c7693d4608979ab73ebb310e0a1647e2c51f31b6/packages/istanbul-lib-coverage/lib/file-coverage.js#L97=) conforms fixture test suite from istanbuljs itself.
+This instrumentation will generate a data struct mimics istanbuljs's `FileCoverage` [object](https://github.com/istanbuljs/istanbuljs/blob/c7693d4608979ab73ebb310e0a1647e2c51f31b6/packages/istanbul-lib-coverage/lib/file-coverage.js#L97=) conforms fixture test suite from istanbuljs itself.
 
 However, this doesn't mean instrumentation supports exact same [interfaces](https://github.com/istanbuljs/istanbuljs/blob/c7693d4608979ab73ebb310e0a1647e2c51f31b6/packages/istanbul-lib-instrument/src/source-coverage.js#L37=) surrounding coverage object as well as supporting exact same options. There are some fundamental differences between runtime, and ast visitor architecture between different compilers does not allow identical behavior. This package will try `best attempt` as possible.
 
