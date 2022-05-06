@@ -21,7 +21,11 @@
       ]
     }
   },
-  "files": ["package.json", "README.md", "target/wasm32-wasi/release/swc_plugin_coverage.wasm"],
+  "files": [
+    "package.json",
+    "README.md",
+    "target/wasm32-wasi/release/swc_plugin_coverage.wasm"
+  ],
   "scripts": {
     "prepublishOnly": "npm-run-all test && npm run build:plugin -- --release",
     "build:all": "npm-run-all build:customtransform build:instrument build:plugin",
@@ -38,7 +42,12 @@
     "type": "git",
     "url": "git+https://github.com/kwonoj/swc-coverage-instrument.git"
   },
-  "keywords": ["SWC", "plugin", "istanbul", "coverage"],
+  "keywords": [
+    "SWC",
+    "plugin",
+    "istanbul",
+    "coverage"
+  ],
   "author": "OJ Kwon <kwon.ohjoong@gmail.com>",
   "license": "MIT",
   "bugs": {
@@ -48,7 +57,7 @@
   "devDependencies": {
     "@napi-rs/cli": "^2.7.0",
     "@swc-node/register": "^1.4.2",
-    "@swc/core": "^1.2.171",
+    "@swc/core": "^1.2.177",
     "@taplo/cli": "^0.3.2",
     "@types/chai": "^4.3.0",
     "@types/js-yaml": "^4.0.5",
