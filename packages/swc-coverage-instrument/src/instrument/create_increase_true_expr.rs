@@ -1,4 +1,5 @@
-use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
+use swc_common::{util::take::Take, DUMMY_SP};
+use swc_ecma_ast::*;
 
 use super::create_increase_counter_expr::create_increase_counter_expr;
 use crate::constants::idents::IDENT_BT;

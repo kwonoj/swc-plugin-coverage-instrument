@@ -7,23 +7,23 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [build-dependencies]
-napi-build = { version = "1" }
+napi-build = "2.0.0"
 
 [dependencies]
-napi = { version = "2", default-features = false, features = [
+napi = { version = "2.4.1", default-features = false, features = [
   "napi3",
   "serde-json",
 ] }
-napi-derive = { version = "2", default-features = false, features = [
+napi-derive = { version = "2.4.0", default-features = false, features = [
   "type-def",
 ] }
-swc = { version = "0.174.0", features = ["node"] }
-backtrace = "0.3"
-anyhow = "1"
-serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", features = ["unbounded_depth"] }
-swc_common = { version = "0.17.18", features = ["concurrent", "sourcemap"] }
-swc_ecmascript = { version = "0.150.0", features = ["codegen", "optimization", "parser", "react", "transforms", "typescript", "utils", "visit"] }
-swc_node_base = "0.5.1"
-swc_ecma_ast = "0.76.2"
-swc-coverage-instrument = { version = "0.0.3", path = "../../packages/swc-coverage-instrument" }
+swc = { version = "0.175.0", features = ["node"] }
+backtrace = "0.3.65"
+anyhow = "1.0.57"
+serde = { version = "1.0.137", features = ["derive"] }
+serde_json = { version = "1.0.81", features = ["unbounded_depth"] }
+swc_common = { version = "0.17.25", features = ["concurrent", "sourcemap"] }
+swc_ecmascript = { version = "0.153.0", features = ["codegen", "optimization", "parser", "react", "transforms", "typescript", "utils", "visit"] }
+swc_node_base = "0.5.2"
+swc_ecma_ast = "0.77.0"
+swc-coverage-instrument = { version = "0.0.4", path = "../../packages/swc-coverage-instrument" }

@@ -4,7 +4,8 @@ use std::{
 };
 
 use istanbul_oxide::{Branch, FileCoverage, Range};
-use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
+use swc_common::{util::take::Take, DUMMY_SP};
+use swc_ecma_ast::*;
 
 use crate::constants::idents::*;
 use crate::COVERAGE_MAGIC_VALUE;
@@ -446,7 +447,6 @@ pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Exp
 mod tests {
     use istanbul_oxide::BranchType;
     use swc_ecma_quote::quote;
-    use swc_plugin::{ast::*, utils::take::Take};
 
     use crate::source_coverage::SourceCoverage;
 

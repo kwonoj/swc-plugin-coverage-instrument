@@ -1,6 +1,7 @@
+use swc_common::{comments::Comments, util::take::Take, SourceMapper, DUMMY_SP};
+use swc_ecma_ast::*;
+use swc_ecma_visit::{noop_visit_mut_type, VisitMut, VisitMutWith, VisitWith};
 use tracing::instrument;
-
-use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
 
 use crate::{
     constants::idents::IDENT_B, create_instrumentation_visitor, instrumentation_counter_helper,
@@ -11,12 +12,12 @@ create_instrumentation_visitor!(SwitchCaseVisitor { branch: u32 });
 
 /// A visitor to traverse down given logical expr's value (left / right) with existing branch idx.
 /// This is required to preserve branch id to recursively traverse logical expr's inner child.
-impl<C: Clone + Comments> SwitchCaseVisitor<C> {
+impl<C: Clone + Comments, S: SourceMapper> SwitchCaseVisitor<C, S> {
     instrumentation_counter_helper!();
     instrumentation_stmt_counter_helper!();
 }
 
-impl<C: Clone + Comments> VisitMut for SwitchCaseVisitor<C> {
+impl<C: Clone + Comments, S: SourceMapper> VisitMut for SwitchCaseVisitor<C, S> {
     instrumentation_visitor!();
 
     // SwitchCase: entries(coverSwitchCase),

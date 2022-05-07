@@ -18,7 +18,7 @@ macro_rules! visit_mut_for_like {
                 } else {
                     let stmts = vec![body];
                     BlockStmt {
-                        span: DUMMY_SP,
+                        span: swc_common::DUMMY_SP,
                         stmts,
                     }
                 };

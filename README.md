@@ -63,7 +63,7 @@ There is a single interface exposed to create a visitor for the transform, which
 
 ```
 let visitor = swc_coverage_instrument::create_coverage_instrumentation_visitor(
-    source_map: std::sync::Arc<SourceMapImpl>,
+    source_map: std::sync::Arc<SourceMapper>,
     comments: C,
     instrument_options: InstrumentOptions,
     filename: String,

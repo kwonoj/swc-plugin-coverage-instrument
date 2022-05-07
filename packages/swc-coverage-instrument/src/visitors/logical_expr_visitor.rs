@@ -1,4 +1,5 @@
-use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
+use swc_common::{comments::Comments, util::take::Take, SourceMapper};
+use swc_ecma_visit::{VisitMut, VisitMutWith, VisitWith};
 use tracing::instrument;
 
 use crate::{create_instrumentation_visitor, instrumentation_branch_wrap_counter_helper};
@@ -7,11 +8,11 @@ create_instrumentation_visitor!(LogicalExprVisitor { branch: u32 });
 
 /// A visitor to traverse down given logical expr's value (left / right) with existing branch idx.
 /// This is required to preserve branch id to recursively traverse logical expr's inner child.
-impl<C: Clone + Comments> LogicalExprVisitor<C> {
+impl<C: Clone + Comments, S: SourceMapper> LogicalExprVisitor<C, S> {
     instrumentation_branch_wrap_counter_helper!();
 }
 
-impl<C: Clone + Comments> VisitMut for LogicalExprVisitor<C> {
+impl<C: Clone + Comments, S: SourceMapper> VisitMut for LogicalExprVisitor<C, S> {
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
         let (old, _ignore_current) = self.on_enter(expr);
         expr.visit_mut_children_with(self);

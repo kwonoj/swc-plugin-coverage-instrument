@@ -1,4 +1,5 @@
-use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
+use swc_common::DUMMY_SP;
+use swc_ecma_ast::*;
 
 /// Creates a expr like `cov_17709493053001988098().s[0]++;`
 /// idx indicates index of vec-based counters (i.e branches).
