@@ -110,12 +110,12 @@ pub fn transform_sync(
     .convert_err()
 }
 
-fn coverage_instrument<C: Clone + Comments>(
+fn coverage_instrument<'a, C: Comments + 'a + std::clone::Clone>(
     source_map: Arc<SourceMap>,
     comments: C,
     instrument_options: InstrumentOptions,
     filename: String,
-) -> impl Fold {
+) -> impl Fold + 'a {
     let visitor =
         create_coverage_instrumentation_visitor(source_map, comments, instrument_options, filename);
 

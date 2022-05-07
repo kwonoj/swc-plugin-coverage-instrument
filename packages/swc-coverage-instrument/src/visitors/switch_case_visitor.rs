@@ -1,6 +1,6 @@
 use swc_common::{comments::Comments, util::take::Take, SourceMapper, DUMMY_SP};
-use swc_ecma_ast::*;
-use swc_ecma_visit::{noop_visit_mut_type, VisitMut, VisitMutWith, VisitWith};
+use swc_ecmascript::ast::*;
+use swc_ecmascript::visit::{noop_visit_mut_type, VisitMut, VisitMutWith, VisitWith};
 use tracing::instrument;
 
 use crate::{

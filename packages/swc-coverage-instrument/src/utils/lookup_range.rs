@@ -3,7 +3,7 @@ use std::sync::Arc;
 use istanbul_oxide::Range;
 
 use swc_common::{SourceMapper, Span};
-use swc_ecma_ast::*;
+use swc_ecmascript::ast::*;
 
 pub fn get_range_from_span<S: SourceMapper>(source_map: &Arc<S>, span: &Span) -> Range {
     let span_hi_loc = source_map.lookup_char_pos(span.hi);

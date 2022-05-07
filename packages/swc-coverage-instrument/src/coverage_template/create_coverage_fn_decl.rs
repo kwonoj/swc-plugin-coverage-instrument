@@ -9,10 +9,10 @@ use swc_common::{
     util::take::Take,
     Span, DUMMY_SP,
 };
-use swc_ecma_ast::*;
+use swc_ecma_quote::quote;
+use swc_ecmascript::ast::*;
 
 use once_cell::sync::OnceCell;
-use swc_ecma_quote::quote;
 
 use crate::constants::idents::*;
 
