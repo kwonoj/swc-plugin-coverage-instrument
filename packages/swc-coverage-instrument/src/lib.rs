@@ -18,7 +18,7 @@ use source_coverage::SourceCoverage;
 mod macros;
 
 mod visitors;
-pub use visitors::coverage_visitor::create_coverage_instrumentation_visitor;
+pub use visitors::coverage_visitor::{create_coverage_instrumentation_visitor, CoverageVisitor};
 mod options;
 pub use options::instrument_options::*;
 
