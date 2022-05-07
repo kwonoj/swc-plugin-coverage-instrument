@@ -48,9 +48,9 @@ macro_rules! instrumentation_branch_wrap_counter_helper {
                     get_counter(&mut self.cov.borrow_mut(), &self.cov_fn_ident, &init_range);
 
                 let paren_expr = Expr::Paren(ParenExpr {
-                    span: DUMMY_SP,
+                    span: swc_common::DUMMY_SP,
                     expr: Box::new(Expr::Seq(SeqExpr {
-                        span: DUMMY_SP,
+                        span: swc_common::DUMMY_SP,
                         exprs: vec![Box::new(prepend_expr), Box::new(expr.take())],
                     })),
                 });
@@ -116,7 +116,7 @@ macro_rules! instrumentation_branch_wrap_counter_helper {
 
                         // TODO: duplicated code with replace_expr_with_counter
                         let paren_expr = Expr::Seq(SeqExpr {
-                            span: DUMMY_SP,
+                            span: swc_common::DUMMY_SP,
                             exprs: vec![Box::new(increase_expr), Box::new(increase_true_expr)],
                         });
 
@@ -162,7 +162,7 @@ macro_rules! instrumentation_counter_helper {
         fn mark_prepend_stmt_counter(&mut self, span: &Span) {
             let increment_expr = self.create_stmt_increase_counter_expr(span, None);
             self.before.push(Stmt::Expr(ExprStmt {
-                span: DUMMY_SP,
+                span: swc_common::DUMMY_SP,
                 expr: Box::new(increment_expr),
             }));
         }
@@ -199,7 +199,7 @@ macro_rules! instrumentation_counter_helper {
                         None,
                     );
                     let mut prepended_vec = vec![Stmt::Expr(ExprStmt {
-                        span: DUMMY_SP,
+                        span: swc_common::DUMMY_SP,
                         expr: Box::new(b),
                     })];
                     prepended_vec.extend(blockstmt.stmts.take());

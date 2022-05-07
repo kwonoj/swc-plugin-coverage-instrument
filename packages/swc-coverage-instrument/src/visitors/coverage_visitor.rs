@@ -1,4 +1,6 @@
-use swc_plugin::{ast::*, syntax_pos::DUMMY_SP, utils::take::Take};
+use swc_common::{comments::Comments, util::take::Take, SourceMapper, DUMMY_SP};
+use swc_ecma_ast::*;
+use swc_ecma_visit::{noop_visit_mut_type, VisitMut, VisitMutWith, VisitWith};
 use tracing::instrument;
 
 use crate::{

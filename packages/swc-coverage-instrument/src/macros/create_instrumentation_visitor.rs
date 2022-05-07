@@ -6,10 +6,12 @@
 #[macro_export]
 macro_rules! create_instrumentation_visitor {
     ($name:ident { $($vis: vis $field:ident: $t:ty),* $(,)? }) => {
-        use swc_plugin::{ast::{Stmt, Ident}, syntax_pos::Span, comments::Comments, source_map::SourceMapper};
+        #[allow(unused)]
+        use swc_ecma_ast::*;
+        use swc_common::Span;
 
         // Declare a struct, expand fields commonly used for any instrumentation visitor.
-        pub struct $name<C: Clone + Comments, S: SourceMapper> {
+        pub struct $name<C: Clone + swc_common::comments::Comments, S: swc_common::SourceMapper> {
             // We may not need Arc in the plugin context - this is only to preserve isomorphic interface
             // between plugin & custom transform pass.
             source_map: std::sync::Arc<S>,
@@ -25,7 +27,7 @@ macro_rules! create_instrumentation_visitor {
             $($vis $field: $t,)*
         }
 
-        impl<C: Clone + Comments, S: SourceMapper> $name<C, S> {
+        impl<C: Clone + swc_common::comments::Comments, S: swc_common::SourceMapper> $name<C, S> {
             pub fn new(
                 source_map: std::sync::Arc<S>,
                 comments: C,
@@ -96,9 +98,9 @@ macro_rules! create_instrumentation_visitor {
         // Macro generates trait impl for the type can access span directly.
         macro_rules! on_enter {
             ($N: tt) => {
-                impl<C: Clone + Comments, S: SourceMapper> CoverageInstrumentationMutVisitEnter<$N> for $name<C, S> {
+                impl<C: Clone + swc_common::comments::Comments, S: swc_common::SourceMapper> CoverageInstrumentationMutVisitEnter<$N> for $name<C, S> {
                     #[inline]
-                    fn on_enter(&mut self, n: &mut swc_plugin::ast::$N) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
+                    fn on_enter(&mut self, n: &mut swc_ecma_ast::$N) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                         self.nodes.push(crate::Node::$N);
                         self.on_enter_with_span(Some(&n.span))
                     }
@@ -106,15 +108,15 @@ macro_rules! create_instrumentation_visitor {
             }
         }
 
-        impl<C: Clone + Comments, S: SourceMapper> CoverageInstrumentationMutVisitEnter<Expr> for $name<C, S> {
-            fn on_enter(&mut self, n: &mut Expr) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
+        impl<C: Clone + swc_common::comments::Comments, S: swc_common::SourceMapper> CoverageInstrumentationMutVisitEnter<Expr> for $name<C, S> {
+            fn on_enter(&mut self, n: &mut swc_ecma_ast::Expr) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::Expr);
                 let span = crate::lookup_range::get_expr_span(n);
                 self.on_enter_with_span(span)
             }
          }
 
-         impl<C: Clone + Comments, S: SourceMapper> CoverageInstrumentationMutVisitEnter<Stmt> for $name<C, S> {
+         impl<C: Clone + swc_common::comments::Comments, S: swc_common::SourceMapper> CoverageInstrumentationMutVisitEnter<Stmt> for $name<C, S> {
             fn on_enter(&mut self, n: &mut Stmt) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::Stmt);
                 let span = crate::lookup_range::get_stmt_span(n);
@@ -123,8 +125,8 @@ macro_rules! create_instrumentation_visitor {
             }
          }
 
-         impl<C: Clone + Comments, S: SourceMapper> CoverageInstrumentationMutVisitEnter<ModuleDecl> for $name<C, S> {
-            fn on_enter(&mut self, n: &mut ModuleDecl) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
+         impl<C: Clone + swc_common::comments::Comments, S: swc_common::SourceMapper> CoverageInstrumentationMutVisitEnter<ModuleDecl> for $name<C, S> {
+            fn on_enter(&mut self, n: &mut swc_ecma_ast::ModuleDecl) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::ModuleDecl);
                 let span = crate::lookup_range::get_module_decl_span(n);
 
@@ -132,29 +134,29 @@ macro_rules! create_instrumentation_visitor {
             }
          }
 
-         impl<C: Clone + Comments, S: SourceMapper> CoverageInstrumentationMutVisitEnter<ClassDecl> for $name<C, S> {
-            fn on_enter(&mut self, n: &mut ClassDecl) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
+         impl<C: Clone + swc_common::comments::Comments, S: swc_common::SourceMapper> CoverageInstrumentationMutVisitEnter<ClassDecl> for $name<C, S> {
+            fn on_enter(&mut self, n: &mut swc_ecma_ast::ClassDecl) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::ClassDecl);
                 self.on_enter_with_span(Some(&n.class.span))
             }
          }
 
-         impl<C: Clone + Comments, S: SourceMapper> CoverageInstrumentationMutVisitEnter<FnExpr> for $name<C, S> {
-            fn on_enter(&mut self, n: &mut FnExpr) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
+         impl<C: Clone + swc_common::comments::Comments, S: swc_common::SourceMapper> CoverageInstrumentationMutVisitEnter<FnExpr> for $name<C, S> {
+            fn on_enter(&mut self, n: &mut swc_ecma_ast::FnExpr) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::FnExpr);
                 self.on_enter_with_span(Some(&n.function.span))
             }
          }
 
-         impl<C: Clone + Comments, S: SourceMapper> CoverageInstrumentationMutVisitEnter<MethodProp> for $name<C, S> {
-            fn on_enter(&mut self, n: &mut MethodProp) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
+         impl<C: Clone + swc_common::comments::Comments, S: swc_common::SourceMapper> CoverageInstrumentationMutVisitEnter<MethodProp> for $name<C, S> {
+            fn on_enter(&mut self, n: &mut swc_ecma_ast::MethodProp) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::MethodProp);
                 self.on_enter_with_span(Some(&n.function.span))
             }
          }
 
-         impl<C: Clone + Comments, S: SourceMapper> CoverageInstrumentationMutVisitEnter<FnDecl> for $name<C, S> {
-            fn on_enter(&mut self, n: &mut FnDecl) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
+         impl<C: Clone + swc_common::comments::Comments, S: swc_common::SourceMapper> CoverageInstrumentationMutVisitEnter<FnDecl> for $name<C, S> {
+            fn on_enter(&mut self, n: &mut swc_ecma_ast::FnDecl) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::FnDecl);
                 self.on_enter_with_span(Some(&n.function.span))
             }
