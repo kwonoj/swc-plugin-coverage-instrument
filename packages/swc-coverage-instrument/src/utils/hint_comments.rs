@@ -4,7 +4,7 @@ use swc_common::{
     comments::{Comment, Comments},
     Span,
 };
-use swc_ecma_ast::*;
+use swc_ecmascript::ast::*;
 
 /// pattern for istanbul to ignore the whole file
 /// This is not fully identical to original file comments

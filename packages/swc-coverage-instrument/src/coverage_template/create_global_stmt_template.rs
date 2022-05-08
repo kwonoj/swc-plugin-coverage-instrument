@@ -1,5 +1,5 @@
 use swc_common::{util::take::Take, DUMMY_SP};
-use swc_ecma_ast::*;
+use swc_ecmascript::ast::*;
 
 use crate::constants::idents::IDENT_GLOBAL;
 

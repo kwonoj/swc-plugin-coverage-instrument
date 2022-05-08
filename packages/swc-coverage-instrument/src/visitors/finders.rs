@@ -1,5 +1,7 @@
-use swc_ecma_ast::*;
-use swc_ecma_visit::{Visit, VisitWith};
+use swc_ecmascript::{
+    ast::*,
+    visit::{Visit, VisitWith},
+};
 
 /// A visitor to check if counter need to be `hoisted` for certain types of nodes.
 #[derive(Debug)]
