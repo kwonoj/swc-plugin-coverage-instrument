@@ -81,37 +81,45 @@ pub fn transform_sync(
         options.config.adjust(Path::new(&options.filename));
     }
 
-    try_with(c.cm.clone(), !options.config.error.filename, |handler| {
-        c.run(|| {
-            let filename = if options.filename.is_empty() {
-                FileName::Anon
-            } else {
-                FileName::Real(options.filename.clone().into())
-            };
+    try_with(
+        c.cm.clone(),
+        !options.config.error.filename.into_bool(),
+        |handler| {
+            c.run(|| {
+                let filename = if options.filename.is_empty() {
+                    FileName::Anon
+                } else {
+                    FileName::Real(options.filename.clone().into())
+                };
 
-            let fm = c.cm.new_source_file(filename.clone(), s);
-            c.process_js_with_custom_pass(
-                fm,
-                None,
-                handler,
-                &options,
-                |_program, comments| {
-                    coverage_instrument(
-                        c.cm.clone(),
-                        comments.clone(),
-                        instrument_option,
-                        filename.to_string(),
-                    )
-                },
-                |_, _| noop(),
-            )
-        })
-    })
+                let fm = c.cm.new_source_file(filename.clone(), s);
+                c.process_js_with_custom_pass(
+                    fm,
+                    None,
+                    handler,
+                    &options,
+                    |_program, comments| {
+                        coverage_instrument(
+                            c.cm.clone(),
+                            comments.clone(),
+                            instrument_option,
+                            filename.to_string(),
+                        )
+                    },
+                    |_, _| noop(),
+                )
+            })
+        },
+    )
     .convert_err()
 }
 
-fn coverage_instrument<'a, C: Comments + 'a + std::clone::Clone>(
-    source_map: Arc<SourceMap>,
+fn coverage_instrument<
+    'a,
+    C: Comments + 'a + std::clone::Clone,
+    S: 'a + swc_common::errors::SourceMapper,
+>(
+    source_map: Arc<S>,
     comments: C,
     instrument_options: InstrumentOptions,
     filename: String,
