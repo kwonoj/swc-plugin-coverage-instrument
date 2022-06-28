@@ -26,4 +26,4 @@ swc_common = { version = "0.18.9", features = ["concurrent", "sourcemap"] }
 swc_ecmascript = { version = "0.166.0", features = ["codegen", "optimization", "parser", "react", "transforms", "typescript", "utils", "visit"] }
 swc_node_base = "0.5.5"
 swc_ecma_ast = "0.79.0"
-swc-coverage-instrument = { version = "0.0.6", path = "../../packages/swc-coverage-instrument" }
+swc-coverage-instrument = { version = "0.0.7", path = "../../packages/swc-coverage-instrument" }
