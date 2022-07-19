@@ -8,5 +8,5 @@ license = "MIT"
 repository = "https://github.com/kwonoj/swc-coverage-instrument"
 
 [dependencies]
-indexmap = { version = "1.8.1", features = ["serde"] }
-serde = { version = "1.0.136", features = ["derive"] }
+indexmap = { version = "1.9.1", features = ["serde"] }
+serde = { version = "1.0.139", features = ["derive"] }
