@@ -1,10 +1,10 @@
-use serde_json::Value;
 use swc_coverage_instrument::{
     create_coverage_instrumentation_visitor, InstrumentLogOptions, InstrumentOptions,
 };
 use swc_plugin::{
     ast::{as_folder, FoldWith, Program},
-    plugin_transform, TransformPluginProgramMetadata,
+    metadata::{TransformPluginMetadataContextKind, TransformPluginProgramMetadata},
+    plugin_transform,
 };
 
 use tracing_subscriber::fmt::format::FmtSpan;
@@ -37,20 +37,23 @@ fn initialize_instrumentation_log(log_options: &InstrumentLogOptions) {
 
 #[plugin_transform]
 pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Program {
-    let context: Value = serde_json::from_str(&metadata.transform_context)
-        .expect("Should able to deserialize context");
-    let filename = if let Some(filename) = (&context["filename"]).as_str() {
+    let filename = metadata.get_context(&TransformPluginMetadataContextKind::Filename);
+    let filename = if let Some(filename) = filename.as_deref() {
         filename
     } else {
         "unknown.js"
     };
 
-    let instrument_options: InstrumentOptions = serde_json::from_str(&metadata.plugin_config)
-        .unwrap_or_else(|f| {
+    let plugin_config = metadata.get_transform_plugin_config();
+    let instrument_options: InstrumentOptions = if let Some(plugin_config) = plugin_config {
+        serde_json::from_str(&plugin_config).unwrap_or_else(|f| {
             println!("Could not deserialize instrumentation option");
             println!("{:#?}", f);
             Default::default()
-        });
+        })
+    } else {
+        Default::default()
+    };
 
     initialize_instrumentation_log(&instrument_options.instrument_log);
 
