@@ -24,6 +24,7 @@
   "files": [
     "package.json",
     "README.md",
+    "LICENSE",
     "target/wasm32-wasi/release/swc_plugin_coverage.wasm"
   ],
   "scripts": {
