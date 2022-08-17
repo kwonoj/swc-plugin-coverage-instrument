@@ -63,7 +63,7 @@ macro_rules! instrumentation_visitor {
 
                         // insert fn counter expression
                         let mut new_stmts = vec![Stmt::Expr(ExprStmt {
-                            span: swc_common::DUMMY_SP,
+                            span: swc_core::common::DUMMY_SP,
                             expr: Box::new(b),
                         })];
                         // if arrow fn body is already blockstmt, insert stmt counter for each
@@ -94,7 +94,7 @@ macro_rules! instrumentation_visitor {
 
                             // insert fn counter expression
                             let mut stmts = vec![Stmt::Expr(ExprStmt {
-                                span: swc_common::DUMMY_SP,
+                                span: swc_core::common::DUMMY_SP,
                                 expr: Box::new(b),
                             })];
 
@@ -113,7 +113,7 @@ macro_rules! instrumentation_visitor {
                             new_stmts.extend(stmts.drain(..));
 
                             arrow_expr.body = BlockStmtOrExpr::BlockStmt(BlockStmt {
-                                span: swc_common::DUMMY_SP,
+                                span: swc_core::common::DUMMY_SP,
                                 stmts: new_stmts,
                             });
                         }
@@ -389,7 +389,7 @@ macro_rules! instrumentation_visitor {
                                     None,
                                 );
                                 let mut prepended_vec = vec![Stmt::Expr(ExprStmt {
-                                    span: swc_common::DUMMY_SP,
+                                    span: swc_core::common::DUMMY_SP,
                                     expr: Box::new(b),
                                 })];
                                 prepended_vec.extend(body.stmts.take());
@@ -444,7 +444,7 @@ macro_rules! instrumentation_visitor {
                                     None,
                                 );
                                 let mut prepended_vec = vec![Stmt::Expr(ExprStmt {
-                                    span: swc_common::DUMMY_SP,
+                                    span: swc_core::common::DUMMY_SP,
                                     expr: Box::new(b),
                                 })];
                                 prepended_vec.extend(body.stmts.take());
@@ -613,7 +613,7 @@ macro_rules! instrumentation_visitor {
                         );
 
                         let expr = Stmt::Expr(ExprStmt {
-                            span: swc_common::DUMMY_SP,
+                            span: swc_core::common::DUMMY_SP,
                             expr: Box::new(expr),
                         });
 
@@ -642,7 +642,7 @@ macro_rules! instrumentation_visitor {
                             stmts.push(stmt_body);
 
                             BlockStmt {
-                                span: swc_common::DUMMY_SP,
+                                span: swc_core::common::DUMMY_SP,
                                 stmts,
                             }
                         };
@@ -814,7 +814,7 @@ macro_rules! instrumentation_visitor {
                         new_stmts.push(*with_stmt.body.take());
 
                         with_stmt.body = Box::new(Stmt::Block(BlockStmt {
-                            span: swc_common::DUMMY_SP,
+                            span: swc_core::common::DUMMY_SP,
                             stmts: new_stmts,
                         }));
                     }

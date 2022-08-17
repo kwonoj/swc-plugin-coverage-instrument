@@ -1,5 +1,7 @@
-use swc_common::{comments::Comments, util::take::Take, SourceMapper};
-use swc_ecmascript::visit::{noop_visit_mut_type, VisitMut, VisitMutWith, VisitWith};
+use swc_core::{
+    common::{comments::Comments, util::take::Take, SourceMapper},
+    visit::{noop_visit_mut_type, VisitMut, VisitMutWith, VisitWith},
+};
 
 use crate::{
     create_instrumentation_visitor, instrumentation_counter_helper,
