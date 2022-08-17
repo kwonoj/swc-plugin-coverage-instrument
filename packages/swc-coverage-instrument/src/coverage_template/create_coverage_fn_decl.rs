@@ -4,13 +4,15 @@ use std::{
 };
 
 use istanbul_oxide::FileCoverage;
-use swc_common::{
-    comments::{Comment, CommentKind, Comments},
-    util::take::Take,
-    Span, DUMMY_SP,
+use swc_core::{
+    ast::*,
+    common::{
+        comments::{Comment, CommentKind, Comments},
+        util::take::Take,
+        Span, DUMMY_SP,
+    },
+    quote,
 };
-use swc_ecma_quote::quote;
-use swc_ecmascript::ast::*;
 
 use once_cell::sync::OnceCell;
 

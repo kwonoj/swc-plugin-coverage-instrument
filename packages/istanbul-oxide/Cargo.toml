@@ -1,12 +1,12 @@
 [package]
-name = "istanbul-oxide"
-version = "0.0.8"
-edition = "2021"
-authors = ["OJ Kwon <kwon.ohjoong@gmail.com>"]
+authors     = ["OJ Kwon <kwon.ohjoong@gmail.com>"]
 description = "Istanbul compatible coverage data struct"
-license = "MIT"
-repository = "https://github.com/kwonoj/swc-coverage-instrument"
+edition     = "2021"
+license     = "MIT"
+name        = "istanbul-oxide"
+repository  = "https://github.com/kwonoj/swc-coverage-instrument"
+version     = "0.0.9"
 
 [dependencies]
 indexmap = { version = "1.9.1", features = ["serde"] }
-serde = { version = "1.0.140", features = ["derive"] }
+serde    = { version = "1.0.143", features = ["derive"] }

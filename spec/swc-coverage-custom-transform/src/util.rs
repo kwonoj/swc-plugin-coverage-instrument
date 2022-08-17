@@ -6,8 +6,10 @@ use std::{
 use anyhow::{anyhow, Context, Error};
 use napi::Status;
 use serde::de::DeserializeOwned;
-use swc::try_with_handler;
-use swc_common::{errors::Handler, sync::Lrc, SourceMap};
+use swc_core::{
+    base::{try_with_handler, HandlerOpts},
+    common::{errors::Handler, sync::Lrc, SourceMap},
+};
 
 pub fn try_with<F, Ret>(cm: Lrc<SourceMap>, skip_filename: bool, op: F) -> Result<Ret, Error>
 where
@@ -15,7 +17,7 @@ where
 {
     try_with_handler(
         cm,
-        swc::HandlerOpts {
+        HandlerOpts {
             skip_filename,
             ..Default::default()
         },

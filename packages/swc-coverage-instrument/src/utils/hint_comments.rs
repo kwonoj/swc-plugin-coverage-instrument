@@ -1,10 +1,12 @@
 use once_cell::sync::Lazy;
 use regex::Regex as Regexp;
-use swc_common::{
-    comments::{Comment, Comments},
-    Span,
+use swc_core::{
+    ast::*,
+    common::{
+        comments::{Comment, Comments},
+        Span,
+    },
 };
-use swc_ecmascript::ast::*;
 
 /// pattern for istanbul to ignore the whole file
 /// This is not fully identical to original file comments

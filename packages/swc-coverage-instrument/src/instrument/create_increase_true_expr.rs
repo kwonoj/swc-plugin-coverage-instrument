@@ -1,5 +1,7 @@
-use swc_common::{util::take::Take, DUMMY_SP};
-use swc_ecmascript::ast::*;
+use swc_core::{
+    ast::*,
+    common::{util::take::Take, DUMMY_SP},
+};
 
 use super::create_increase_counter_expr::create_increase_counter_expr;
 use crate::constants::idents::IDENT_BT;

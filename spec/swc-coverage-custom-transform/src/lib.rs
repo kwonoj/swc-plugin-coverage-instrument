@@ -5,25 +5,24 @@ mod util;
 
 #[macro_use]
 extern crate napi_derive;
-/// Explicit extern crate to use allocator.
-extern crate swc_node_base;
+
+//extern crate swc_core;
 
 use std::{env, panic::set_hook, sync::Arc};
 
 use backtrace::Backtrace;
-use swc::Compiler;
-use swc_common::{self, comments::Comments, sync::Lazy, FilePathMapping, SourceMap};
+
+use swc_core::{
+    base::{config::Options, Compiler, TransformOutput},
+    common::{comments::Comments, sync::Lazy, FileName, FilePathMapping, SourceMap},
+    transforms::pass::noop,
+    visit::{as_folder, Fold},
+};
 use swc_coverage_instrument::{create_coverage_instrumentation_visitor, InstrumentOptions};
 
 use std::path::Path;
 
 use napi::bindgen_prelude::Buffer;
-use swc::{config::Options, TransformOutput};
-use swc_common::FileName;
-use swc_ecmascript::{
-    transforms::pass::noop,
-    visit::{as_folder, Fold},
-};
 
 use crate::util::{get_deserialized, try_with, MapErr};
 
@@ -117,7 +116,7 @@ pub fn transform_sync(
 fn coverage_instrument<
     'a,
     C: Comments + 'a + std::clone::Clone,
-    S: 'a + swc_common::errors::SourceMapper,
+    S: 'a + swc_core::common::errors::SourceMapper,
 >(
     source_map: Arc<S>,
     comments: C,

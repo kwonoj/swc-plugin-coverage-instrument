@@ -9,3 +9,5 @@ index.js
 spec/swc-coverage-custom-transform/target/
 a.js
 swc-plugin-coverage-*.tgz
+/tmp
+trace-*.json

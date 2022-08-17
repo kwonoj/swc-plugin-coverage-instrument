@@ -1,5 +1,7 @@
-use swc_common::{util::take::Take, DUMMY_SP};
-use swc_ecmascript::ast::*;
+use swc_core::{
+    ast::*,
+    common::{util::take::Take, DUMMY_SP},
+};
 
 /// Create an assignment stmt AST for `var $var_decl_ident = $value;`
 pub fn create_assignment_stmt(var_decl_ident: &Ident, value: Expr) -> Stmt {

@@ -1,5 +1,8 @@
-use swc_common::{util::take::Take, DUMMY_SP};
-use swc_ecmascript::{ast::*, utils::quote_ident};
+use swc_core::{
+    ast::*,
+    common::{util::take::Take, DUMMY_SP},
+    utils::quote_ident,
+};
 
 use crate::constants::idents::IDENT_GLOBAL;
 

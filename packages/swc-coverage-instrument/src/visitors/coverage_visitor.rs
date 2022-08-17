@@ -1,6 +1,6 @@
-use swc_common::{comments::Comments, util::take::Take, SourceMapper, DUMMY_SP};
-use swc_ecmascript::{
+use swc_core::{
     ast::*,
+    common::{comments::Comments, util::take::Take, SourceMapper, DUMMY_SP},
     visit::{noop_visit_mut_type, VisitMut, VisitMutWith, VisitWith},
 };
 use tracing::instrument;
