@@ -1,10 +1,13 @@
+use swc_core::{
+    ast::Program,
+    plugin::{
+        metadata::TransformPluginMetadataContextKind, plugin_transform,
+        proxies::TransformPluginProgramMetadata,
+    },
+    visit::*,
+};
 use swc_coverage_instrument::{
     create_coverage_instrumentation_visitor, InstrumentLogOptions, InstrumentOptions,
-};
-use swc_plugin::{
-    ast::{as_folder, FoldWith, Program},
-    metadata::{TransformPluginMetadataContextKind, TransformPluginProgramMetadata},
-    plugin_transform,
 };
 
 use tracing_subscriber::fmt::format::FmtSpan;
