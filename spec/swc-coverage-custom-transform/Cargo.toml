@@ -12,18 +12,18 @@ napi-build = "2.0.1"
 [dependencies]
 anyhow = "1.0.62"
 backtrace = "0.3.66"
-napi = { version = "2.8.0", default-features = false, features = [
+napi = { version = "2.9.0", default-features = false, features = [
   "napi3",
   "serde-json",
 ] }
-napi-derive = { version = "2.8.0", default-features = false, features = [
+napi-derive = { version = "2.9.0", default-features = false, features = [
   "type-def",
 ] }
-serde = { version = "1.0.143", features = ["derive"] }
-serde_json = { version = "1.0.83", features = ["unbounded_depth"] }
-swc-coverage-instrument = { version = "0.0.10", path = "../../packages/swc-coverage-instrument" }
+serde = { version = "1.0.144", features = ["derive"] }
+serde_json = { version = "1.0.85", features = ["unbounded_depth"] }
+swc-coverage-instrument = { version = "0.0.11", path = "../../packages/swc-coverage-instrument" }
 
-swc_core = { version = "0.7.20", features = [
+swc_core = { version = "0.11.8", features = [
   "common_concurrent",
   "transforms",
   "ast",

@@ -7,7 +7,7 @@ version = "0.1.0"
 crate-type = ["cdylib"]
 
 [dependencies]
-serde                   = { version = "1.0.143", features = ["derive"] }
+serde                   = { version = "1.0.144", features = ["derive"] }
 serde-wasm-bindgen      = "0.4.3"
-swc-coverage-instrument = { version = "0.0.10", path = "../../packages/swc-coverage-instrument" }
+swc-coverage-instrument = { version = "0.0.11", path = "../../packages/swc-coverage-instrument" }
 wasm-bindgen            = { version = "0.2.82", features = ["serde-serialize"] }
