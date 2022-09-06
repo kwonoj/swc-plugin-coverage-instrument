@@ -480,7 +480,7 @@ checksum = "616cde7c720bb2bb5824a224687d8f77bfd38922027f01d825cd7453be5099fb"
 
 [[package]]
 name = "istanbul-oxide"
-version = "0.0.11"
+version = "0.0.12"
 dependencies = [
  "indexmap",
  "serde",
@@ -1291,7 +1291,7 @@ dependencies = [
 
 [[package]]
 name = "swc-coverage-instrument"
-version = "0.0.11"
+version = "0.0.12"
 dependencies = [
  "istanbul-oxide",
  "once_cell",
@@ -1315,7 +1315,7 @@ dependencies = [
 
 [[package]]
 name = "swc-plugin-coverage"
-version = "0.0.11"
+version = "0.0.12"
 dependencies = [
  "serde_json",
  "swc-coverage-instrument",
