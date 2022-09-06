@@ -1,10 +1,9 @@
 use swc_core::{
-    ast::Program,
+    ecma::{ast::Program, visit::*},
     plugin::{
         metadata::TransformPluginMetadataContextKind, plugin_transform,
         proxies::TransformPluginProgramMetadata,
     },
-    visit::*,
 };
 use swc_coverage_instrument::{
     create_coverage_instrumentation_visitor, InstrumentLogOptions, InstrumentOptions,

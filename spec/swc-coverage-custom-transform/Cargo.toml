@@ -10,7 +10,7 @@ crate-type = ["cdylib", "rlib"]
 napi-build = "2.0.1"
 
 [dependencies]
-anyhow = "1.0.62"
+anyhow = "1.0.64"
 backtrace = "0.3.66"
 napi = { version = "2.9.0", default-features = false, features = [
   "napi3",
@@ -23,11 +23,11 @@ serde = { version = "1.0.144", features = ["derive"] }
 serde_json = { version = "1.0.85", features = ["unbounded_depth"] }
 swc-coverage-instrument = { version = "0.0.11", path = "../../packages/swc-coverage-instrument" }
 
-swc_core = { version = "0.11.8", features = [
+swc_core = { version = "0.20.12", features = [
   "common_concurrent",
-  "transforms",
-  "ast",
+  "ecma_transforms",
+  "ecma_ast",
   "allocator_node",
-  "visit",
+  "ecma_visit",
   "base_node",
 ] }

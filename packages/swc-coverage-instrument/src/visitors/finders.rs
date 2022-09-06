@@ -1,4 +1,4 @@
-use swc_core::{
+use swc_core::ecma::{
     ast::*,
     visit::{Visit, VisitWith},
 };

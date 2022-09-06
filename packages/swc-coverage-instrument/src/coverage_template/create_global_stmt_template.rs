@@ -1,7 +1,6 @@
 use swc_core::{
-    ast::*,
     common::{util::take::Take, DUMMY_SP},
-    utils::quote_ident,
+    ecma::{ast::*, utils::quote_ident},
 };
 
 use crate::constants::idents::IDENT_GLOBAL;

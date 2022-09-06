@@ -15,8 +15,10 @@ use backtrace::Backtrace;
 use swc_core::{
     base::{config::Options, Compiler, TransformOutput},
     common::{comments::Comments, sync::Lazy, FileName, FilePathMapping, SourceMap},
-    transforms::pass::noop,
-    visit::{as_folder, Fold},
+    ecma::{
+        transforms::base::pass::noop,
+        visit::{as_folder, Fold},
+    },
 };
 use swc_coverage_instrument::{create_coverage_instrumentation_visitor, InstrumentOptions};
 

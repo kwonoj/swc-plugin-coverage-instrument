@@ -1,6 +1,6 @@
 use swc_core::{
-    ast::*,
     common::{util::take::Take, DUMMY_SP},
+    ecma::ast::*,
 };
 
 use super::create_increase_counter_expr::create_increase_counter_expr;

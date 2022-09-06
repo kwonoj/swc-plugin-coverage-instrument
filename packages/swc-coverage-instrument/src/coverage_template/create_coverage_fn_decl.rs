@@ -5,12 +5,12 @@ use std::{
 
 use istanbul_oxide::FileCoverage;
 use swc_core::{
-    ast::*,
     common::{
         comments::{Comment, CommentKind, Comments},
         util::take::Take,
         Span, DUMMY_SP,
     },
+    ecma::ast::*,
     quote,
 };
 

@@ -1,6 +1,6 @@
 use swc_core::{
     common::{comments::Comments, util::take::Take, SourceMapper},
-    visit::{VisitMut, VisitMutWith, VisitWith},
+    ecma::visit::{VisitMut, VisitMutWith, VisitWith},
 };
 use tracing::instrument;
 
