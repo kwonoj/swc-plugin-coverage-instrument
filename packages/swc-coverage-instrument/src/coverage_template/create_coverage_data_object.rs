@@ -5,8 +5,8 @@ use std::{
 
 use istanbul_oxide::{Branch, FileCoverage, Range};
 use swc_core::{
-    ast::*,
     common::{util::take::Take, DUMMY_SP},
+    ecma::ast::*,
 };
 
 use crate::constants::idents::*;

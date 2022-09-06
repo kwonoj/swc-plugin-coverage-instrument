@@ -1,6 +1,6 @@
 {
   "name": "swc-plugin-coverage-instrument",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "SWC coverage instrumentation plugin",
   "main": "./target/wasm32-wasi/release/swc_plugin_coverage.wasm",
   "napi": {
@@ -58,7 +58,7 @@
   "devDependencies": {
     "@napi-rs/cli": "^2.11.0",
     "@swc-node/register": "^1.5.1",
-    "@swc/core": "^1.2.242",
+    "@swc/core": "^1.2.248",
     "@taplo/cli": "^0.4.2",
     "@types/chai": "^4.3.3",
     "@types/js-yaml": "^4.0.5",

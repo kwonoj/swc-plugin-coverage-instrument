@@ -1,6 +1,6 @@
 //! Static ident declarations being used across template
 use once_cell::sync::Lazy;
-use swc_core::{ast::Ident, common::util::take::Take};
+use swc_core::{common::util::take::Take, ecma::ast::Ident};
 
 pub static IDENT_ALL: Lazy<Ident> = Lazy::new(|| Ident {
     sym: "all".into(),

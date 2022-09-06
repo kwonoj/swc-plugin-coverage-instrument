@@ -1,7 +1,9 @@
 use swc_core::{
-    ast::*,
     common::{comments::Comments, util::take::Take, SourceMapper, DUMMY_SP},
-    visit::{noop_visit_mut_type, VisitMut, VisitMutWith, VisitWith},
+    ecma::{
+        ast::*,
+        visit::{noop_visit_mut_type, VisitMut, VisitMutWith, VisitWith},
+    },
 };
 use tracing::instrument;
 

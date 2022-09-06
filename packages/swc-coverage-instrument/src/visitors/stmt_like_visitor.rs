@@ -1,6 +1,6 @@
 use swc_core::{
     common::{comments::Comments, util::take::Take, SourceMapper},
-    visit::{noop_visit_mut_type, VisitMut, VisitMutWith, VisitWith},
+    ecma::visit::{noop_visit_mut_type, VisitMut, VisitMutWith, VisitWith},
 };
 
 use crate::{

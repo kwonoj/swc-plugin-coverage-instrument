@@ -1,6 +1,6 @@
 use swc_core::{
-    ast::*,
     common::{util::take::Take, DUMMY_SP},
+    ecma::ast::*,
 };
 
 /// Create an assignment stmt AST for `var $var_decl_ident = $value;`

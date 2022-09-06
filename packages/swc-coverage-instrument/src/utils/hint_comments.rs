@@ -1,11 +1,11 @@
 use once_cell::sync::Lazy;
 use regex::Regex as Regexp;
 use swc_core::{
-    ast::*,
     common::{
         comments::{Comment, Comments},
         Span,
     },
+    ecma::ast::*,
 };
 
 /// pattern for istanbul to ignore the whole file

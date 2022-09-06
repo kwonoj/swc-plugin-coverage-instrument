@@ -3,8 +3,8 @@ use std::sync::Arc;
 use istanbul_oxide::Range;
 
 use swc_core::{
-    ast::*,
     common::{SourceMapper, Span},
+    ecma::ast::*,
 };
 
 pub fn get_range_from_span<S: SourceMapper>(source_map: &Arc<S>, span: &Span) -> Range {
