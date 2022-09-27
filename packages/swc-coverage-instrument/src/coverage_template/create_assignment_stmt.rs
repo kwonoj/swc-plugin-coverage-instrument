@@ -5,7 +5,7 @@ use swc_core::{
 
 /// Create an assignment stmt AST for `var $var_decl_ident = $value;`
 pub fn create_assignment_stmt(var_decl_ident: &Ident, value: Expr) -> Stmt {
-    Stmt::Decl(Decl::Var(VarDecl {
+    Stmt::Decl(Decl::Var(Box::new(VarDecl {
         kind: VarDeclKind::Var,
         decls: vec![VarDeclarator {
             span: DUMMY_SP,
@@ -19,5 +19,5 @@ pub fn create_assignment_stmt(var_decl_ident: &Ident, value: Expr) -> Stmt {
             definite: false,
         }],
         ..VarDecl::dummy()
-    }))
+    })))
 }

@@ -41,31 +41,29 @@ macro_rules! instrumentation_branch_wrap_counter_helper {
                 &crate::Range,
             ) -> Expr,
         {
-            let span = crate::lookup_range::get_expr_span(expr);
-            if let Some(span) = span {
-                let init_range = crate::lookup_range::get_range_from_span(&self.source_map, span);
-                let prepend_expr =
-                    get_counter(&mut self.cov.borrow_mut(), &self.cov_fn_ident, &init_range);
+            let span = expr.span();
+            let init_range = crate::lookup_range::get_range_from_span(&self.source_map, &span);
+            let prepend_expr =
+                get_counter(&mut self.cov.borrow_mut(), &self.cov_fn_ident, &init_range);
 
-                let paren_expr = Expr::Paren(ParenExpr {
+            let paren_expr = Expr::Paren(ParenExpr {
+                span: swc_core::common::DUMMY_SP,
+                expr: Box::new(Expr::Seq(SeqExpr {
                     span: swc_core::common::DUMMY_SP,
-                    expr: Box::new(Expr::Seq(SeqExpr {
-                        span: swc_core::common::DUMMY_SP,
-                        exprs: vec![Box::new(prepend_expr), Box::new(expr.take())],
-                    })),
-                });
+                    exprs: vec![Box::new(prepend_expr), Box::new(expr.take())],
+                })),
+            });
 
-                // replace init with increase expr + init seq
-                *expr = paren_expr;
-            }
+            // replace init with increase expr + init seq
+            *expr = paren_expr;
         }
 
         /// Attempt to wrap expression with branch increase counter.
         /// Given Expr may be left, or right of the logical expression.
         #[tracing::instrument(skip_all)]
         fn wrap_bin_expr_with_branch_counter(&mut self, branch: u32, expr: &mut Expr) {
-            let span = crate::lookup_range::get_expr_span(expr);
-            let should_ignore = crate::hint_comments::should_ignore(&self.comments, span);
+            let span = expr.span();
+            let should_ignore = crate::hint_comments::should_ignore(&self.comments, Some(&span));
 
             if let Some(crate::hint_comments::IgnoreScope::Next) = should_ignore {
                 return;
@@ -94,35 +92,31 @@ macro_rules! instrumentation_branch_wrap_counter_helper {
                 // Now we believe this expr is the leaf of the logical expr tree.
                 // Wrap it with branch counter.
                 if self.instrument_options.report_logic {
-                    if let Some(span) = span {
-                        let range =
-                            crate::lookup_range::get_range_from_span(&self.source_map, span);
-                        let branch_path_index =
-                            self.cov.borrow_mut().add_branch_path(branch, &range);
+                    let range = crate::lookup_range::get_range_from_span(&self.source_map, &span);
+                    let branch_path_index = self.cov.borrow_mut().add_branch_path(branch, &range);
 
-                        let increase_expr = crate::create_increase_counter_expr(
-                            &crate::constants::idents::IDENT_B,
-                            branch,
-                            &self.cov_fn_ident,
-                            Some(branch_path_index),
-                        );
-                        let increase_true_expr = crate::create_increase_true_expr(
-                            branch,
-                            branch_path_index,
-                            &self.cov_fn_ident,
-                            &self.cov_fn_temp_ident,
-                            expr.take(),
-                        );
+                    let increase_expr = crate::create_increase_counter_expr(
+                        &crate::constants::idents::IDENT_B,
+                        branch,
+                        &self.cov_fn_ident,
+                        Some(branch_path_index),
+                    );
+                    let increase_true_expr = crate::create_increase_true_expr(
+                        branch,
+                        branch_path_index,
+                        &self.cov_fn_ident,
+                        &self.cov_fn_temp_ident,
+                        expr.take(),
+                    );
 
-                        // TODO: duplicated code with replace_expr_with_counter
-                        let paren_expr = Expr::Seq(SeqExpr {
-                            span: swc_core::common::DUMMY_SP,
-                            exprs: vec![Box::new(increase_expr), Box::new(increase_true_expr)],
-                        });
+                    // TODO: duplicated code with replace_expr_with_counter
+                    let paren_expr = Expr::Seq(SeqExpr {
+                        span: swc_core::common::DUMMY_SP,
+                        exprs: vec![Box::new(increase_expr), Box::new(increase_true_expr)],
+                    });
 
-                        // replace init with increase expr + init seq
-                        *expr = paren_expr;
-                    }
+                    // replace init with increase expr + init seq
+                    *expr = paren_expr;
                 } else {
                     self.replace_expr_with_branch_counter(expr, branch);
                 }
@@ -240,69 +234,67 @@ macro_rules! instrumentation_counter_helper {
         }
 
         fn cover_statement(&mut self, expr: &mut Expr) {
-            let span = crate::lookup_range::get_expr_span(expr);
+            let span = expr.span();
             // This is ugly, poor man's substitute to istanbul's `insertCounter` to determine
             // when to replace givn expr to wrapped Paren or prepend stmt counter.
             // We can't do insert parent node's sibling in downstream's child node.
             // TODO: there should be a better way.
-            if let Some(span) = span {
-                let mut block = crate::visitors::finders::BlockStmtFinder::new();
-                expr.visit_with(&mut block);
-                // TODO: this may not required as visit_mut_block_stmt recursively visits inner instead.
-                if block.0 {
-                    //path.node.body.unshift(T.expressionStatement(increment));
-                    self.mark_prepend_stmt_counter(span);
-                    return;
-                }
+            let mut block = crate::visitors::finders::BlockStmtFinder::new();
+            expr.visit_with(&mut block);
+            // TODO: this may not required as visit_mut_block_stmt recursively visits inner instead.
+            if block.0 {
+                //path.node.body.unshift(T.expressionStatement(increment));
+                self.mark_prepend_stmt_counter(&span);
+                return;
+            }
 
-                let mut stmt = crate::visitors::finders::StmtFinder::new();
-                expr.visit_with(&mut stmt);
-                if stmt.0 {
-                    //path.insertBefore(T.expressionStatement(increment));
-                    self.mark_prepend_stmt_counter(span);
-                }
+            let mut stmt = crate::visitors::finders::StmtFinder::new();
+            expr.visit_with(&mut stmt);
+            if stmt.0 {
+                //path.insertBefore(T.expressionStatement(increment));
+                self.mark_prepend_stmt_counter(&span);
+            }
 
-                let mut hoist = crate::visitors::finders::HoistingFinder::new();
-                expr.visit_with(&mut hoist);
-                let parent = self.nodes.last().unwrap().clone();
-                if hoist.0 && parent == crate::Node::VarDeclarator {
-                    // TODO: need to polish logic to determine prepending instead of traversing parent node types
-                    let nodes_len = self.nodes.len();
-                    let parent_index = if nodes_len >= (3 as usize) {
-                        nodes_len - 3
+            let mut hoist = crate::visitors::finders::HoistingFinder::new();
+            expr.visit_with(&mut hoist);
+            let parent = self.nodes.last().unwrap().clone();
+            if hoist.0 && parent == crate::Node::VarDeclarator {
+                // TODO: need to polish logic to determine prepending instead of traversing parent node types
+                let nodes_len = self.nodes.len();
+                let parent_index = if nodes_len >= (3 as usize) {
+                    nodes_len - 3
+                } else {
+                    0
+                };
+                let parent = self.nodes.get(parent_index);
+
+                if parent.is_some() {
+                    let parent_index = if nodes_len >= (4 as usize) {
+                        nodes_len - 4
                     } else {
                         0
                     };
                     let parent = self.nodes.get(parent_index);
 
-                    if parent.is_some() {
-                        let parent_index = if nodes_len >= (4 as usize) {
-                            nodes_len - 4
-                        } else {
-                            0
-                        };
-                        let parent = self.nodes.get(parent_index);
-
-                        if let Some(parent) = parent {
-                            match parent {
-                                crate::Node::BlockStmt | crate::Node::Program => {
-                                    self.mark_prepend_stmt_counter(span);
-                                }
-                                _ => {}
+                    if let Some(parent) = parent {
+                        match parent {
+                            crate::Node::BlockStmt | crate::Node::Program => {
+                                self.mark_prepend_stmt_counter(&span);
                             }
+                            _ => {}
                         }
-                    } else {
-                        self.replace_expr_with_stmt_counter(expr);
                     }
-
-                    return;
-                }
-
-                let mut expr_finder = crate::visitors::finders::ExprFinder::new();
-                expr.visit_with(&mut expr_finder);
-                if expr_finder.0 {
+                } else {
                     self.replace_expr_with_stmt_counter(expr);
                 }
+
+                return;
+            }
+
+            let mut expr_finder = crate::visitors::finders::ExprFinder::new();
+            expr.visit_with(&mut expr_finder);
+            if expr_finder.0 {
+                self.replace_expr_with_stmt_counter(expr);
             }
         }
     };

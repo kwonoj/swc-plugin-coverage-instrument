@@ -77,46 +77,44 @@ macro_rules! instrumentation_visitor {
                             &self.source_map,
                             &arrow_expr.span,
                         );
-                        let span = crate::lookup_range::get_expr_span(expr);
-                        if let Some(span) = span {
-                            let body_range =
-                                crate::lookup_range::get_range_from_span(&self.source_map, &span);
-                            let index =
-                                self.cov
-                                    .borrow_mut()
-                                    .new_function(&None, &range, &body_range);
-                            let b = crate::create_increase_counter_expr(
-                                &crate::constants::idents::IDENT_F,
-                                index,
-                                &self.cov_fn_ident,
-                                None,
-                            );
+                        let span = expr.span();
+                        let body_range =
+                            crate::lookup_range::get_range_from_span(&self.source_map, &span);
+                        let index = self
+                            .cov
+                            .borrow_mut()
+                            .new_function(&None, &range, &body_range);
+                        let b = crate::create_increase_counter_expr(
+                            &crate::constants::idents::IDENT_F,
+                            index,
+                            &self.cov_fn_ident,
+                            None,
+                        );
 
-                            // insert fn counter expression
-                            let mut stmts = vec![Stmt::Expr(ExprStmt {
-                                span: swc_core::common::DUMMY_SP,
-                                expr: Box::new(b),
-                            })];
+                        // insert fn counter expression
+                        let mut stmts = vec![Stmt::Expr(ExprStmt {
+                            span: swc_core::common::DUMMY_SP,
+                            expr: Box::new(b),
+                        })];
 
-                            // single line expr in arrow fn need to be converted into return stmt
-                            // Note we should preserve original expr's span, otherwise statementmap will lose correct
-                            // code location
-                            let ret = Stmt::Return(ReturnStmt {
-                                span: span.clone(),
-                                arg: Some(expr.take()),
-                            });
-                            stmts.push(ret);
+                        // single line expr in arrow fn need to be converted into return stmt
+                        // Note we should preserve original expr's span, otherwise statementmap will lose correct
+                        // code location
+                        let ret = Stmt::Return(ReturnStmt {
+                            span: span.clone(),
+                            arg: Some(expr.take()),
+                        });
+                        stmts.push(ret);
 
-                            let mut new_stmts = vec![];
-                            // insert stmt counter for the returnstmt we made above
-                            self.insert_stmts_counter(&mut stmts);
-                            new_stmts.extend(stmts.drain(..));
+                        let mut new_stmts = vec![];
+                        // insert stmt counter for the returnstmt we made above
+                        self.insert_stmts_counter(&mut stmts);
+                        new_stmts.extend(stmts.drain(..));
 
-                            arrow_expr.body = BlockStmtOrExpr::BlockStmt(BlockStmt {
-                                span: swc_core::common::DUMMY_SP,
-                                stmts: new_stmts,
-                            });
-                        }
+                        arrow_expr.body = BlockStmtOrExpr::BlockStmt(BlockStmt {
+                            span: swc_core::common::DUMMY_SP,
+                            stmts: new_stmts,
+                        });
                     }
                 },
             }
