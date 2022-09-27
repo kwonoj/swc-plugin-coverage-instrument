@@ -7,7 +7,7 @@
 macro_rules! create_instrumentation_visitor {
     ($name:ident { $($vis: vis $field:ident: $t:ty),* $(,)? }) => {
         #[allow(unused)]
-        use swc_core::{common::Span, ecma::ast::*};
+        use swc_core::{common::{Span, Spanned}, ecma::ast::*};
 
         // Declare a struct, expand fields commonly used for any instrumentation visitor.
         pub struct $name<C: Clone + swc_core::common::comments::Comments, S: swc_core::common::SourceMapper> {
@@ -110,26 +110,24 @@ macro_rules! create_instrumentation_visitor {
         impl<C: Clone + swc_core::common::comments::Comments, S: swc_core::common::SourceMapper> CoverageInstrumentationMutVisitEnter<Expr> for $name<C, S> {
             fn on_enter(&mut self, n: &mut swc_core::ecma::ast::Expr) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::Expr);
-                let span = crate::lookup_range::get_expr_span(n);
-                self.on_enter_with_span(span)
+                let span = n.span();
+                self.on_enter_with_span(Some(&span))
             }
          }
 
          impl<C: Clone + swc_core::common::comments::Comments, S: swc_core::common::SourceMapper> CoverageInstrumentationMutVisitEnter<Stmt> for $name<C, S> {
             fn on_enter(&mut self, n: &mut Stmt) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::Stmt);
-                let span = crate::lookup_range::get_stmt_span(n);
-
-                self.on_enter_with_span(span)
+                self.on_enter_with_span(Some(&n.span()))
             }
          }
 
          impl<C: Clone + swc_core::common::comments::Comments, S: swc_core::common::SourceMapper> CoverageInstrumentationMutVisitEnter<ModuleDecl> for $name<C, S> {
             fn on_enter(&mut self, n: &mut swc_core::ecma::ast::ModuleDecl) -> (Option<crate::hint_comments::IgnoreScope>, Option<crate::hint_comments::IgnoreScope>) {
                 self.nodes.push(crate::Node::ModuleDecl);
-                let span = crate::lookup_range::get_module_decl_span(n);
+                let span = n.span();
 
-                self.on_enter_with_span(span)
+                self.on_enter_with_span(Some(&span))
             }
          }
 

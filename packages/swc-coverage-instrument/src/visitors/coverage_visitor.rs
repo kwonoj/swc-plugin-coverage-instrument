@@ -250,11 +250,11 @@ impl<C: Clone + Comments, S: SourceMapper> VisitMut for CoverageVisitor<C, S> {
 
                 let c_hint = crate::hint_comments::lookup_hint_comments(
                     &self.comments,
-                    crate::lookup_range::get_expr_span(&*cond_expr.cons),
+                    Some(&cond_expr.cons.span()),
                 );
                 let a_hint = crate::hint_comments::lookup_hint_comments(
                     &self.comments,
-                    crate::lookup_range::get_expr_span(&*cond_expr.alt),
+                    Some(&cond_expr.alt.span()),
                 );
 
                 if c_hint.as_deref() != Some("next") {

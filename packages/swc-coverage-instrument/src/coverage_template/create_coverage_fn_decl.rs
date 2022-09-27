@@ -126,7 +126,7 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
         )))),
         right: Box::new(Expr::Fn(FnExpr {
             ident: None,
-            function: Function {
+            function: Box::new(Function {
                 body: Some(BlockStmt {
                     span: DUMMY_SP,
                     stmts: vec![Stmt::Return(ReturnStmt {
@@ -135,7 +135,7 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
                     })],
                 }),
                 ..Function::dummy()
-            },
+            }),
         })),
         ..AssignExpr::dummy()
     });
@@ -176,12 +176,12 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
     Stmt::Decl(Decl::Fn(FnDecl {
         ident: cov_fn_ident.clone(),
         declare: false,
-        function: Function {
+        function: Box::new(Function {
             body: Some(BlockStmt {
                 span: DUMMY_SP,
                 stmts,
             }),
             ..Function::dummy()
-        },
+        }),
     }))
 }
