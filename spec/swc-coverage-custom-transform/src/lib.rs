@@ -14,7 +14,11 @@ use backtrace::Backtrace;
 
 use swc_core::{
     base::{config::Options, Compiler, TransformOutput},
-    common::{comments::Comments, sync::Lazy, FileName, FilePathMapping, SourceMap},
+    common::{
+        comments::{Comments, SingleThreadedComments},
+        sync::Lazy,
+        FileName, FilePathMapping, SourceMap,
+    },
     ecma::{
         transforms::base::pass::noop,
         visit::{as_folder, Fold},
@@ -93,13 +97,16 @@ pub fn transform_sync(
                     FileName::Real(options.filename.clone().into())
                 };
 
+                let comments = SingleThreadedComments::default();
+
                 let fm = c.cm.new_source_file(filename.clone(), s);
                 c.process_js_with_custom_pass(
                     fm,
                     None,
                     handler,
                     &options,
-                    |_program, comments| {
+                    comments.clone(),
+                    |_program| {
                         coverage_instrument(
                             c.cm.clone(),
                             comments.clone(),
@@ -107,7 +114,7 @@ pub fn transform_sync(
                             filename.to_string(),
                         )
                     },
-                    |_, _| noop(),
+                    |_| noop(),
                 )
             })
         },
