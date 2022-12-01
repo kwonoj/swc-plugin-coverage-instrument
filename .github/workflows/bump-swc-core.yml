@@ -21,6 +21,16 @@ jobs:
       with:
         node-version: 16
 
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
@@ -44,7 +54,6 @@ jobs:
         # Note: we could use https://docs.github.com/en/actions/learn-github-actions/expressions#fromjson instead, but
         # that'll make local debugging harder
         echo "is_outdated=$(cargo outdated -p swc_core --format=json | jq 'select(if .dependencies | length == 0 then false else true end).dependencies' | jq -n '[inputs []] | length')" >> $GITHUB_OUTPUT
-
     - name: Run auto dependency update
       uses: romoh/dependencies-autoupdate@v1
       # Check previous step output to see if there are outdated deps
