@@ -1,0 +1,63 @@
+name: Bump up swc_core
+
+on:
+  pull_request:
+    types: ['opened', 'reopened', 'synchronize']
+  push:
+    branches:
+      - main
+
+jobs:
+  upgrade-swc-core:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+
+    - name: Setup node
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        override: true
+
+    - uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: "cargo-test"
+        cache-on-failure: true
+
+    - name: Cargo outdated
+      # Setting the id of the step to be used in the next step to references outdated deps count
+      id: outdated
+      run: |
+        cargo install --locked cargo-outdated
+        cargo install --locked cargo-edit
+        # Run cargo-outdated checking swc_core, output as json format
+        # Then run jq to selecto `dependencies` property and select only if it have elements
+        # Then pipe it to create flattened array, count length then save it as output
+        # Note: we could use https://docs.github.com/en/actions/learn-github-actions/expressions#fromjson instead, but
+        # that'll make local debugging harder
+        echo "is_outdated=$(cargo outdated -p swc_core --format=json | jq 'select(if .dependencies | length == 0 then false else true end).dependencies' | jq -n '[inputs []] | length')" >> $GITHUB_OUTPUT
+    - name: Run auto dependency update
+      uses: romoh/dependencies-autoupdate@v1
+      # Check previous step output to see if there are outdated deps
+      if: steps.outdated.outputs.is_outdated != 0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        update-command: "'cargo upgrade -p swc_core && cargo test --all'"
