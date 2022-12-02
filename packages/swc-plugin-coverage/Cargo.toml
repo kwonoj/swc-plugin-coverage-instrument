@@ -1,18 +1,1 @@
-[package]
-authors     = ["OJ Kwon <kwon.ohjoong@gmail.com>"]
-description = "Istanbul compatible coverage instrumentation plugin for SWC"
-edition     = "2021"
-license     = "MIT"
-name        = "swc-plugin-coverage"
-repository  = "https://github.com/kwonoj/swc-coverage-instrument"
-version     = "0.0.14"
-
-[lib]
-crate-type = ["cdylib"]
-
-[dependencies]
-serde_json              = "1.0.87"
-swc-coverage-instrument = { version = "0.0.14", path = "../swc-coverage-instrument" }
-swc_core                = { version = "0.43.2", features = ["plugin_transform"] }
-tracing                 = "0.1.37"
-tracing-subscriber      = { version = "0.3.16", features = ["fmt"] }
+W3BhY2thZ2VdCmF1dGhvcnMgICAgID0gWyJPSiBLd29uIDxrd29uLm9oam9vbmdAZ21haWwuY29tPiJdCmRlc2NyaXB0aW9uID0gIklzdGFuYnVsIGNvbXBhdGlibGUgY292ZXJhZ2UgaW5zdHJ1bWVudGF0aW9uIHBsdWdpbiBmb3IgU1dDIgplZGl0aW9uICAgICA9ICIyMDIxIgpsaWNlbnNlICAgICA9ICJNSVQiCm5hbWUgICAgICAgID0gInN3Yy1wbHVnaW4tY292ZXJhZ2UiCnJlcG9zaXRvcnkgID0gImh0dHBzOi8vZ2l0aHViLmNvbS9rd29ub2ovc3djLWNvdmVyYWdlLWluc3RydW1lbnQiCnZlcnNpb24gICAgID0gIjAuMC4xNCIKCltsaWJdCmNyYXRlLXR5cGUgPSBbImNkeWxpYiJdCgpbZGVwZW5kZW5jaWVzXQpzZXJkZV9qc29uICAgICAgICAgICAgICA9ICIxLjAuODciCnN3Yy1jb3ZlcmFnZS1pbnN0cnVtZW50ID0geyB2ZXJzaW9uID0gIjAuMC4xNCIsIHBhdGggPSAiLi4vc3djLWNvdmVyYWdlLWluc3RydW1lbnQiIH0Kc3djX2NvcmUgICAgICAgICAgICAgICAgPSB7IHZlcnNpb24gPSAiMC40My40MSIsIGZlYXR1cmVzID0gWyJwbHVnaW5fdHJhbnNmb3JtIl0gfQp0cmFjaW5nICAgICAgICAgICAgICAgICA9ICIwLjEuMzciCnRyYWNpbmctc3Vic2NyaWJlciAgICAgID0geyB2ZXJzaW9uID0gIjAuMy4xNiIsIGZlYXR1cmVzID0gWyJmbXQiXSB9Cg==
