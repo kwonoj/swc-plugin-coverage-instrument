@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '0 0 * * *'
     - cron: '0 6 * * *'
+  pull_request:
+    types: ['opened', 'reopened', 'synchronize']
+  push:
+    branches:
+      - main
 
 jobs:
   upgrade-swc-core:
