@@ -363,7 +363,6 @@ macro_rules! instrumentation_visitor {
                 _ => {
                     // TODO: this does not cover all of PropName enum yet
                     // TODO: duplicated logic between class_method
-                    println!("getter_prop: {:?}", getter_prop);
                     if let PropName::Ident(ident) = &getter_prop.key {
                         let should_ignore_via_options = self
                             .instrument_options
