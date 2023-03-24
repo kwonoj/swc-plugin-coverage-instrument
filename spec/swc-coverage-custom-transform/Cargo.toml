@@ -21,7 +21,7 @@ napi-derive = { version = "2.9.3", default-features = false, features = [
 ] }
 serde = { version = "1.0.151", features = ["derive"] }
 serde_json = { version = "1.0.90", features = ["unbounded_depth"] }
-swc-coverage-instrument = { version = "0.0.14", path = "../../packages/swc-coverage-instrument" }
+swc-coverage-instrument = { version = "0.0.15", path = "../../packages/swc-coverage-instrument" }
 
 swc_core = { version = "0.69.30", features = [
   "common_concurrent",

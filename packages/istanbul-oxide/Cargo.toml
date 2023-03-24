@@ -5,7 +5,7 @@ edition     = "2021"
 license     = "MIT"
 name        = "istanbul-oxide"
 repository  = "https://github.com/kwonoj/swc-coverage-instrument"
-version     = "0.0.14"
+version     = "0.0.15"
 
 [dependencies]
 indexmap = { version = "1.9.2", features = ["serde"] }
