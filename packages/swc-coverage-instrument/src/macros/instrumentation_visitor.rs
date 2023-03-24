@@ -40,7 +40,7 @@ macro_rules! instrumentation_visitor {
             let (old, ignore_current) = self.on_enter(arrow_expr);
             match ignore_current {
                 Some(crate::hint_comments::IgnoreScope::Next) => {}
-                _ => match &mut arrow_expr.body {
+                _ => match &mut *arrow_expr.body {
                     BlockStmtOrExpr::BlockStmt(block_stmt) => {
                         let range = crate::lookup_range::get_range_from_span(
                             &self.source_map,
@@ -111,10 +111,10 @@ macro_rules! instrumentation_visitor {
                         self.insert_stmts_counter(&mut stmts);
                         new_stmts.extend(stmts.drain(..));
 
-                        arrow_expr.body = BlockStmtOrExpr::BlockStmt(BlockStmt {
+                        arrow_expr.body = Box::new(BlockStmtOrExpr::BlockStmt(BlockStmt {
                             span: swc_core::common::DUMMY_SP,
                             stmts: new_stmts,
-                        });
+                        }));
                     }
                 },
             }
