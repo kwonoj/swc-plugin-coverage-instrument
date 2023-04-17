@@ -23,7 +23,7 @@ serde = { version = "1.0.151", features = ["derive"] }
 serde_json = { version = "1.0.90", features = ["unbounded_depth"] }
 swc-coverage-instrument = { version = "0.0.16", path = "../../packages/swc-coverage-instrument" }
 
-swc_core = { version = "0.75.11", features = [
+swc_core = { git = "https://github.com/swc-project/swc", rev = "dd561005858a65ca169e312c61bd5bbfc3b1f168", features = [
   "common_concurrent",
   "ecma_transforms",
   "ecma_ast",
