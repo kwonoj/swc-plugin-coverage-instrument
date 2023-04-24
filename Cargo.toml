@@ -9,3 +9,14 @@ members = [
 
 [profile.release]
 lto = true
+
+[workspace.dependencies]
+indexmap           = { version = "1.9.3" }
+serde              = { version = "1.0.160" }
+serde-wasm-bindgen = { version = "0.5.0" }
+serde_json         = { version = "1.0.96" }
+tracing            = { version = "0.1.37" }
+tracing-subscriber = { version = "0.3.17" }
+wasm-bindgen       = { version = "0.2.84" }
+
+swc_core = { version = "0.75.34" }

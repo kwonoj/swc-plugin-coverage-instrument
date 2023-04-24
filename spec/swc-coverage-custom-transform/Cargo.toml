@@ -10,20 +10,20 @@ crate-type = ["cdylib", "rlib"]
 napi-build = "2.0.1"
 
 [dependencies]
-anyhow = "1.0.67"
+anyhow = "1.0.70"
 backtrace = "0.3.67"
-napi = { version = "2.10.2", default-features = false, features = [
+napi = { version = "2.12.5", default-features = false, features = [
   "napi3",
   "serde-json",
 ] }
-napi-derive = { version = "2.9.3", default-features = false, features = [
+napi-derive = { version = "2.12.3", default-features = false, features = [
   "type-def",
 ] }
-serde = { version = "1.0.151", features = ["derive"] }
-serde_json = { version = "1.0.90", features = ["unbounded_depth"] }
+serde = { version = "1.0.160", features = ["derive"] }
+serde_json = { version = "1.0.96", features = ["unbounded_depth"] }
 swc-coverage-instrument = { version = "0.0.16", path = "../../packages/swc-coverage-instrument" }
 
-swc_core = { version = "0.75.11", features = [
+swc_core = { version = "0.75.34", features = [
   "common_concurrent",
   "ecma_transforms",
   "ecma_ast",
