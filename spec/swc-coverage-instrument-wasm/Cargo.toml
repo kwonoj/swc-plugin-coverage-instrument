@@ -11,4 +11,4 @@ serde              = { workspace = true, features = ["derive"] }
 serde-wasm-bindgen = { workspace = true }
 wasm-bindgen       = { workspace = true, features = ["serde-serialize"] }
 
-swc-coverage-instrument = { version = "0.0.16", path = "../../packages/swc-coverage-instrument" }
+swc-coverage-instrument = { version = "0.0.17", path = "../../packages/swc-coverage-instrument" }
