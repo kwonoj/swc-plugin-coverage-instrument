@@ -341,6 +341,13 @@ macro_rules! instrumentation_visitor {
                             );
                             method_prop.visit_mut_children_with(self);
                         }
+                    } else {
+                        let ident = Ident {
+                            sym: "anonymous".into(),
+                            ..Ident::dummy()
+                        };
+                        self.create_fn_instrumentation(&Some(&ident), &mut method_prop.function);
+                        method_prop.visit_mut_children_with(self);
                     }
                 }
             }
@@ -395,6 +402,37 @@ macro_rules! instrumentation_visitor {
                             }
                             getter_prop.visit_mut_children_with(self);
                         }
+                    } else {
+                        let span = &getter_prop.span;
+                        let name: Option<String> = Some("anonymous".to_owned());
+
+                        let range =
+                            crate::lookup_range::get_range_from_span(&self.source_map, span);
+                        if let Some(body) = &mut getter_prop.body {
+                            let body_span = body.span;
+                            let body_range = crate::lookup_range::get_range_from_span(
+                                &self.source_map,
+                                &body_span,
+                            );
+                            let index =
+                                self.cov
+                                    .borrow_mut()
+                                    .new_function(&name, &range, &body_range);
+
+                            let b = crate::create_increase_counter_expr(
+                                &crate::constants::idents::IDENT_F,
+                                index,
+                                &self.cov_fn_ident,
+                                None,
+                            );
+                            let mut prepended_vec = vec![Stmt::Expr(ExprStmt {
+                                span: swc_core::common::DUMMY_SP,
+                                expr: Box::new(b),
+                            })];
+                            prepended_vec.extend(body.stmts.take());
+                            body.stmts = prepended_vec;
+                        }
+                        getter_prop.visit_mut_children_with(self);
                     }
                 }
             }
@@ -450,6 +488,37 @@ macro_rules! instrumentation_visitor {
                             }
                             setter_prop.visit_mut_children_with(self);
                         }
+                    } else {
+                        let span = &setter_prop.span;
+                        let name: Option<String> = Some("anonymous".to_owned());
+
+                        let range =
+                            crate::lookup_range::get_range_from_span(&self.source_map, span);
+                        if let Some(body) = &mut setter_prop.body {
+                            let body_span = body.span;
+                            let body_range = crate::lookup_range::get_range_from_span(
+                                &self.source_map,
+                                &body_span,
+                            );
+                            let index =
+                                self.cov
+                                    .borrow_mut()
+                                    .new_function(&name, &range, &body_range);
+
+                            let b = crate::create_increase_counter_expr(
+                                &crate::constants::idents::IDENT_F,
+                                index,
+                                &self.cov_fn_ident,
+                                None,
+                            );
+                            let mut prepended_vec = vec![Stmt::Expr(ExprStmt {
+                                span: swc_core::common::DUMMY_SP,
+                                expr: Box::new(b),
+                            })];
+                            prepended_vec.extend(body.stmts.take());
+                            body.stmts = prepended_vec;
+                        }
+                        setter_prop.visit_mut_children_with(self);
                     }
                 }
             }
