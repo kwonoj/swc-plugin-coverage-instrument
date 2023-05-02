@@ -8,7 +8,7 @@ members = [
 ]
 
 [profile.release]
-lto = true
+#lto = true
 
 [workspace.dependencies]
 indexmap           = { version = "1.9.3" }
