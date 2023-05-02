@@ -5,14 +5,14 @@ edition     = "2021"
 license     = "MIT"
 name        = "swc-plugin-coverage"
 repository  = "https://github.com/kwonoj/swc-coverage-instrument"
-version     = "0.0.17"
+version     = "0.0.18"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
 serde_json              = { workspace = true }
-swc-coverage-instrument = { version = "0.0.17", path = "../swc-coverage-instrument" }
+swc-coverage-instrument = { version = "0.0.18", path = "../swc-coverage-instrument" }
 swc_core                = { workspace = true, features = ["ecma_plugin_transform"] }
 tracing                 = { workspace = true }
 tracing-subscriber      = { workspace = true, features = ["fmt"] }
