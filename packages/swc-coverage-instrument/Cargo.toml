@@ -5,10 +5,10 @@ edition     = "2021"
 license     = "MIT"
 name        = "swc-coverage-instrument"
 repository  = "https://github.com/kwonoj/swc-coverage-instrument"
-version     = "0.0.18"
+version     = "0.0.19"
 
 [dependencies]
-istanbul-oxide = { version = "0.0.18", path = "../istanbul-oxide" }
+istanbul-oxide = { version = "0.0.19", path = "../istanbul-oxide" }
 once_cell      = { workspace = true }
 regex          = "1.8.1"
 serde          = { workspace = true, features = ["derive"] }
