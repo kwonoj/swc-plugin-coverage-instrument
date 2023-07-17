@@ -13,7 +13,6 @@ pub fn create_assignment_stmt(var_decl_ident: &Ident, value: Expr) -> Stmt {
                 span: DUMMY_SP,
                 left: Box::new(Pat::Ident(BindingIdent::from(var_decl_ident.clone()))),
                 right: Box::new(value),
-                type_ann: None,
             }),
             init: None,
             definite: false,
