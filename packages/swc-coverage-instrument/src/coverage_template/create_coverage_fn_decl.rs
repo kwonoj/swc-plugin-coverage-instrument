@@ -4,6 +4,7 @@ use std::{
 };
 
 use istanbul_oxide::FileCoverage;
+use once_cell::sync::OnceCell;
 use swc_core::{
     common::{
         comments::{Comment, CommentKind, Comments},
@@ -13,8 +14,6 @@ use swc_core::{
     ecma::ast::*,
     quote,
 };
-
-use once_cell::sync::OnceCell;
 
 use crate::constants::idents::*;
 
