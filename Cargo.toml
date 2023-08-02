@@ -17,7 +17,7 @@ once_cell          = { version = "1.18.0" }
 serde              = { version = "1.0.160" }
 serde-wasm-bindgen = { version = "0.5.0" }
 serde_json         = { version = "1.0.96" }
-swc_core           = { version = "0.79.17" }
+swc_core           = { version = "0.79.37" }
 tracing            = { version = "0.1.37" }
 tracing-subscriber = { version = "0.3.17" }
 wasm-bindgen       = { version = "0.2.84" }

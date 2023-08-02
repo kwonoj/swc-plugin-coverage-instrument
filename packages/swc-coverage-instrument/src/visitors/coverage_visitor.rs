@@ -2,6 +2,7 @@ use swc_core::{
     common::{comments::Comments, util::take::Take, SourceMapper, DUMMY_SP},
     ecma::{
         ast::*,
+        utils::IsDirective,
         visit::{noop_visit_mut_type, VisitMut, VisitMutWith, VisitWith},
     },
 };
@@ -147,6 +148,14 @@ impl<C: Clone + Comments, S: SourceMapper> VisitMut for CoverageVisitor<C, S> {
         // TODO: Should module_items need to be added in self.nodes?
         let mut new_items = vec![];
         for mut item in items.drain(..) {
+            if let ModuleItem::Stmt(stmt) = &item {
+                // Do not create coverage instrumentation for directives.
+                if stmt.is_directive() {
+                    new_items.push(item);
+                    continue;
+                }
+            }
+
             let (old, _ignore_current) = match &mut item {
                 ModuleItem::ModuleDecl(decl) => self.on_enter(decl),
                 ModuleItem::Stmt(stmt) => self.on_enter(stmt),
@@ -162,8 +171,13 @@ impl<C: Clone + Comments, S: SourceMapper> VisitMut for CoverageVisitor<C, S> {
         let (coverage_template, call_coverage_template_stmt) = self.get_coverage_templates();
 
         // prepend template to the top of the code
-        items.insert(0, ModuleItem::Stmt(coverage_template));
-        items.insert(1, ModuleItem::Stmt(call_coverage_template_stmt));
+        if items.len() >= 1 {
+            items.insert(1, ModuleItem::Stmt(coverage_template));
+            items.insert(2, ModuleItem::Stmt(call_coverage_template_stmt));
+        } else {
+            items.push(ModuleItem::Stmt(coverage_template));
+            items.push(ModuleItem::Stmt(call_coverage_template_stmt));
+        }
 
         if !root_exists {
             self.nodes.pop();
