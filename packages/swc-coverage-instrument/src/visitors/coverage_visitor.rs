@@ -150,7 +150,7 @@ impl<C: Clone + Comments, S: SourceMapper> VisitMut for CoverageVisitor<C, S> {
         for mut item in items.drain(..) {
             if let ModuleItem::Stmt(stmt) = &item {
                 // Do not create coverage instrumentation for directives.
-                if stmt.is_directive() {
+                if stmt.directive_continue() {
                     new_items.push(item);
                     continue;
                 }

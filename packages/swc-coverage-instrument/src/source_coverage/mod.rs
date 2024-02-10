@@ -175,9 +175,9 @@ impl SourceCoverage {
 
         map.retain(|key, branch| {
             if branch.locations.len() == 0 {
-                branches.remove_entry(key);
+                branches.swap_remove_entry(key);
                 if let Some(branches_t) = branches_t {
-                    branches_t.remove_entry(key);
+                    branches_t.swap_remove_entry(key);
                 }
                 false
             } else {

@@ -25,7 +25,7 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - uses: actions/setup-node@v2
       with:
-        node-version: "16"
+        node-version: "18"
         cache: "npm"
     - uses: actions-rs/toolchain@v1
       with:
@@ -35,7 +35,6 @@ jobs:
       uses: taiki-e/install-action@cargo-llvm-cov
     - name: install
       run: |
-        npm install -g npm@latest
         npm ci
         curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
         rustup target add wasm32-wasi
