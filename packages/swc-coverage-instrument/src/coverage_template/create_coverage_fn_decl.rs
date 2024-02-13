@@ -120,9 +120,7 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
     //}
     // TODO: need to add @ts-ignore leading comment
     let coverage_fn_assign_expr = Expr::Assign(AssignExpr {
-        left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent::from(
-            cov_fn_ident.clone(),
-        )))),
+        left: BindingIdent::from(cov_fn_ident.clone()).into(),
         right: Box::new(Expr::Fn(FnExpr {
             ident: None,
             function: Box::new(Function {

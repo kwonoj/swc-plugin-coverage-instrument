@@ -15,18 +15,18 @@ pub fn create_increase_true_expr(
     temp_var_name: &Ident,
     expr: Expr,
 ) -> Expr {
-    let member = Expr::Member(MemberExpr {
+    let member = MemberExpr {
         obj: Box::new(Expr::Call(CallExpr {
             callee: Callee::Expr(Box::new(Expr::Ident(var_name.clone()))),
             ..CallExpr::dummy()
         })),
         prop: MemberProp::Ident(temp_var_name.clone()),
         ..MemberExpr::dummy()
-    });
+    };
 
     let assignment = Expr::Assign(AssignExpr {
         op: AssignOp::Assign,
-        left: PatOrExpr::Expr(Box::new(member.clone())),
+        left: member.clone().into(),
         right: Box::new(expr), // Only evaluates once.
         ..AssignExpr::dummy()
     });
@@ -48,7 +48,11 @@ pub fn create_increase_true_expr(
 
     let ret = Expr::Seq(SeqExpr {
         span: DUMMY_SP,
-        exprs: vec![Box::new(assignment), Box::new(paren), Box::new(member)],
+        exprs: vec![
+            Box::new(assignment),
+            Box::new(paren),
+            Box::new(Expr::Member(member)),
+        ],
     });
 
     ret
