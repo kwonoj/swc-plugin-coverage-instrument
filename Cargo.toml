@@ -11,6 +11,9 @@ members = [
 #lto = true
 
 [workspace.dependencies]
+istanbul-oxide          = { path = "./packages/istanbul-oxide" }
+swc-coverage-instrument = { path = "./packages/swc-coverage-instrument" }
+
 getrandom          = { version = "0.2.12" }
 indexmap           = { version = "2.2.2" }
 once_cell          = { version = "1.19.0" }
