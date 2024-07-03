@@ -219,6 +219,53 @@ macro_rules! instrumentation_visitor {
             self.on_exit(old);
         }
 
+        // ConditionalExpression: entries(coverTernary),
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_cond_expr(&mut self, cond_expr: &mut CondExpr) {
+            let (old, ignore_current) = self.on_enter(cond_expr);
+
+            match ignore_current {
+                Some(crate::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    let range =
+                        crate::lookup_range::get_range_from_span(&self.source_map, &cond_expr.span);
+                    let branch = self.cov.borrow_mut().new_branch(
+                        istanbul_oxide::BranchType::CondExpr,
+                        &range,
+                        false,
+                    );
+
+                    let c_hint = crate::hint_comments::lookup_hint_comments(
+                        &self.comments,
+                        Some(&cond_expr.cons.span()),
+                    );
+                    let a_hint = crate::hint_comments::lookup_hint_comments(
+                        &self.comments,
+                        Some(&cond_expr.alt.span()),
+                    );
+
+                    if c_hint.as_deref() != Some("next") {
+                        // TODO: do we need this?
+                        // cond_expr.cons.visit_mut_children_with(self);
+
+                        // replace consequence to the paren for increase expr + expr itself
+                        self.replace_expr_with_branch_counter(&mut *cond_expr.cons, branch);
+                    }
+
+                    if a_hint.as_deref() != Some("next") {
+                        // TODO: do we need this?
+                        // cond_expr.alt.visit_mut_children_with(self);
+
+                        // replace consequence to the paren for increase expr + expr itself
+                        self.replace_expr_with_branch_counter(&mut *cond_expr.alt, branch);
+                    }
+                }
+            };
+
+            cond_expr.visit_mut_children_with(self);
+            self.on_exit(old);
+        }
+
         // ReturnStatement: entries(coverStatement),
         #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_return_stmt(&mut self, return_stmt: &mut ReturnStmt) {
@@ -227,9 +274,9 @@ macro_rules! instrumentation_visitor {
                 Some(crate::hint_comments::IgnoreScope::Next) => {}
                 _ => {
                     self.mark_prepend_stmt_counter(&return_stmt.span);
-                    return_stmt.visit_mut_children_with(self);
                 }
             }
+            return_stmt.visit_mut_children_with(self);
 
             self.on_exit(old);
         }
