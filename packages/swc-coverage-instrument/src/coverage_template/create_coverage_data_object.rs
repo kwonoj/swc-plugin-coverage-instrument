@@ -15,7 +15,7 @@ use crate::COVERAGE_MAGIC_VALUE;
 //TODO: macro, or remove create_* util
 fn create_str(value: &str) -> Str {
     Str {
-        value: value.clone().into(),
+        value: value.into(),
         raw: Some(format!(r#""{}""#, value).into()),
         span: DUMMY_SP,
     }
@@ -27,7 +27,7 @@ pub fn create_str_lit_expr(value: &str) -> Expr {
 
 pub fn create_num_lit_expr(value: u32) -> Expr {
     Expr::Lit(Lit::Num(Number {
-        value: value.clone().into(),
+        value: value.into(),
         raw: Some(value.to_string().into()),
         span: DUMMY_SP,
     }))

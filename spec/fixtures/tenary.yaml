@@ -1,5 +1,3 @@
-# For easier single test fixture debugging, `npm run test:debug` runs this test only.
-# Place any test want to run.
 ---
 name: ternary operator
 code: |
