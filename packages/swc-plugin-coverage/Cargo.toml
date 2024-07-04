@@ -16,3 +16,4 @@ swc-coverage-instrument = { workspace = true }
 swc_core                = { workspace = true, features = ["ecma_plugin_transform"] }
 tracing                 = { workspace = true }
 tracing-subscriber      = { workspace = true, features = ["fmt"] }
+wax                     = { workspace = true }

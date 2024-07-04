@@ -10,6 +10,7 @@ use swc_coverage_instrument::{
 };
 
 use tracing_subscriber::fmt::format::FmtSpan;
+use wax::Pattern;
 
 fn initialize_instrumentation_log(log_options: &InstrumentLogOptions) {
     let log_level = match log_options.level.as_deref() {
@@ -56,6 +57,23 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
     } else {
         Default::default()
     };
+
+    // Unstable option to exclude files from coverage. If pattern is wax(https://crates.io/crates/wax)
+    // compatible glob and the filename matches the pattern, the file will not be instrumented.
+    // Note that the filename is provided by swc's core, may not be the full absolute path to the file name.
+    if let Some(exclude) = &instrument_options.unstable_exclude {
+        match wax::any(exclude.iter().map(|s| s.as_ref()).collect::<Vec<&str>>()) {
+            Ok(p) => {
+                if p.is_match(filename) {
+                    return program;
+                }
+            }
+            Err(e) => {
+                println!("Could not parse unstable_exclude option, will be ignored");
+                println!("{:#?}", e);
+            }
+        }
+    }
 
     initialize_instrumentation_log(&instrument_options.instrument_log);
 
