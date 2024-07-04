@@ -29,4 +29,6 @@ let visitor = swc_coverage_instrument::create_coverage_instrumentation_visitor(
 let fold = as_folder(visitor);
 ```
 
-`InstrumentationOptions` is a subset of istanbul's instrumentation options. Refer [istanbul's option](https://github.com/istanbuljs/istanbuljs/blob/master/packages/istanbul-lib-instrument/src/instrumenter.js#L16-L27=) for the same configuration flags. For the logging, this package does not init any subscriber by itself. Caller should setup proper `tracing-subscriber` as needed.
+`InstrumentationOptions` is a subset of istanbul's instrumentation options. Refer [istanbul's option](https://github.com/istanbuljs/istanbuljs/blob/master/packages/istanbul-lib-instrument/src/instrumenter.js#L16-L27=) for the same configuration flags. However there are few exceptions or differences, referencing [InstrumentOptions](https://github.com/kwonoj/swc-plugin-coverage-instrument/blob/main/packages/swc-coverage-instrument/src/options/instrument_options.rs) will list all possible options.
+
+For the logging, this package does not init any subscriber by itself. Caller should setup proper `tracing-subscriber` as needed.

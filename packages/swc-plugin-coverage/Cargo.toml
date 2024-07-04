@@ -5,7 +5,7 @@ edition     = "2021"
 license     = "MIT"
 name        = "swc-plugin-coverage"
 repository  = "https://github.com/kwonoj/swc-coverage-instrument"
-version     = "0.0.23"
+version     = "0.0.24"
 
 [lib]
 crate-type = ["cdylib"]
@@ -16,3 +16,4 @@ swc-coverage-instrument = { workspace = true }
 swc_core                = { workspace = true, features = ["ecma_plugin_transform"] }
 tracing                 = { workspace = true }
 tracing-subscriber      = { workspace = true, features = ["fmt"] }
+wax                     = { workspace = true }
