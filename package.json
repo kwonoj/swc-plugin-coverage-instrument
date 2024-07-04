@@ -1,6 +1,6 @@
 {
   "name": "swc-plugin-coverage-instrument",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "description": "SWC coverage instrumentation plugin",
   "main": "./target/wasm32-wasi/release/swc_plugin_coverage.wasm",
   "napi": {
