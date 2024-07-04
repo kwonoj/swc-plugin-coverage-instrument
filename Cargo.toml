@@ -12,7 +12,7 @@ resolver = "2"
 #lto = true
 
   [workspace.dependencies]
-  istanbul-oxide          = { path = "./packages/istanbul-oxide", version = "0.0.22" }
+  istanbul-oxide          = { path = "./packages/istanbul-oxide", version = "0.0.23" }
   swc-coverage-instrument = { path = "./packages/swc-coverage-instrument" }
 
   getrandom          = { version = "0.2.15" }
