@@ -37,7 +37,7 @@ jsc: {
 }
 ```
 
-`InstrumentationOptions` is a subset of istanbul's instrumentation options. Refer [istanbul's option](https://github.com/istanbuljs/istanbuljs/blob/master/packages/istanbul-lib-instrument/src/instrumenter.js#L16-L27=) for the same configuration flags.
+`InstrumentationOptions` is a subset of istanbul's instrumentation options. Refer [istanbul's option](https://github.com/istanbuljs/istanbuljs/blob/master/packages/istanbul-lib-instrument/src/instrumenter.js#L16-L27=) for the same configuration flags. However there are few exceptions or differences, referencing [InstrumentOptions](https://github.com/kwonoj/swc-plugin-coverage-instrument/blob/4689fc9d281e11c875edd2376e8d92819472b9fe/packages/swc-coverage-instrument/src/options/instrument_options.rs#L22-L33) will list all possible options.
 
 ```
 interface InstrumentationOptions {
@@ -54,6 +54,7 @@ interface InstrumentationOptions {
     // Only effective if level sets higher than info.
     enableTrace: bool
   },
+  unstableExclude?: Array<String>
 }
 ```
 
