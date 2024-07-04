@@ -118,6 +118,7 @@ macro_rules! instrumentation_branch_wrap_counter_helper {
                     // replace init with increase expr + init seq
                     *expr = paren_expr;
                 } else {
+                    expr.visit_mut_children_with(self);
                     self.replace_expr_with_branch_counter(expr, branch);
                 }
             }
