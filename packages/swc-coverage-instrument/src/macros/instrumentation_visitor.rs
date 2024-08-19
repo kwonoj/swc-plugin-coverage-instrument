@@ -114,6 +114,7 @@ macro_rules! instrumentation_visitor {
                         arrow_expr.body = Box::new(BlockStmtOrExpr::BlockStmt(BlockStmt {
                             span: swc_core::common::DUMMY_SP,
                             stmts: new_stmts,
+                            ..BlockStmt::dummy()
                         }));
                     }
                 },
@@ -354,7 +355,7 @@ macro_rules! instrumentation_visitor {
 
                         if !should_ignore_via_options {
                             self.create_fn_instrumentation(
-                                &Some(&ident),
+                                &Some(&ident.clone().into()),
                                 &mut class_method.function,
                             );
                             class_method.visit_mut_children_with(self);
@@ -383,7 +384,7 @@ macro_rules! instrumentation_visitor {
 
                         if !should_ignore_via_options {
                             self.create_fn_instrumentation(
-                                &Some(&ident),
+                                &Some(&ident.clone().into()),
                                 &mut method_prop.function,
                             );
                             method_prop.visit_mut_children_with(self);
@@ -758,6 +759,7 @@ macro_rules! instrumentation_visitor {
                             BlockStmt {
                                 span: swc_core::common::DUMMY_SP,
                                 stmts,
+                                ..Default::default()
                             }
                         };
 
@@ -930,6 +932,7 @@ macro_rules! instrumentation_visitor {
                         with_stmt.body = Box::new(Stmt::Block(BlockStmt {
                             span: swc_core::common::DUMMY_SP,
                             stmts: new_stmts,
+                            ..Default::default()
                         }));
                     }
                 }

@@ -15,12 +15,13 @@ pub fn create_increase_counter_expr(
         callee: Callee::Expr(Box::new(Expr::Ident(var_name.clone()))),
         args: vec![],
         type_args: None,
+        ..Default::default()
     };
 
     let c = MemberExpr {
         span: DUMMY_SP,
         obj: Box::new(Expr::Call(call)),
-        prop: MemberProp::Ident(type_ident.clone()),
+        prop: MemberProp::Ident(type_ident.clone().into()),
     };
 
     let expr = MemberExpr {

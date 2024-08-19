@@ -35,7 +35,7 @@ pub fn create_num_lit_expr(value: u32) -> Expr {
 
 pub fn create_ident_key_value_prop(key: &Ident, value: Expr) -> PropOrSpread {
     PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(key.clone()),
+        key: PropName::Ident(key.clone().into()),
         value: Box::new(value),
     })))
 }
