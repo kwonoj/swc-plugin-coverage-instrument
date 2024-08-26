@@ -33,9 +33,15 @@ pub fn create_coverage_fn_ident(value: &str) {
     value.hash(&mut s);
     let var_name_hash = format!("cov_{}", s.finish());
 
-    COVERAGE_FN_IDENT.get_or_init(|| Ident::new(var_name_hash.clone().into(), DUMMY_SP, Default::default()));
-    COVERAGE_FN_TRUE_TEMP_IDENT
-        .get_or_init(|| Ident::new(format!("{}_temp", var_name_hash).into(), DUMMY_SP, Default::default()));
+    COVERAGE_FN_IDENT
+        .get_or_init(|| Ident::new(var_name_hash.clone().into(), DUMMY_SP, Default::default()));
+    COVERAGE_FN_TRUE_TEMP_IDENT.get_or_init(|| {
+        Ident::new(
+            format!("{}_temp", var_name_hash).into(),
+            DUMMY_SP,
+            Default::default(),
+        )
+    });
 }
 
 /// Creates a function declaration for actual coverage collection.
