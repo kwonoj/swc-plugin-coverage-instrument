@@ -58,7 +58,7 @@
   "devDependencies": {
     "@napi-rs/cli": "^2.11.0",
     "@swc-node/register": "^1.6.5",
-    "@swc/core": "^1.4.0",
+    "@swc/core": "^1.7.26",
     "@taplo/cli": "^0.7.0",
     "@types/chai": "^4.3.3",
     "@types/js-yaml": "^4.0.5",
