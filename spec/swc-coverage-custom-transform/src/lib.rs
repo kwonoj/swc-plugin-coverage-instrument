@@ -99,7 +99,7 @@ pub fn transform_sync(
 
                 let comments = SingleThreadedComments::default();
 
-                let fm = c.cm.new_source_file(filename.clone(), s);
+                let fm = c.cm.new_source_file(filename.clone().into(), s);
                 c.process_js_with_custom_pass(
                     fm,
                     None,

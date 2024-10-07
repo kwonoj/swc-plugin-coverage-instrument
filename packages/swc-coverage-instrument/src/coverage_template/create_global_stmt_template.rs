@@ -13,7 +13,7 @@ pub fn create_global_stmt_template(coverage_global_scope: &str) -> Stmt {
     // Note: we don't support function template based on scoped binding
     // like https://github.com/istanbuljs/istanbuljs/blob/c7693d4608979ab73ebb310e0a1647e2c51f31b6/packages/istanbul-lib-instrument/src/visitor.js#L793=
     // due to scope checking is tricky.
-    let fn_ctor = quote_ident!("((function(){}).constructor)");
+    let fn_ctor = quote_ident!(Default::default(), "((function(){}).constructor)");
 
     let expr = Expr::New(NewExpr {
         callee: Box::new(Expr::Ident(fn_ctor)),

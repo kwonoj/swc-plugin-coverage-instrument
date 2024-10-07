@@ -20,7 +20,7 @@ pub fn create_increase_true_expr(
             callee: Callee::Expr(Box::new(Expr::Ident(var_name.clone()))),
             ..CallExpr::dummy()
         })),
-        prop: MemberProp::Ident(temp_var_name.clone()),
+        prop: MemberProp::Ident(temp_var_name.clone().into()),
         ..MemberExpr::dummy()
     };
 
@@ -65,7 +65,7 @@ fn validate_true_non_trivial(var_name: &Ident, temp_var_name: &Ident) -> Expr {
             callee: Callee::Expr(Box::new(Expr::Ident(var_name.clone()))),
             ..CallExpr::dummy()
         })),
-        prop: MemberProp::Ident(temp_var_name.clone()),
+        prop: MemberProp::Ident(temp_var_name.clone().into()),
         ..MemberExpr::dummy()
     });
 
@@ -81,9 +81,9 @@ fn validate_true_non_trivial(var_name: &Ident, temp_var_name: &Ident) -> Expr {
                             sym: "Array".into(),
                             ..Ident::dummy()
                         })),
-                        prop: MemberProp::Ident(Ident {
+                        prop: MemberProp::Ident(IdentName {
                             sym: "isArray".into(),
-                            ..Ident::dummy()
+                            ..IdentName::dummy()
                         }),
                         ..MemberExpr::dummy()
                     }))),
@@ -97,9 +97,9 @@ fn validate_true_non_trivial(var_name: &Ident, temp_var_name: &Ident) -> Expr {
             })),
             right: Box::new(Expr::Member(MemberExpr {
                 obj: Box::new(member.clone()),
-                prop: MemberProp::Ident(Ident {
+                prop: MemberProp::Ident(IdentName {
                     sym: "length".into(),
-                    ..Ident::dummy()
+                    ..IdentName::dummy()
                 }),
                 ..MemberExpr::dummy()
             })),
@@ -117,9 +117,9 @@ fn validate_true_non_trivial(var_name: &Ident, temp_var_name: &Ident) -> Expr {
                             sym: "Object".into(),
                             ..Ident::dummy()
                         })),
-                        prop: MemberProp::Ident(Ident {
+                        prop: MemberProp::Ident(IdentName {
                             sym: "getPrototypeOf".into(),
-                            ..Ident::dummy()
+                            ..IdentName::dummy()
                         }),
                         ..MemberExpr::dummy()
                     }))),
@@ -134,9 +134,9 @@ fn validate_true_non_trivial(var_name: &Ident, temp_var_name: &Ident) -> Expr {
                         sym: "Object".into(),
                         ..Ident::dummy()
                     })),
-                    prop: MemberProp::Ident(Ident {
+                    prop: MemberProp::Ident(IdentName {
                         sym: "prototype".into(),
-                        ..Ident::dummy()
+                        ..IdentName::dummy()
                     }),
                     ..MemberExpr::dummy()
                 })),
@@ -149,9 +149,9 @@ fn validate_true_non_trivial(var_name: &Ident, temp_var_name: &Ident) -> Expr {
                             sym: "Object".into(),
                             ..Ident::dummy()
                         })),
-                        prop: MemberProp::Ident(Ident {
+                        prop: MemberProp::Ident(IdentName {
                             sym: "values".into(),
-                            ..Ident::dummy()
+                            ..IdentName::dummy()
                         }),
                         ..MemberExpr::dummy()
                     }))),
@@ -161,9 +161,9 @@ fn validate_true_non_trivial(var_name: &Ident, temp_var_name: &Ident) -> Expr {
                     }],
                     ..CallExpr::dummy()
                 })),
-                prop: MemberProp::Ident(Ident {
+                prop: MemberProp::Ident(IdentName {
                     sym: "length".into(),
-                    ..Ident::dummy()
+                    ..IdentName::dummy()
                 }),
                 ..MemberExpr::dummy()
             })),

@@ -33,9 +33,15 @@ pub fn create_coverage_fn_ident(value: &str) {
     value.hash(&mut s);
     let var_name_hash = format!("cov_{}", s.finish());
 
-    COVERAGE_FN_IDENT.get_or_init(|| Ident::new(var_name_hash.clone().into(), DUMMY_SP));
-    COVERAGE_FN_TRUE_TEMP_IDENT
-        .get_or_init(|| Ident::new(format!("{}_temp", var_name_hash).into(), DUMMY_SP));
+    COVERAGE_FN_IDENT
+        .get_or_init(|| Ident::new(var_name_hash.clone().into(), DUMMY_SP, Default::default()));
+    COVERAGE_FN_TRUE_TEMP_IDENT.get_or_init(|| {
+        Ident::new(
+            format!("{}_temp", var_name_hash).into(),
+            DUMMY_SP,
+            Default::default(),
+        )
+    });
 }
 
 /// Creates a function declaration for actual coverage collection.
@@ -85,7 +91,7 @@ pub fn create_coverage_fn_decl<C: Clone + Comments>(
     let coverage_data_stmt = create_assignment_stmt(&IDENT_COVERAGE_DATA, coverage_data_object);
     stmts.push(coverage_data_stmt);
 
-    let coverage_ident = Ident::new("coverage".into(), DUMMY_SP);
+    let coverage_ident = Ident::new("coverage".into(), DUMMY_SP, Default::default());
     stmts.push(quote!(
         "var $coverage = $global[$gcv] || ($global[$gcv] = {})" as Stmt,
         coverage = coverage_ident.clone(),
@@ -106,7 +112,7 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
     ));
 
     // var actualCoverage = coverage[path];
-    let actual_coverage_ident = Ident::new("actualCoverage".into(), DUMMY_SP);
+    let actual_coverage_ident = Ident::new("actualCoverage".into(), DUMMY_SP, Default::default());
     stmts.push(quote!(
         "var $actual_coverage = $coverage[$path];" as Stmt,
         actual_coverage = actual_coverage_ident.clone(),
@@ -130,6 +136,7 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
                         span: DUMMY_SP,
                         arg: Some(Box::new(Expr::Ident(actual_coverage_ident.clone()))),
                     })],
+                    ..BlockStmt::dummy()
                 }),
                 ..Function::dummy()
             }),
@@ -177,6 +184,7 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
             body: Some(BlockStmt {
                 span: DUMMY_SP,
                 stmts,
+                ..BlockStmt::dummy()
             }),
             ..Function::dummy()
         }),

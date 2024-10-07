@@ -20,6 +20,7 @@ macro_rules! visit_mut_for_like {
                     BlockStmt {
                         span: swc_core::common::DUMMY_SP,
                         stmts,
+                        ..Default::default()
                     }
                 };
 
