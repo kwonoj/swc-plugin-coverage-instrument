@@ -9,7 +9,7 @@ const clone: typeof import("lodash.clone") = require("lodash.clone");
 
 const pluginBinary = path.resolve(
   __dirname,
-  "../../target/wasm32-wasi/debug/swc_plugin_coverage.wasm"
+  "../../target/wasm32-wasip1/debug/swc_plugin_coverage.wasm",
 );
 
 /// Mimic instrumenter.
@@ -18,7 +18,7 @@ const instrumentSync = (
   filename: string,
   inputSourceMap?: object,
   instrumentOptions?: Record<string, any>,
-  transformOptions?: Options
+  transformOptions?: Options,
 ) => {
   const pluginOptions = inputSourceMap
     ? {
@@ -54,8 +54,8 @@ const instrumentSync = (
         JSON.stringify({
           ...pluginOptions,
           debugInitialCoverageComment: true,
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -102,51 +102,51 @@ class Verifier {
     assert.ok(!this.result.err, (this.result.err || {}).message);
 
     getGlobalObject()[this.result.coverageVariable] = clone(
-      this.result.baseline
+      this.result.baseline,
     );
     const actualOutput = await this.result.fn(args);
     const cov = this.getFileCoverage();
 
     assert.ok(
       cov && typeof cov === "object",
-      "No coverage found for [" + this.result.file + "]"
+      "No coverage found for [" + this.result.file + "]",
     );
     assert.deepEqual(actualOutput, expectedOutput, "Output mismatch");
     assert.deepEqual(
       Object.fromEntries(cov.getLineCoverage()),
       expectedCoverage.lines || {},
-      "Line coverage mismatch"
+      "Line coverage mismatch",
     );
     assert.deepEqual(
       Object.fromEntries(cov.f()),
       expectedCoverage.functions || {},
-      "Function coverage mismatch"
+      "Function coverage mismatch",
     );
     assert.deepEqual(
       Object.fromEntries(cov.b()),
       expectedCoverage.branches || {},
-      "Branch coverage mismatch"
+      "Branch coverage mismatch",
     );
     assert.deepEqual(
       Object.fromEntries(cov.bT() || new Map()),
       expectedCoverage.branchesTrue || {},
-      "Branch truthiness coverage mismatch"
+      "Branch truthiness coverage mismatch",
     );
     assert.deepEqual(
       Object.fromEntries(cov.s()),
       expectedCoverage.statements || {},
-      "Statement coverage mismatch"
+      "Statement coverage mismatch",
     );
 
     assert.deepEqual(
       cov.inputSourceMap(),
       expectedCoverage.inputSourceMap || undefined,
-      "Input source map mismatch"
+      "Input source map mismatch",
     );
 
     const initial = readInitialCoverage(
       this.getGeneratedCode(),
-      this.result.transformOptions
+      this.result.transformOptions,
     );
     assert.ok(initial);
     assert.deepEqual(initial.coverageData, this.result.emptyCoverage);
@@ -242,21 +242,21 @@ const create = (code, options = {}, instrumentOptions = {}, inputSourceMap) => {
       file,
       inputSourceMap,
       instrumentOptions,
-      options.transformOptions
+      options.transformOptions,
     );
     instrumenterOutput = out.code;
 
     if (debug) {
       console.log(
-        "================== Original ============================================"
+        "================== Original ============================================",
       );
       console.log(annotatedCode(code));
       console.log(
-        "================== Generated ==========================================="
+        "================== Generated ===========================================",
       );
       console.log(instrumenterOutput);
       console.log(
-        "========================================================================"
+        "========================================================================",
       );
     }
   } catch (ex) {
@@ -264,7 +264,10 @@ const create = (code, options = {}, instrumentOptions = {}, inputSourceMap) => {
       console.error(ex.stack);
     }
     verror = new Error(
-      "Error instrumenting:\n" + annotatedCode(String(code)) + "\n" + ex.message
+      "Error instrumenting:\n" +
+        annotatedCode(String(code)) +
+        "\n" +
+        ex.message,
     );
   }
   if (!(verror || generateOnly)) {
@@ -279,7 +282,7 @@ const create = (code, options = {}, instrumentOptions = {}, inputSourceMap) => {
     } catch (ex) {
       console.error(ex.stack);
       verror = new Error(
-        "Error compiling\n" + annotatedCode(code) + "\n" + ex.message
+        "Error compiling\n" + annotatedCode(code) + "\n" + ex.message,
       );
     }
   }

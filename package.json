@@ -2,7 +2,7 @@
   "name": "swc-plugin-coverage-instrument",
   "version": "0.0.25",
   "description": "SWC coverage instrumentation plugin",
-  "main": "./target/wasm32-wasi/release/swc_plugin_coverage.wasm",
+  "main": "./target/wasm32-wasip1/release/swc_plugin_coverage.wasm",
   "napi": {
     "name": "swc",
     "triples": {
@@ -25,14 +25,14 @@
     "package.json",
     "README.md",
     "LICENSE",
-    "target/wasm32-wasi/release/swc_plugin_coverage.wasm"
+    "target/wasm32-wasip1/release/swc_plugin_coverage.wasm"
   ],
   "scripts": {
     "prepublishOnly": "npm-run-all test && npm run build:plugin -- --release",
     "build:all": "npm-run-all build:customtransform build:instrument build:plugin",
     "build:customtransform": "napi build --platform --cargo-cwd ./spec/swc-coverage-custom-transform",
     "build:instrument": "wasm-pack build spec/swc-coverage-instrument-wasm --target nodejs",
-    "build:plugin": "cargo build -p swc-plugin-coverage --target wasm32-wasi",
+    "build:plugin": "cargo build -p swc-plugin-coverage --target wasm32-wasip1",
     "test:plugin": "npm-run-all build:all && mocha",
     "test:customtransform": "npm-run-all build:all && cross-env SWC_TRANSFORM_CUSTOM=1 mocha",
     "test": "npm-run-all test:plugin test:customtransform",
@@ -57,8 +57,8 @@
   "homepage": "https://github.com/kwonoj/swc-coverage-instrument#readme",
   "devDependencies": {
     "@napi-rs/cli": "^2.11.0",
-    "@swc-node/register": "^1.6.5",
-    "@swc/core": "^1.7.26",
+    "@swc-node/register": "^1.10.9",
+    "@swc/core": "^1.10.14",
     "@taplo/cli": "^0.7.0",
     "@types/chai": "^4.3.3",
     "@types/js-yaml": "^4.0.5",
