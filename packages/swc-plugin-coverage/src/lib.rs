@@ -84,5 +84,5 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
         filename.to_string(),
     );
 
-    program.fold_with(&mut as_folder(visitor))
+    program.apply(&mut visit_mut_pass(visitor))
 }

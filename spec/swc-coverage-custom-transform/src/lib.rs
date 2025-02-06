@@ -20,8 +20,8 @@ use swc_core::{
         FileName, FilePathMapping, SourceMap,
     },
     ecma::{
-        transforms::base::pass::noop,
-        visit::{as_folder, Fold},
+        ast::{noop_pass, Pass},
+        visit::visit_mut_pass,
     },
 };
 use swc_coverage_instrument::{create_coverage_instrumentation_visitor, InstrumentOptions};
@@ -114,7 +114,7 @@ pub fn transform_sync(
                             filename.to_string(),
                         )
                     },
-                    |_| noop(),
+                    |_| noop_pass(),
                 )
             })
         },
@@ -131,9 +131,9 @@ fn coverage_instrument<
     comments: C,
     instrument_options: InstrumentOptions,
     filename: String,
-) -> impl Fold + 'a {
+) -> impl Pass + 'a {
     let visitor =
         create_coverage_instrumentation_visitor(source_map, comments, instrument_options, filename);
 
-    as_folder(visitor)
+    visit_mut_pass(visitor)
 }
