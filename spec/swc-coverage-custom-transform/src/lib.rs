@@ -12,6 +12,7 @@ use std::{env, panic::set_hook, sync::Arc};
 
 use backtrace::Backtrace;
 
+use crate::util::MapErr;
 use swc_core::{
     base::{config::Options, Compiler, TransformOutput},
     common::{
@@ -30,7 +31,7 @@ use std::path::Path;
 
 use napi::bindgen_prelude::Buffer;
 
-use crate::util::{get_deserialized, try_with, MapErr};
+use crate::util::{get_deserialized, try_with};
 
 static COMPILER: Lazy<Arc<Compiler>> = Lazy::new(|| {
     let cm = Arc::new(SourceMap::new(FilePathMapping::empty()));

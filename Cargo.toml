@@ -12,7 +12,7 @@ resolver = "2"
 #lto = true
 
   [workspace.dependencies]
-  istanbul-oxide          = { path = "./packages/istanbul-oxide", version = "0.0.26" }
+  istanbul-oxide          = { path = "./packages/istanbul-oxide", version = "0.0.27" }
   swc-coverage-instrument = { path = "./packages/swc-coverage-instrument" }
 
   getrandom          = { version = "0.2.15" }
@@ -21,7 +21,7 @@ resolver = "2"
   serde              = { version = "1.0.203" }
   serde-wasm-bindgen = { version = "0.6.5" }
   serde_json         = { version = "1.0.120" }
-  swc_core           = { version = "13.0.4" }
+  swc_core           = { version = "22.2.1" }
   tracing            = { version = "0.1.37" }
   tracing-subscriber = { version = "0.3.17" }
   wasm-bindgen       = { version = "0.2.92" }
