@@ -21,8 +21,8 @@ napi-derive = { version = "2.12.3", default-features = false, features = [
 ] }
 serde = { version = "1.0.203", features = ["derive"] }
 serde_json = { version = "1.0.120", features = ["unbounded_depth"] }
-swc-coverage-instrument = { version = "0.0.26", path = "../../packages/swc-coverage-instrument" }
-swc_core = { version = "13.0.4", features = [
+swc-coverage-instrument = { version = "0.0.27", path = "../../packages/swc-coverage-instrument" }
+swc_core = { version = "22.2.1", features = [
   "common_concurrent",
   "ecma_transforms",
   "ecma_ast",
@@ -30,3 +30,4 @@ swc_core = { version = "13.0.4", features = [
   "ecma_visit",
   "base_node",
 ] }
+swc_error_reporters = { version = "10.0.0" }
