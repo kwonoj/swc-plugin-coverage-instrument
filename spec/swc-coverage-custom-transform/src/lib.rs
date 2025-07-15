@@ -17,6 +17,7 @@ use swc_core::{
     base::{config::Options, Compiler, TransformOutput},
     common::{
         comments::{Comments, SingleThreadedComments},
+        errors::SourceMapper,
         sync::Lazy,
         FileName, FilePathMapping, SourceMap,
     },
@@ -123,11 +124,7 @@ pub fn transform_sync(
     .convert_err()
 }
 
-fn coverage_instrument<
-    'a,
-    C: Comments + 'a + std::clone::Clone,
-    S: 'a + swc_core::common::errors::SourceMapper,
->(
+fn coverage_instrument<'a, C: Comments + 'a + std::clone::Clone, S: 'a + SourceMapper>(
     source_map: Arc<S>,
     comments: C,
     instrument_options: InstrumentOptions,
