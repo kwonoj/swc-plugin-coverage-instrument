@@ -4,6 +4,7 @@ macro_rules! instrumentation_branch_wrap_counter_helper {
         // if (path.isExpression()) {
         //    path.replaceWith(T.sequenceExpression([increment, path.node]));
         //}
+        #[allow(dead_code)]
         #[tracing::instrument(skip_all)]
         fn replace_expr_with_stmt_counter(&mut self, expr: &mut Expr) {
             self.replace_expr_with_counter(expr, |cov, cov_fn_ident, range| {

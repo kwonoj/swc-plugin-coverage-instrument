@@ -1,3 +1,5 @@
+#![allow(unexpected_cfgs)]
+
 use serde::Deserialize;
 use serde::Serialize;
 use swc_coverage_instrument::FileCoverage;
@@ -11,6 +13,7 @@ pub struct CoverageMagicValue {
     key: String,
     value: String,
 }
+
 
 #[wasm_bindgen(js_name = "getCoverageMagicConstants")]
 pub fn get_coverage_magic_constants() -> JsValue {
@@ -31,6 +34,7 @@ pub struct FileCoverageInterop {
 impl FileCoverageInterop {
     #[wasm_bindgen(constructor)]
     pub fn new(val: &JsValue) -> FileCoverageInterop {
+        #[allow(deprecated)]
         let inner: FileCoverage = val.into_serde().unwrap();
 
         FileCoverageInterop { inner }

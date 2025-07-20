@@ -20,7 +20,7 @@ macro_rules! create_instrumentation_visitor {
             cov_fn_temp_ident: Ident,
             instrument_options: crate::InstrumentOptions,
             // Current visitor state to hold stmts to be prepended by parent node.
-            pub before: Vec<Stmt>,
+            #[allow(dead_code)] pub before: Vec<Stmt>,
             nodes: Vec<crate::Node>,
             should_ignore: Option<crate::hint_comments::IgnoreScope>,
             $($vis $field: $t,)*
