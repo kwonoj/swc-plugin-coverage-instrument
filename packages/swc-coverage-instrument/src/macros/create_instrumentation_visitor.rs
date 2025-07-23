@@ -190,5 +190,6 @@ macro_rules! create_instrumentation_visitor {
          on_enter!(AssignPat);
          on_enter!(GetterProp);
          on_enter!(SetterProp);
+         on_enter!(TaggedTpl);
     }
 }

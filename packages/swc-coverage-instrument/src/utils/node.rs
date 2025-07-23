@@ -44,6 +44,7 @@ pub enum Node {
     ExportDefaultDecl,
     BlockStmt,
     AssignPat,
+    TaggedTpl,
 }
 
 impl Display for Node {

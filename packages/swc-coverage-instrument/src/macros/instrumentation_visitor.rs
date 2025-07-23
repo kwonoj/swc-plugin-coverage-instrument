@@ -267,6 +267,31 @@ macro_rules! instrumentation_visitor {
             self.on_exit(old);
         }
 
+        // TaggedTemplateExpression: special handling to preserve template relationship
+        #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
+        fn visit_mut_tagged_tpl(&mut self, tagged_tpl: &mut TaggedTpl) {
+            let (old, ignore_current) = self.on_enter(tagged_tpl);
+
+            match ignore_current {
+                Some(crate::hint_comments::IgnoreScope::Next) => {}
+                _ => {
+                    // For tagged template expressions like styled(...)`template`,
+                    // we need to instrument the entire expression rather than wrapping
+                    // the tag part in a sequence expression, which would break the
+                    // template relationship and cause emotion to lose label information.
+
+                    // Instead of calling cover_statement on the tag (which would wrap it),
+                    // we mark to prepend a statement counter before the entire tagged template
+                    self.mark_prepend_stmt_counter(&tagged_tpl.span);
+
+                    // Visit children normally to instrument any inner expressions
+                    tagged_tpl.visit_mut_children_with(self);
+                }
+            }
+
+            self.on_exit(old);
+        }
+
         // ReturnStatement: entries(coverStatement),
         #[tracing::instrument(skip_all, fields(node = %self.print_node()))]
         fn visit_mut_return_stmt(&mut self, return_stmt: &mut ReturnStmt) {
