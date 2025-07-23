@@ -236,6 +236,18 @@ macro_rules! instrumentation_counter_helper {
         }
 
         fn cover_statement(&mut self, expr: &mut Expr) {
+            // Special handling for tagged template expressions (like emotion styled components)
+            // to preserve the template relationship and avoid wrapping in sequence expressions
+            if let Expr::TaggedTpl(_) = expr {
+                // For tagged templates, prepend statement counter instead of wrapping
+                // This preserves the template relationship
+                let span = expr.span();
+                self.mark_prepend_stmt_counter(&span);
+                // Still visit children to instrument any inner expressions
+                expr.visit_mut_children_with(self);
+                return;
+            }
+
             let span = expr.span();
             // This is ugly, poor man's substitute to istanbul's `insertCounter` to determine
             // when to replace givn expr to wrapped Paren or prepend stmt counter.
