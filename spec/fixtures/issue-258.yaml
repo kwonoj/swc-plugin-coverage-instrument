@@ -1,0 +1,30 @@
+---
+name: issue 258 - class property arrow function coverage
+code: |
+  class Testing {
+    method() {
+      return 'Hello, World! ' + this.propertyFunction();
+    }
+
+    propertyFunction = () => {
+      return 'Instance';
+    };
+  }
+
+  const instance = new Testing();
+  output = args === 1 ? instance.method() : 'not called';
+tests:
+  - name: covers arrow function body when called
+    args: 1
+    out: 'Hello, World! Instance'
+    lines: {'3': 1, '6': 1, '7': 1, '11': 1, '12': 1}
+    statements: {'0': 1, '1': 1, '2': 1, '3': 1, '4': 1}
+    branches: {'0': [1, 0]}
+    functions: {'0': 1, '1': 1}
+  - name: does not cover arrow function body when not called
+    args: 2
+    out: 'not called'
+    lines: {'3': 0, '6': 1, '7': 0, '11': 1, '12': 1}
+    statements: {'0': 0, '1': 1, '2': 0, '3': 1, '4': 1}
+    branches: {'0': [0, 1]}
+    functions: {'0': 0, '1': 0}
