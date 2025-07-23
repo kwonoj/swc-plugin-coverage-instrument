@@ -316,6 +316,8 @@ macro_rules! instrumentation_visitor {
                     if let Some(value) = &mut class_prop.value {
                         self.cover_statement(&mut *value);
                     }
+                    // Visit children to ensure arrow functions and other expressions are properly instrumented
+                    class_prop.visit_mut_children_with(self);
                 }
             }
             self.on_exit(old);
@@ -332,6 +334,8 @@ macro_rules! instrumentation_visitor {
                     if let Some(value) = &mut private_prop.value {
                         self.cover_statement(&mut *value);
                     }
+                    // Visit children to ensure arrow functions and other expressions are properly instrumented
+                    private_prop.visit_mut_children_with(self);
                 }
             }
             self.on_exit(old);
