@@ -29,6 +29,26 @@ ${code}
     );
   });
 
+  it("should normalize paths", () => {
+    const code = `console.log('hello world');`;
+
+    const output = instrumentSync(
+      code,
+      "C:\\Users\\project\\test\\index.test.ts",
+      undefined,
+      {
+        unstableExclude: ["**/test/**"],
+      },
+    );
+
+    assert.equal(
+      output.code,
+      `"use strict";
+${code}
+`,
+    );
+  });
+
   it("should preserve emotion styled component labels with template literals", () => {
     // This reproduces the issue from GitHub #247
     // Input: code AFTER emotion processing (as shown in the GitHub issue)
