@@ -702,7 +702,7 @@ dependencies = [
 
 [[package]]
 name = "istanbul-oxide"
-version = "0.0.28"
+version = "0.0.29"
 dependencies = [
  "indexmap",
  "serde",
@@ -1443,7 +1443,7 @@ checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "swc-coverage-instrument"
-version = "0.0.28"
+version = "0.0.29"
 dependencies = [
  "istanbul-oxide",
  "once_cell",
@@ -1468,13 +1468,14 @@ dependencies = [
 
 [[package]]
 name = "swc-plugin-coverage"
-version = "0.0.28"
+version = "0.0.29"
 dependencies = [
  "serde_json",
  "swc-coverage-instrument",
  "swc_core",
  "tracing",
  "tracing-subscriber",
+ "typed-path",
  "wax",
 ]
 
@@ -2132,6 +2133,12 @@ dependencies = [
  "serde",
  "stable_deref_trait",
 ]
+
+[[package]]
+name = "typed-path"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c462d18470a2857aa657d338af5fa67170bb48bcc80a296710ce3b0802a32566"
 
 [[package]]
 name = "typenum"

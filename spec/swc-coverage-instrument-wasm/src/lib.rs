@@ -14,7 +14,6 @@ pub struct CoverageMagicValue {
     value: String,
 }
 
-
 #[wasm_bindgen(js_name = "getCoverageMagicConstants")]
 pub fn get_coverage_magic_constants() -> JsValue {
     serde_wasm_bindgen::to_value(&CoverageMagicValue {
