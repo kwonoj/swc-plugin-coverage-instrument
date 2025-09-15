@@ -160,6 +160,20 @@ impl<C: Clone + Comments, S: SourceMapper> VisitMut for CoverageVisitor<C, S> {
                 ModuleItem::ModuleDecl(decl) => self.on_enter(decl),
                 ModuleItem::Stmt(stmt) => self.on_enter(stmt),
             };
+
+            // https://github.com/kwonoj/swc-plugin-coverage-instrument/issues/277
+            // Add statement counter for export const declarations to match istanbul behavior
+            // Istanbul treats export const and export var differently:
+            // - export const: adds statement counter for the export declaration
+            // - export var: only instruments the initializer, no separate export counter
+            if let ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(export_decl)) = &item {
+                if let Decl::Var(var_decl) = &export_decl.decl {
+                    if var_decl.kind == VarDeclKind::Const {
+                        self.mark_prepend_stmt_counter(&export_decl.span);
+                    }
+                }
+            }
+
             item.visit_mut_children_with(self);
 
             new_items.extend(self.before.drain(..).map(|v| ModuleItem::Stmt(v)));
