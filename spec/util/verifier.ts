@@ -271,7 +271,10 @@ const create = (code, options = {}, instrumentOptions = {}, inputSourceMap) => {
     );
   }
   if (!(verror || generateOnly)) {
-    wrapped = "{ var output;\n" + instrumenterOutput + "\nreturn output;\n}";
+    wrapped =
+      "{ var exports={};\n var output;\n" +
+      instrumenterOutput +
+      "\nreturn output;\n}";
     g[coverageVariable] = undefined;
     try {
       if (options.isAsync) {
