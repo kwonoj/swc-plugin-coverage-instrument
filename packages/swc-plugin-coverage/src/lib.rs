@@ -14,7 +14,7 @@ use typed_path::Utf8TypedPath;
 use wax::Pattern;
 
 /// Normalize a file path to use forward slashes for consistent glob matching
-fn normalize_path_for_glob_matching(path: &str) -> String {
+fn normalize_path(path: &str) -> String {
     let typed_path = Utf8TypedPath::derive(path);
     if typed_path.is_windows() {
         typed_path.with_unix_encoding().to_string()
@@ -77,9 +77,14 @@ pub fn process(program: Program, metadata: TransformPluginProgramMetadata) -> Pr
     // compatible glob and the filename matches the pattern, the file will not be instrumented.
     // Note that the filename is provided by swc's core, may not be the full absolute path to the file name.
     if let Some(exclude) = &instrument_options.unstable_exclude {
-        match wax::any(exclude.iter().map(|s| s.as_ref()).collect::<Vec<&str>>()) {
+        let normalized_patterns = exclude
+            .iter()
+            .map(|s| normalize_path(s))
+            .collect::<Vec<_>>();
+
+        match wax::any(normalized_patterns.iter().map(|s| s.as_str())) {
             Ok(p) => {
-                let normalized_filename = normalize_path_for_glob_matching(filename);
+                let normalized_filename = normalize_path(filename);
                 if p.is_match(normalized_filename.as_str()) {
                     return program;
                 }
@@ -110,32 +115,32 @@ mod tests {
     #[test]
     fn test_normalize_path_for_glob_matching() {
         // Test Windows paths are normalized to Unix-style
-        let result = normalize_path_for_glob_matching(r"C:\Users\project\test\index.test.ts");
+        let result = normalize_path(r"C:\Users\project\test\index.test.ts");
         println!("Windows path result: {}", result);
         // The typed-path crate converts Windows paths to Unix format, but may strip the drive letter
         // The important thing is that backslashes are converted to forward slashes
         assert!(result.contains("/Users/project/test/index.test.ts"));
 
         // Test mixed separators are normalized
-        let result = normalize_path_for_glob_matching(r"C:\Users/project\test/file.js");
+        let result = normalize_path(r"C:\Users/project\test/file.js");
         println!("Mixed separators result: {}", result);
         assert!(result.contains("/Users/project/test/file.js"));
 
         // Test Unix paths remain unchanged
         assert_eq!(
-            normalize_path_for_glob_matching("/home/user/project/src/utils/helper.js"),
+            normalize_path("/home/user/project/src/utils/helper.js"),
             "/home/user/project/src/utils/helper.js"
         );
 
         // Test relative Unix paths remain unchanged
         assert_eq!(
-            normalize_path_for_glob_matching("src/components/Button.tsx"),
+            normalize_path("src/components/Button.tsx"),
             "src/components/Button.tsx"
         );
 
         // Test that backslashes are converted to forward slashes
         let windows_path = r"project\src\test\file.ts";
-        let result = normalize_path_for_glob_matching(windows_path);
+        let result = normalize_path(windows_path);
         println!("Relative Windows path result: {}", result);
         assert!(result.contains("project/src/test/file.ts"));
     }
