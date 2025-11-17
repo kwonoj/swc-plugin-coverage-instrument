@@ -62,8 +62,7 @@ checksum = "d92bec98840b8f03a5ff5413de5293bfcd8bf96467cf5452609f939ec6f5de16"
 [[package]]
 name = "ast_node"
 version = "4.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4902c7f39335a2390500ee791d6cb1778e742c7b97952497ec81449a5bfa3a7"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "quote",
  "swc_macros_common",
@@ -95,6 +94,7 @@ dependencies = [
 [[package]]
 name = "better_scoped_tls"
 version = "1.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "scoped-tls",
 ]
@@ -465,8 +465,7 @@ dependencies = [
 [[package]]
 name = "from_variant"
 version = "2.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "308530a56b099da144ebc5d8e179f343ad928fa2b3558d1eb3db9af18d6eff43"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "swc_macros_common",
  "syn",
@@ -561,7 +560,8 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "hstr"
-version = "3.0.3"
+version = "3.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "hashbrown 0.14.5",
  "new_debug_unreachable",
@@ -1435,6 +1435,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "string_enum"
 version = "1.0.2"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "quote",
  "swc_macros_common",
@@ -1489,6 +1490,7 @@ dependencies = [
 [[package]]
 name = "swc_allocator"
 version = "4.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "allocator-api2",
  "bumpalo",
@@ -1499,8 +1501,7 @@ dependencies = [
 [[package]]
 name = "swc_atoms"
 version = "8.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b40c2b43a19b5d0706aca8669ae5b77b92bd141f7f8ce5e980e0e52430f54b20"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "bytecheck",
  "hstr",
@@ -1513,8 +1514,7 @@ dependencies = [
 [[package]]
 name = "swc_common"
 version = "16.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09e51fecd32bb0989543f0a64f4103cbd728e375838be83d768ce6989f5ea631"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "anyhow",
  "ast_node",
@@ -1538,15 +1538,14 @@ dependencies = [
  "swc_visit",
  "termcolor",
  "tracing",
- "unicode-width 0.1.14",
+ "unicode-width 0.2.2",
  "url",
 ]
 
 [[package]]
 name = "swc_core"
 version = "46.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f062270a2c008b097af0f2f512fb7f6137c3ef26527fcfa7e1477acc7dc78bba"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "swc_allocator",
  "swc_atoms",
@@ -1567,8 +1566,7 @@ dependencies = [
 [[package]]
 name = "swc_ecma_ast"
 version = "17.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7da8bb0e5aaa6e077f178a28d29bc7da4a8ddaf012b3c21c043cb5f72a0b9779"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "bitflags",
  "bytecheck",
@@ -1589,8 +1587,7 @@ dependencies = [
 [[package]]
 name = "swc_ecma_codegen"
 version = "19.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43b756350060f51856d6d1f6ce63183b299d783d9d4458c1ecd6a3d72f4acf7e"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "ascii",
  "compact_str",
@@ -1613,6 +1610,7 @@ dependencies = [
 [[package]]
 name = "swc_ecma_codegen_macros"
 version = "2.0.2"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "proc-macro2",
  "swc_macros_common",
@@ -1622,8 +1620,7 @@ dependencies = [
 [[package]]
 name = "swc_ecma_parser"
 version = "26.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ac3281dd9eef03b877fe9cef75a4c8951ce6df0c5f381868f302ee3c58fa6e2"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "bitflags",
  "either",
@@ -1643,8 +1640,7 @@ dependencies = [
 [[package]]
 name = "swc_ecma_quote_macros"
 version = "26.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4086f93c86b9ea772c4d34f908f8c64a80f8235b6513fa8c00a565dd3eb199a1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "anyhow",
  "proc-macro2",
@@ -1661,8 +1657,7 @@ dependencies = [
 [[package]]
 name = "swc_ecma_testing"
 version = "17.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26ba3446b9060debb0aa7f722b9bcdaf7865f88a91ab1e77f3b35f11f7935d3a"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "anyhow",
  "hex",
@@ -1674,8 +1669,7 @@ dependencies = [
 [[package]]
 name = "swc_ecma_transforms_base"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e757ebf73dcab085bed9d1290bbe387c4cf889e21e105b4f480cbafac865ed9"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "better_scoped_tls",
  "indexmap",
@@ -1696,8 +1690,7 @@ dependencies = [
 [[package]]
 name = "swc_ecma_transforms_testing"
 version = "32.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43c95e674bc46c27db53aaa9b293fcfdb10b65a0fe02d33be1106ea6d0ad3b1e"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "ansi_term",
  "anyhow",
@@ -1722,8 +1715,7 @@ dependencies = [
 [[package]]
 name = "swc_ecma_utils"
 version = "23.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c17da9ae2d3ad51e865bb27aa97f68b89441ef0b6ee1ba507913c412303c9b7"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "indexmap",
  "num_cpus",
@@ -1741,8 +1733,7 @@ dependencies = [
 [[package]]
 name = "swc_ecma_visit"
 version = "17.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6e6fea33cf8e654d46998cb65bf2915d3dbaab869a25f0ae2c70a86f1e7c2a4"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "new_debug_unreachable",
  "num-bigint",
@@ -1756,6 +1747,7 @@ dependencies = [
 [[package]]
 name = "swc_eq_ignore_macros"
 version = "1.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1765,8 +1757,7 @@ dependencies = [
 [[package]]
 name = "swc_error_reporters"
 version = "18.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8457a012c93109582b926c97716ff4408923bd54690a8b1fd6b138b1b6334cd"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "anyhow",
  "miette",
@@ -1778,6 +1769,7 @@ dependencies = [
 [[package]]
 name = "swc_macros_common"
 version = "1.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1787,6 +1779,7 @@ dependencies = [
 [[package]]
 name = "swc_plugin"
 version = "1.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "once_cell",
 ]
@@ -1794,6 +1787,7 @@ dependencies = [
 [[package]]
 name = "swc_plugin_macro"
 version = "1.1.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1803,8 +1797,7 @@ dependencies = [
 [[package]]
 name = "swc_plugin_proxy"
 version = "17.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5aa8c82358eebd41d96ffe6f9e8d8ebb77218e1e44ec9bd5b9d986a060ae896e"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "better_scoped_tls",
  "bytecheck",
@@ -1839,6 +1832,7 @@ dependencies = [
 [[package]]
 name = "swc_trace_macro"
 version = "2.0.2"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "quote",
  "syn",
@@ -1847,8 +1841,7 @@ dependencies = [
 [[package]]
 name = "swc_transform_common"
 version = "10.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac052dc4f163680187023eaad6737cfeec2f7b69ac063bb004b3a4cc52407924"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "better_scoped_tls",
  "rustc-hash",
@@ -1859,6 +1852,7 @@ dependencies = [
 [[package]]
 name = "swc_visit"
 version = "2.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "either",
  "new_debug_unreachable",
@@ -1917,8 +1911,7 @@ dependencies = [
 [[package]]
 name = "testing"
 version = "17.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6071e9f3c50d975c85e606f2cc37c3a3ccff34cafc065f412fe7e04b94ae944"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "cargo_metadata 0.18.1",
  "difference",
@@ -1938,6 +1931,7 @@ dependencies = [
 [[package]]
 name = "testing_macros"
 version = "1.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 dependencies = [
  "anyhow",
  "glob",
@@ -2554,465 +2548,481 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "ast_node"
-version = "5.0.0"
-
-[[patch.unused]]
 name = "binding_core_node"
-version = "0.2.0"
+version = "0.1.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "binding_core_wasm"
-version = "1.15.2"
+version = "1.14.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "binding_es_ast_viewer"
-version = "1.15.2"
+version = "1.14.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "binding_html_node"
-version = "0.2.0"
+version = "0.1.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "binding_macros"
-version = "45.0.0"
+version = "44.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "binding_minifier_node"
-version = "0.2.0"
+version = "0.1.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "binding_minifier_wasm"
-version = "1.15.2"
+version = "1.14.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "binding_react_compiler_node"
-version = "0.2.0"
+version = "0.1.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "binding_typescript_wasm"
-version = "1.15.2"
+version = "1.14.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "dbg-swc"
-version = "37.0.0"
-
-[[patch.unused]]
-name = "from_variant"
-version = "3.0.0"
+version = "36.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "generate-code"
 version = "0.2.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "jsdoc"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "preset_env_base"
-version = "6.0.0"
+version = "5.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc"
-version = "45.0.1"
+version = "44.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc-releaser"
 version = "0.1.0"
-
-[[patch.unused]]
-name = "swc_atoms"
-version = "9.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_bundler"
-version = "35.0.0"
+version = "34.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_cli"
-version = "0.92.8"
+version = "0.91.634"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_cli_impl"
-version = "47.0.1"
-
-[[patch.unused]]
-name = "swc_common"
-version = "17.0.1"
+version = "46.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_compiler_base"
-version = "39.0.0"
+version = "38.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_config"
 version = "3.1.2"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_config_macro"
 version = "1.0.1"
-
-[[patch.unused]]
-name = "swc_core"
-version = "47.0.6"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_css"
-version = "20.0.0"
+version = "19.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_css_ast"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_css_codegen"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_css_codegen_macros"
 version = "1.0.2"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_css_compat"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_css_lints"
-version = "18.0.0"
+version = "17.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_css_minifier"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_css_modules"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_css_parser"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_css_prefixer"
-version = "20.0.0"
+version = "19.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_css_utils"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_css_visit"
-version = "17.0.1"
-
-[[patch.unused]]
-name = "swc_ecma_ast"
-version = "18.0.0"
-
-[[patch.unused]]
-name = "swc_ecma_codegen"
-version = "20.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_compat_bugfixes"
-version = "33.0.0"
+version = "32.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_compat_common"
-version = "24.0.0"
+version = "23.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_compat_es2015"
-version = "33.0.0"
+version = "32.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_compat_es2016"
-version = "30.0.0"
+version = "29.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_compat_es2017"
-version = "30.0.0"
+version = "29.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_compat_es2018"
-version = "30.0.0"
+version = "29.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_compat_es2019"
-version = "30.0.0"
+version = "29.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_compat_es2020"
-version = "31.0.0"
+version = "30.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_compat_es2021"
-version = "30.0.0"
+version = "29.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_compat_es2022"
-version = "31.0.0"
+version = "30.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_compat_es3"
-version = "25.0.0"
+version = "24.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_compiler"
-version = "8.0.0"
+version = "7.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_ext_transforms"
-version = "24.0.0"
-
-[[patch.unused]]
-name = "swc_ecma_hooks"
-version = "0.2.0"
+version = "23.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_lexer"
-version = "26.0.0"
+version = "25.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_lints"
-version = "25.0.0"
+version = "24.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_loader"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_minifier"
-version = "36.0.2"
-
-[[patch.unused]]
-name = "swc_ecma_parser"
-version = "27.0.4"
+version = "35.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_preset_env"
-version = "39.0.0"
+version = "38.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_quote"
-version = "27.0.0"
-
-[[patch.unused]]
-name = "swc_ecma_quote_macros"
-version = "27.0.0"
+version = "26.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_react_compiler"
-version = "11.0.0"
+version = "10.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_regexp"
-version = "0.6.0"
+version = "0.5.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_regexp_ast"
-version = "0.6.0"
+version = "0.5.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_regexp_common"
 version = "0.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_regexp_visit"
-version = "0.6.0"
-
-[[patch.unused]]
-name = "swc_ecma_testing"
-version = "18.0.0"
+version = "0.5.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_transforms"
-version = "38.0.0"
-
-[[patch.unused]]
-name = "swc_ecma_transforms_base"
-version = "30.0.0"
+version = "37.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_transforms_classes"
-version = "30.0.0"
+version = "29.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_transforms_compat"
-version = "34.0.0"
+version = "33.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_transforms_macros"
 version = "1.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_transforms_module"
-version = "33.0.0"
+version = "32.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_transforms_optimization"
-version = "32.0.0"
+version = "31.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_transforms_proposal"
-version = "30.0.0"
+version = "29.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_transforms_react"
-version = "33.0.0"
-
-[[patch.unused]]
-name = "swc_ecma_transforms_testing"
-version = "33.0.0"
+version = "32.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_transforms_typescript"
-version = "33.0.0"
+version = "32.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecma_usage_analyzer"
-version = "25.0.0"
-
-[[patch.unused]]
-name = "swc_ecma_utils"
 version = "24.0.0"
-
-[[patch.unused]]
-name = "swc_ecma_visit"
-version = "18.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ecmascript"
-version = "43.0.0"
-
-[[patch.unused]]
-name = "swc_error_reporters"
-version = "19.0.0"
+version = "42.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_estree_ast"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_estree_compat"
-version = "29.0.0"
+version = "28.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_graph_analyzer"
 version = "14.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_html"
-version = "29.0.0"
+version = "28.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_html_ast"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_html_codegen"
-version = "18.0.0"
+version = "17.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_html_codegen_macros"
 version = "1.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_html_minifier"
-version = "36.0.0"
+version = "35.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_html_parser"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_html_utils"
-version = "16.0.0"
+version = "15.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_html_visit"
-version = "17.0.1"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_malloc"
 version = "1.2.4"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_node_bundler"
-version = "46.0.0"
+version = "45.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_node_comments"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_nodejs_common"
 version = "1.0.3"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_plugin_backend_tests"
 version = "0.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_plugin_backend_wasmer"
-version = "5.0.0"
+version = "4.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_plugin_backend_wasmtime"
-version = "4.0.0"
-
-[[patch.unused]]
-name = "swc_plugin_proxy"
-version = "18.0.0"
+version = "3.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_plugin_runner"
-version = "22.0.1"
+version = "21.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_timer"
 version = "1.0.0"
-
-[[patch.unused]]
-name = "swc_transform_common"
-version = "11.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_ts_fast_strip"
-version = "36.0.0"
-
-[[patch.unused]]
-name = "swc_ts_fast_strip_binding"
-version = "0.1.0"
+version = "35.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_typescript"
-version = "23.0.0"
+version = "22.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_xml"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_xml_ast"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_xml_codegen"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_xml_codegen_macros"
 version = "1.0.1"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_xml_parser"
-version = "17.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"
 
 [[patch.unused]]
 name = "swc_xml_visit"
-version = "17.0.1"
-
-[[patch.unused]]
-name = "testing"
-version = "18.0.0"
+version = "16.0.0"
+source = "git+https://github.com/swc-project/swc.git?branch=devbird%2Ffix-lexer-windows-path-escape#46fdbb3ba9f877ed05aa8820ba52047bbe600131"

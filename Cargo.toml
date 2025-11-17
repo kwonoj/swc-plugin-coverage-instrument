@@ -88,7 +88,6 @@ swc_ecma_compat_es2022 = { git = 'https://github.com/swc-project/swc.git', branc
 swc_ecma_compat_es3 = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
 swc_ecma_compiler = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
 swc_ecma_ext_transforms = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
-swc_ecma_hooks = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
 swc_ecma_lexer = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
 swc_ecma_lints = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
 swc_ecma_loader = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
@@ -147,7 +146,6 @@ swc_timer = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/
 swc_trace_macro = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
 swc_transform_common = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
 swc_ts_fast_strip = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
-swc_ts_fast_strip_binding = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
 swc_typescript = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
 swc_visit = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
 swc_xml = { git = 'https://github.com/swc-project/swc.git', branch = 'devbird/fix-lexer-windows-path-escape' }
