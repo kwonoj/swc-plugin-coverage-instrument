@@ -95,8 +95,6 @@ dependencies = [
 [[package]]
 name = "better_scoped_tls"
 version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7cd228125315b132eed175bf47619ac79b945b26e56b848ba203ae4ea8603609"
 dependencies = [
  "scoped-tls",
 ]
@@ -564,8 +562,6 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 [[package]]
 name = "hstr"
 version = "3.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c43c0a9e8fbdb3bb9dc8eee85e1e2ac81605418b4c83b6b7413cbf14d56ca5c"
 dependencies = [
  "hashbrown 0.14.5",
  "new_debug_unreachable",
@@ -1439,8 +1435,6 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "string_enum"
 version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae36a4951ca7bd1cfd991c241584a9824a70f6aff1e7d4f693fb3f2465e4030e"
 dependencies = [
  "quote",
  "swc_macros_common",
@@ -1495,8 +1489,6 @@ dependencies = [
 [[package]]
 name = "swc_allocator"
 version = "4.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d7eefd2c8b228a8c73056482b2ae4b3a1071fbe07638e3b55ceca8570cc48bb"
 dependencies = [
  "allocator-api2",
  "bumpalo",
@@ -1621,8 +1613,6 @@ dependencies = [
 [[package]]
 name = "swc_ecma_codegen_macros"
 version = "2.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e276dc62c0a2625a560397827989c82a93fd545fcf6f7faec0935a82cc4ddbb8"
 dependencies = [
  "proc-macro2",
  "swc_macros_common",
@@ -1766,8 +1756,6 @@ dependencies = [
 [[package]]
 name = "swc_eq_ignore_macros"
 version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c16ce73424a6316e95e09065ba6a207eba7765496fed113702278b7711d4b632"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1790,8 +1778,6 @@ dependencies = [
 [[package]]
 name = "swc_macros_common"
 version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aae1efbaa74943dc5ad2a2fb16cbd78b77d7e4d63188f3c5b4df2b4dcd2faaae"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1801,8 +1787,6 @@ dependencies = [
 [[package]]
 name = "swc_plugin"
 version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92b27449420554de6ad8d49004ad3d36e6ac64ecb51d1b0fe1002afcd7a45d85"
 dependencies = [
  "once_cell",
 ]
@@ -1810,8 +1794,6 @@ dependencies = [
 [[package]]
 name = "swc_plugin_macro"
 version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ace467dfafbbdf3aecff786b8605b35db57d945e92fd88800569aa2cba0cdf61"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1857,8 +1839,6 @@ dependencies = [
 [[package]]
 name = "swc_trace_macro"
 version = "2.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfd2b4b0adb82e36f2ac688d00a6a67132c7f4170c772617516793a701be89e8"
 dependencies = [
  "quote",
  "syn",
@@ -1879,8 +1859,6 @@ dependencies = [
 [[package]]
 name = "swc_visit"
 version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62fb71484b486c185e34d2172f0eabe7f4722742aad700f426a494bb2de232a2"
 dependencies = [
  "either",
  "new_debug_unreachable",
@@ -1960,8 +1938,6 @@ dependencies = [
 [[package]]
 name = "testing_macros"
 version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7442bd3ca09f38d4788dc5ebafbc1967c3717726b4b074db011d470b353548b"
 dependencies = [
  "anyhow",
  "glob",
@@ -2576,3 +2552,467 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[patch.unused]]
+name = "ast_node"
+version = "5.0.0"
+
+[[patch.unused]]
+name = "binding_core_node"
+version = "0.2.0"
+
+[[patch.unused]]
+name = "binding_core_wasm"
+version = "1.15.2"
+
+[[patch.unused]]
+name = "binding_es_ast_viewer"
+version = "1.15.2"
+
+[[patch.unused]]
+name = "binding_html_node"
+version = "0.2.0"
+
+[[patch.unused]]
+name = "binding_macros"
+version = "45.0.0"
+
+[[patch.unused]]
+name = "binding_minifier_node"
+version = "0.2.0"
+
+[[patch.unused]]
+name = "binding_minifier_wasm"
+version = "1.15.2"
+
+[[patch.unused]]
+name = "binding_react_compiler_node"
+version = "0.2.0"
+
+[[patch.unused]]
+name = "binding_typescript_wasm"
+version = "1.15.2"
+
+[[patch.unused]]
+name = "dbg-swc"
+version = "37.0.0"
+
+[[patch.unused]]
+name = "from_variant"
+version = "3.0.0"
+
+[[patch.unused]]
+name = "generate-code"
+version = "0.2.0"
+
+[[patch.unused]]
+name = "jsdoc"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "preset_env_base"
+version = "6.0.0"
+
+[[patch.unused]]
+name = "swc"
+version = "45.0.1"
+
+[[patch.unused]]
+name = "swc-releaser"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "swc_atoms"
+version = "9.0.0"
+
+[[patch.unused]]
+name = "swc_bundler"
+version = "35.0.0"
+
+[[patch.unused]]
+name = "swc_cli"
+version = "0.92.8"
+
+[[patch.unused]]
+name = "swc_cli_impl"
+version = "47.0.1"
+
+[[patch.unused]]
+name = "swc_common"
+version = "17.0.1"
+
+[[patch.unused]]
+name = "swc_compiler_base"
+version = "39.0.0"
+
+[[patch.unused]]
+name = "swc_config"
+version = "3.1.2"
+
+[[patch.unused]]
+name = "swc_config_macro"
+version = "1.0.1"
+
+[[patch.unused]]
+name = "swc_core"
+version = "47.0.6"
+
+[[patch.unused]]
+name = "swc_css"
+version = "20.0.0"
+
+[[patch.unused]]
+name = "swc_css_ast"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_css_codegen"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_css_codegen_macros"
+version = "1.0.2"
+
+[[patch.unused]]
+name = "swc_css_compat"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_css_lints"
+version = "18.0.0"
+
+[[patch.unused]]
+name = "swc_css_minifier"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_css_modules"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_css_parser"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_css_prefixer"
+version = "20.0.0"
+
+[[patch.unused]]
+name = "swc_css_utils"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_css_visit"
+version = "17.0.1"
+
+[[patch.unused]]
+name = "swc_ecma_ast"
+version = "18.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_codegen"
+version = "20.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_compat_bugfixes"
+version = "33.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_compat_common"
+version = "24.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_compat_es2015"
+version = "33.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_compat_es2016"
+version = "30.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_compat_es2017"
+version = "30.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_compat_es2018"
+version = "30.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_compat_es2019"
+version = "30.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_compat_es2020"
+version = "31.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_compat_es2021"
+version = "30.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_compat_es2022"
+version = "31.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_compat_es3"
+version = "25.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_compiler"
+version = "8.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_ext_transforms"
+version = "24.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_hooks"
+version = "0.2.0"
+
+[[patch.unused]]
+name = "swc_ecma_lexer"
+version = "26.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_lints"
+version = "25.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_loader"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_minifier"
+version = "36.0.2"
+
+[[patch.unused]]
+name = "swc_ecma_parser"
+version = "27.0.4"
+
+[[patch.unused]]
+name = "swc_ecma_preset_env"
+version = "39.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_quote"
+version = "27.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_quote_macros"
+version = "27.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_react_compiler"
+version = "11.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_regexp"
+version = "0.6.0"
+
+[[patch.unused]]
+name = "swc_ecma_regexp_ast"
+version = "0.6.0"
+
+[[patch.unused]]
+name = "swc_ecma_regexp_common"
+version = "0.0.1"
+
+[[patch.unused]]
+name = "swc_ecma_regexp_visit"
+version = "0.6.0"
+
+[[patch.unused]]
+name = "swc_ecma_testing"
+version = "18.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_transforms"
+version = "38.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_transforms_base"
+version = "30.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_transforms_classes"
+version = "30.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_transforms_compat"
+version = "34.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_transforms_macros"
+version = "1.0.1"
+
+[[patch.unused]]
+name = "swc_ecma_transforms_module"
+version = "33.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_transforms_optimization"
+version = "32.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_transforms_proposal"
+version = "30.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_transforms_react"
+version = "33.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_transforms_testing"
+version = "33.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_transforms_typescript"
+version = "33.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_usage_analyzer"
+version = "25.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_utils"
+version = "24.0.0"
+
+[[patch.unused]]
+name = "swc_ecma_visit"
+version = "18.0.1"
+
+[[patch.unused]]
+name = "swc_ecmascript"
+version = "43.0.0"
+
+[[patch.unused]]
+name = "swc_error_reporters"
+version = "19.0.0"
+
+[[patch.unused]]
+name = "swc_estree_ast"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_estree_compat"
+version = "29.0.0"
+
+[[patch.unused]]
+name = "swc_graph_analyzer"
+version = "14.0.1"
+
+[[patch.unused]]
+name = "swc_html"
+version = "29.0.0"
+
+[[patch.unused]]
+name = "swc_html_ast"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_html_codegen"
+version = "18.0.0"
+
+[[patch.unused]]
+name = "swc_html_codegen_macros"
+version = "1.0.1"
+
+[[patch.unused]]
+name = "swc_html_minifier"
+version = "36.0.0"
+
+[[patch.unused]]
+name = "swc_html_parser"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_html_utils"
+version = "16.0.0"
+
+[[patch.unused]]
+name = "swc_html_visit"
+version = "17.0.1"
+
+[[patch.unused]]
+name = "swc_malloc"
+version = "1.2.4"
+
+[[patch.unused]]
+name = "swc_node_bundler"
+version = "46.0.0"
+
+[[patch.unused]]
+name = "swc_node_comments"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_nodejs_common"
+version = "1.0.3"
+
+[[patch.unused]]
+name = "swc_plugin_backend_tests"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "swc_plugin_backend_wasmer"
+version = "5.0.0"
+
+[[patch.unused]]
+name = "swc_plugin_backend_wasmtime"
+version = "4.0.0"
+
+[[patch.unused]]
+name = "swc_plugin_proxy"
+version = "18.0.0"
+
+[[patch.unused]]
+name = "swc_plugin_runner"
+version = "22.0.1"
+
+[[patch.unused]]
+name = "swc_timer"
+version = "1.0.0"
+
+[[patch.unused]]
+name = "swc_transform_common"
+version = "11.0.0"
+
+[[patch.unused]]
+name = "swc_ts_fast_strip"
+version = "36.0.0"
+
+[[patch.unused]]
+name = "swc_ts_fast_strip_binding"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "swc_typescript"
+version = "23.0.0"
+
+[[patch.unused]]
+name = "swc_xml"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_xml_ast"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_xml_codegen"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_xml_codegen_macros"
+version = "1.0.1"
+
+[[patch.unused]]
+name = "swc_xml_parser"
+version = "17.0.0"
+
+[[patch.unused]]
+name = "swc_xml_visit"
+version = "17.0.1"
+
+[[patch.unused]]
+name = "testing"
+version = "18.0.0"
