@@ -15,7 +15,7 @@ macro_rules! create_instrumentation_visitor {
             // between plugin & custom transform pass.
             source_map: std::sync::Arc<S>,
             comments: C,
-            cov: std::rc::Rc<std::cell::RefCell<crate::SourceCoverage>>,
+            pub cov: std::rc::Rc<std::cell::RefCell<crate::SourceCoverage>>,
             cov_fn_ident: Ident,
             cov_fn_temp_ident: Ident,
             instrument_options: crate::InstrumentOptions,
