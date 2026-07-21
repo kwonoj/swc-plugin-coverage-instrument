@@ -12,6 +12,7 @@ use coverage_template::create_assignment_stmt::create_assignment_stmt;
 use coverage_template::create_coverage_data_object::create_coverage_data_object;
 use coverage_template::create_coverage_fn_decl::*;
 use coverage_template::create_global_stmt_template::create_global_stmt_template;
+use coverage_template::create_global_stmt_template::create_global_var_stmt_template;
 use source_coverage::SourceCoverage;
 
 #[macro_use]

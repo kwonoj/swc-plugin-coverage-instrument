@@ -9,6 +9,37 @@ instrumentSync(`console.log('boo')`, "anon");
 const tryDescribe = process.env.SWC_TRANSFORM_CUSTOM ? describe.skip : describe;
 
 tryDescribe("Plugin options", () => {
+  it("should emit the CSP-safe global scope verbatim when coverageGlobalScopeFunc is false", () => {
+    // https://github.com/istanbuljs/babel-plugin-istanbul/issues/212
+    const scope =
+      '(function(){var g;if(typeof globalThis!=="undefined"){g=globalThis}else{g=this}return g})()';
+
+    const output = instrumentSync(`console.log('hello');`, "csp-scope.js", undefined, {
+      coverageGlobalScopeFunc: false,
+      coverageGlobalScope: scope,
+    });
+
+    assert.include(
+      output.code,
+      `var global = ${scope}`,
+      "expected the scope expression emitted verbatim",
+    );
+    assert.notInclude(
+      output.code,
+      `((function(){}).constructor)("return`,
+      "expected NO Function-constructor preamble",
+    );
+  });
+
+  it("should keep the Function-constructor scope by default (istanbul parity)", () => {
+    const output = instrumentSync(`console.log('hello');`, "default-scope.js");
+    assert.include(
+      output.code,
+      `((function(){}).constructor)("return this")()`,
+      "default behavior should be unchanged",
+    );
+  });
+
   it("should able to exclude", () => {
     const code = `console.log('hello');`;
 

@@ -38,3 +38,20 @@ pub fn create_global_stmt_template(coverage_global_scope: &str) -> Stmt {
         }),
     )
 }
+
+/// Creates an assignment statement that emits the coverage global scope expression
+/// verbatim, with no `Function` constructor: `var global = <coverage_global_scope>;`.
+/// This is the CSP-safe counterpart to `create_global_stmt_template`, mirroring
+/// babel-plugin-istanbul's `globalTemplateVariable` (used when `coverageGlobalScopeFunc`
+/// is false). Some Content Security Policies forbid the `Function` constructor even when
+/// reached through a prototype, so callers can pass e.g. an inline
+/// `globalThis`/`self`/`window`/`global` lookup expression here instead.
+/// See https://github.com/istanbuljs/babel-plugin-istanbul/issues/212
+///
+/// The scope string is printed verbatim via `quote_ident!`, the same mechanism the
+/// Function-constructor template above relies on to smuggle `((function(){}).constructor)`
+/// through as source text.
+pub fn create_global_var_stmt_template(coverage_global_scope: &str) -> Stmt {
+    let scope_expr = quote_ident!(Default::default(), coverage_global_scope);
+    create_assignment_stmt(&IDENT_GLOBAL, Expr::Ident(scope_expr))
+}

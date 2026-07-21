@@ -54,10 +54,13 @@ impl<C: Clone + Comments, S: SourceMapper> CoverageVisitor<C, S> {
     fn get_coverage_templates(&mut self) -> (Stmt, Stmt) {
         self.cov.borrow_mut().freeze();
 
-        //TODO: option: global coverage variable scope. (optional, default `this`)
-        let coverage_global_scope = "this";
-        //TODO: option: use an evaluated function to find coverageGlobalScope.
-        let coverage_global_scope_func = true;
+        // Global coverage variable scope (optional, default `this`), mirroring
+        // babel-plugin-istanbul's `coverageGlobalScope`.
+        let coverage_global_scope = self.instrument_options.coverage_global_scope.as_str();
+        // Whether to locate coverageGlobalScope via an evaluated Function constructor
+        // (default true, matching istanbul). When false, emit the scope expression
+        // directly to avoid the eval-like construct some CSPs forbid.
+        let coverage_global_scope_func = self.instrument_options.coverage_global_scope_func;
 
         let gv_template = if coverage_global_scope_func {
             // TODO: path.scope.getBinding('Function')
@@ -76,12 +79,9 @@ impl<C: Clone + Comments, S: SourceMapper> CoverageVisitor<C, S> {
                 crate::create_global_stmt_template(coverage_global_scope)
             }
         } else {
-            unimplemented!("");
-            /*
-            gvTemplate = globalTemplateVariable({
-                GLOBAL_COVERAGE_SCOPE: opts.coverageGlobalScope
-            });
-            */
+            // globalTemplateVariable: `var global = <coverageGlobalScope>;`
+            // Emits the scope expression verbatim, with no Function constructor.
+            crate::create_global_var_stmt_template(coverage_global_scope)
         };
 
         let coverage_template = crate::create_coverage_fn_decl(
