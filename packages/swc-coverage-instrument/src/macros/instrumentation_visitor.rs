@@ -41,7 +41,7 @@ macro_rules! instrumentation_visitor {
             match ignore_current {
                 Some(crate::hint_comments::IgnoreScope::Next) => {}
                 _ => match &mut *arrow_expr.body {
-                    BlockStmtOrExpr::BlockStmt(block_stmt) => {
+                    ArrowFunctionBody::FunctionBody(block_stmt) => {
                         let range = crate::lookup_range::get_range_from_span(
                             &self.source_map,
                             &arrow_expr.span,
@@ -71,7 +71,7 @@ macro_rules! instrumentation_visitor {
                         new_stmts.extend(block_stmt.stmts.drain(..));
                         block_stmt.stmts = new_stmts;
                     }
-                    BlockStmtOrExpr::Expr(expr) => {
+                    ArrowFunctionBody::Expr(expr) => {
                         // TODO: refactor common logics creates a blockstmt from single expr
                         let range = crate::lookup_range::get_range_from_span(
                             &self.source_map,
@@ -111,10 +111,9 @@ macro_rules! instrumentation_visitor {
                         self.insert_stmts_counter(&mut stmts);
                         new_stmts.extend(stmts.drain(..));
 
-                        arrow_expr.body = Box::new(BlockStmtOrExpr::BlockStmt(BlockStmt {
+                        arrow_expr.body = Box::new(ArrowFunctionBody::FunctionBody(FunctionBody {
                             span: swc_core::common::DUMMY_SP,
                             stmts: new_stmts,
-                            ..BlockStmt::dummy()
                         }));
                     }
                     #[cfg(swc_ast_unknown)]
@@ -455,7 +454,7 @@ macro_rules! instrumentation_visitor {
 
                             let range =
                                 crate::lookup_range::get_range_from_span(&self.source_map, span);
-                            if let Some(body) = &mut getter_prop.body {
+                            if let Some(body) = &mut getter_prop.function.body {
                                 let body_span = body.span;
                                 let body_range = crate::lookup_range::get_range_from_span(
                                     &self.source_map,
@@ -487,7 +486,7 @@ macro_rules! instrumentation_visitor {
 
                         let range =
                             crate::lookup_range::get_range_from_span(&self.source_map, span);
-                        if let Some(body) = &mut getter_prop.body {
+                        if let Some(body) = &mut getter_prop.function.body {
                             let body_span = body.span;
                             let body_range = crate::lookup_range::get_range_from_span(
                                 &self.source_map,
@@ -541,7 +540,7 @@ macro_rules! instrumentation_visitor {
 
                             let range =
                                 crate::lookup_range::get_range_from_span(&self.source_map, span);
-                            if let Some(body) = &mut setter_prop.body {
+                            if let Some(body) = &mut setter_prop.function.body {
                                 let body_span = body.span;
                                 let body_range = crate::lookup_range::get_range_from_span(
                                     &self.source_map,
@@ -573,7 +572,7 @@ macro_rules! instrumentation_visitor {
 
                         let range =
                             crate::lookup_range::get_range_from_span(&self.source_map, span);
-                        if let Some(body) = &mut setter_prop.body {
+                        if let Some(body) = &mut setter_prop.function.body {
                             let body_span = body.span;
                             let body_range = crate::lookup_range::get_range_from_span(
                                 &self.source_map,

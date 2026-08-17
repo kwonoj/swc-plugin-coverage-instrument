@@ -41,6 +41,13 @@ impl Visit for BlockStmtFinder {
     fn visit_block_stmt(&mut self, _block: &BlockStmt) {
         self.0 = true;
     }
+
+    /// Count it as a block to keep `cover_statement`
+    /// picking the prepend-counter path for exprs that
+    /// contain a function.
+    fn visit_function_body(&mut self, _body: &FunctionBody) {
+        self.0 = true;
+    }
 }
 
 #[derive(Debug)]

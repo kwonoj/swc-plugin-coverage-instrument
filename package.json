@@ -55,7 +55,7 @@
   "devDependencies": {
     "@napi-rs/cli": "^3.4.1",
     "@swc-node/register": "^1.11.1",
-    "@swc/core": "^1.15.0",
+    "@swc/core": "^1.16.0",
     "@taplo/cli": "^0.7.0",
     "@types/chai": "^4.3.3",
     "@types/js-yaml": "^4.0.5",
@@ -82,5 +82,9 @@
     "*.rs": [
       "cargo fmt --"
     ]
+  },
+  "allowScripts": {
+    "@swc/core@1.16.0": true,
+    "wasm-pack@0.13.0": true
   }
 }

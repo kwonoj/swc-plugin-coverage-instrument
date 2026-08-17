@@ -130,13 +130,12 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
         right: Box::new(Expr::Fn(FnExpr {
             ident: None,
             function: Box::new(Function {
-                body: Some(BlockStmt {
+                body: Some(FunctionBody {
                     span: DUMMY_SP,
                     stmts: vec![Stmt::Return(ReturnStmt {
                         span: DUMMY_SP,
                         arg: Some(Box::new(Expr::Ident(actual_coverage_ident.clone()))),
                     })],
-                    ..BlockStmt::dummy()
                 }),
                 ..Function::dummy()
             }),
@@ -181,10 +180,9 @@ if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
         ident: cov_fn_ident.clone(),
         declare: false,
         function: Box::new(Function {
-            body: Some(BlockStmt {
+            body: Some(FunctionBody {
                 span: DUMMY_SP,
                 stmts,
-                ..BlockStmt::dummy()
             }),
             ..Function::dummy()
         }),

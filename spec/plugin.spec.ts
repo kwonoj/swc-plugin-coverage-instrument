@@ -71,10 +71,10 @@ Object.defineProperty(exports, "TabsList", {
         return TabsList;
     }
 });
-var TabsList = (cov_14220330533750098279().s[0]++, /*#__PURE__*/ styled(TabsListCore, {
+var TabsList = (cov_14220330533750098279().s[0]++, /*#__PURE__*/ (styled(TabsListCore, {
     target: "ebt2y835",
     label: "TabsList"
-})("margin:0 auto;width:fit-content;")); /*__coverage_data_json_comment__::{"all":false,"path":"test-emotion.js","statementMap":{"0":{"start":{"line":1,"column":36},"end":{"line":4,"column":38}}},"fnMap":{},"branchMap":{},"s":{"0":0},"f":{},"b":{}}*/ 
+}))("margin:0 auto;width:fit-content;")); /*__coverage_data_json_comment__::{"all":false,"path":"test-emotion.js","statementMap":{"0":{"start":{"line":1,"column":36},"end":{"line":4,"column":38}}},"fnMap":{},"branchMap":{},"s":{"0":0},"f":{},"b":{}}*/ 
 function cov_14220330533750098279() {
     var path = "test-emotion.js";
     var hash = "15339889637910252771";
