@@ -1,10 +1,14 @@
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+
 function tryThis(str, feature, generateOnly) {
   if (!generateOnly) {
     try {
       eval(str);
     } catch (ex) {
       console.error(
-        "ES6 feature [" + feature + "] is not available in this environment"
+        "ES6 feature [" + feature + "] is not available in this environment",
       );
       return false;
     }
@@ -27,7 +31,7 @@ function isClassPrivatePropAvailable() {
 function isForOfAvailable() {
   return tryThis(
     "function *foo() { yield 1; }\n" + "for (var k of foo()) {}",
-    "for-of"
+    "for-of",
   );
 }
 
@@ -70,13 +74,13 @@ function isDefaultArgsAvailable() {
 
 function isInferredFunctionNameAvailable() {
   return tryThis(
-    'const foo = function () {}; require("assert").equal(foo.name, "foo")'
+    'const foo = function () {}; require("assert").equal(foo.name, "foo")',
   );
 }
 
 function isInferredClassNameAvailable() {
   return tryThis(
-    'const foo = class {}; require("assert").equal(foo.name, "foo")'
+    'const foo = class {}; require("assert").equal(foo.name, "foo")',
   );
 }
 

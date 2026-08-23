@@ -1,14 +1,17 @@
-import {
+import type {
   Declaration,
   FunctionDeclaration,
   Module,
-  parseSync,
   Property,
   SpreadElement,
   VariableDeclaration,
 } from "@swc/core";
-import { Visitor } from "@swc/core/Visitor";
-import { getCoverageMagicConstants } from "../swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm";
+import { createRequire } from "module";
+import { Visitor } from "@swc/core/Visitor.js";
+import { getCoverageMagicConstants } from "../swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm.js";
+
+const require = createRequire(import.meta.url);
+const { parseSync } = require("@swc/core") as typeof import("@swc/core");
 
 const { key: COVERAGE_MAGIC_KEY, value: COVERAGE_MAGIC_VALUE } =
   getCoverageMagicConstants();
@@ -45,7 +48,7 @@ class CoverageReadVisitor extends Visitor {
   }
 
   public visitObjectProperty(
-    n: Property | SpreadElement
+    n: Property | SpreadElement,
   ): Property | SpreadElement {
     if (n.type !== "KeyValueProperty") {
       return n;
@@ -82,7 +85,7 @@ export function readInitialCoverage(code: any, options?: any) {
       (stmt) =>
         (stmt.type === "VariableDeclaration"
           ? stmt
-          : null) as any as VariableDeclaration
+          : null) as any as VariableDeclaration,
     )
     .filter(Boolean);
 
@@ -90,7 +93,7 @@ export function readInitialCoverage(code: any, options?: any) {
     const binding = declarations.reduce((acc, value) => {
       if (!acc) {
         acc = value.declarations.find(
-          (decl) => decl.id.type === "Identifier" && decl.id.value === key
+          (decl) => decl.id.type === "Identifier" && decl.id.value === key,
         );
       }
 
@@ -106,7 +109,7 @@ export function readInitialCoverage(code: any, options?: any) {
     function setPropertiesRecursive(
       obj: Record<string, any>,
       binding: any,
-      resultKey: string
+      resultKey: string,
     ) {
       if (binding?.value !== null && binding?.value !== undefined) {
         obj[resultKey] = binding?.value;

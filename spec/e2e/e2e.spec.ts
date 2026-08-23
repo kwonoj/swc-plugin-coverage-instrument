@@ -1,7 +1,10 @@
 import { assert } from "chai";
-import { instrumentSync } from "../util/verifier";
+import { instrumentSync } from "../util/verifier.ts";
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Custom transform test doesn't use plugin's exclude option
 const tryDescribe = process.env.SWC_TRANSFORM_CUSTOM ? describe.skip : describe;

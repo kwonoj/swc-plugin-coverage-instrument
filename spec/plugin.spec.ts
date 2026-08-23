@@ -1,6 +1,6 @@
 import { assert } from "chai";
-import { getCoverageMagicConstants } from "./swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm";
-import { instrumentSync } from "./util/verifier";
+import { getCoverageMagicConstants } from "./swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm.js";
+import { instrumentSync } from "./util/verifier.ts";
 
 // dummy: initiate wasm compilation before any test runs
 getCoverageMagicConstants();
