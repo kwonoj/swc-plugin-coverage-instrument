@@ -249,6 +249,14 @@ macro_rules! instrumentation_counter_helper {
             }
 
             let span = expr.span();
+
+            // Preserve minifier hints like /*#__PURE__*/ by prepending the statement
+            // counter instead of wrapping the expression
+            if crate::utils::hint_comments::has_pure_comment(&self.comments, Some(&span)) {
+                self.mark_prepend_stmt_counter(&span);
+                return;
+            }
+
             // This is ugly, poor man's substitute to istanbul's `insertCounter` to determine
             // when to replace givn expr to wrapped Paren or prepend stmt counter.
             // We can't do insert parent node's sibling in downstream's child node.

@@ -41,6 +41,12 @@ impl Visit for BlockStmtFinder {
     fn visit_block_stmt(&mut self, _block: &BlockStmt) {
         self.0 = true;
     }
+
+    // Function bodies are no longer BlockStmt in newer swc AST.
+    // match FunctionBody so function bodies nested in expressions can be discovered.
+    fn visit_function_body(&mut self, _body: &FunctionBody) {
+        self.0 = true;
+    }
 }
 
 #[derive(Debug)]

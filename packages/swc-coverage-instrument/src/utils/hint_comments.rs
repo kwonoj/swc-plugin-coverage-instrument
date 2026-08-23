@@ -19,6 +19,27 @@ static COMMENT_FILE_REGEX: Lazy<Regexp> =
 pub static COMMENT_RE: Lazy<Regexp> =
     Lazy::new(|| Regexp::new(r"^\s*istanbul\s+ignore\s+(if|else|next)(\W|$)").unwrap());
 
+/// pattern for minifier pure annotations, e.g. /*#__PURE__*/
+static PURE_COMMENT_REGEX: Lazy<Regexp> = Lazy::new(|| Regexp::new(r"^\s*#__PURE__\s*$").unwrap());
+
+/// Check if given span has a leading /*#__PURE__*/ annotation.
+pub fn has_pure_comment<C: Clone + Comments>(comments: &C, span: Option<&Span>) -> bool {
+    if let Some(span) = span {
+        for pos in [span.lo, span.hi] {
+            if let Some(leading) = comments.get_leading(pos) {
+                if leading
+                    .iter()
+                    .any(|comment| PURE_COMMENT_REGEX.is_match(&comment.text))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    false
+}
+
 pub fn should_ignore_file<C: Clone + Comments>(comments: &C, program: &Program) -> bool {
     let pos = match &program {
         Program::Module(module) => module.span,
