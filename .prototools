@@ -1,0 +1,4 @@
+node = "26"
+
+[settings]
+auto-install = true

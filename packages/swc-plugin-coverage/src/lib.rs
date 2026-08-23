@@ -11,7 +11,7 @@ use swc_coverage_instrument::{
 
 use tracing_subscriber::fmt::format::FmtSpan;
 use typed_path::Utf8TypedPath;
-use wax::Pattern;
+use wax::Program as WaxProgram;
 
 /// Normalize a file path to use forward slashes for consistent glob matching
 fn normalize_path(path: &str) -> String {

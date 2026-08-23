@@ -28,7 +28,7 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - uses: actions/setup-node@v4
       with:
-        node-version: "18"
+        node-version: "26"
         cache: "npm"
 
     - uses: actions-rust-lang/setup-rust-toolchain@v1

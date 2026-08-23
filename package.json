@@ -1,6 +1,6 @@
 {
   "name": "swc-plugin-coverage-instrument",
-  "version": "0.0.32",
+  "version": "0.0.33",
   "description": "SWC coverage instrumentation plugin",
   "main": "./target/wasm32-wasip1/release/swc_plugin_coverage.wasm",
   "napi": {
@@ -53,26 +53,25 @@
   },
   "homepage": "https://github.com/kwonoj/swc-coverage-instrument#readme",
   "devDependencies": {
-    "@napi-rs/cli": "^3.4.1",
-    "@swc-node/register": "^1.11.1",
-    "@swc/core": "^1.15.0",
+    "@napi-rs/cli": "^3.8.6",
+    "@swc/core": "^1.16.1",
     "@taplo/cli": "^0.7.0",
-    "@types/chai": "^4.3.3",
-    "@types/js-yaml": "^4.0.5",
-    "@types/lodash.clone": "^4.5.6",
-    "@types/mocha": "^10.0.7",
-    "@types/node": "^20.14.9",
-    "chai": "^4.3.6",
-    "cross-env": "^7.0.3",
-    "husky": "^9.0.11",
-    "js-yaml": "^4.1.0",
-    "lint-staged": "^15.2.7",
+    "@types/chai": "^5.2.3",
+    "@types/js-yaml": "^4.0.9",
+    "@types/lodash.clone": "^4.5.9",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.2.0",
+    "chai": "^6.2.2",
+    "cross-env": "^10.1.0",
+    "husky": "^9.1.7",
+    "js-yaml": "^5.3.0",
+    "lint-staged": "^17.3.0",
     "lodash.clone": "^4.5.0",
-    "mocha": "^10.6.0",
+    "mocha": "11.8.0",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.3.2",
-    "typescript": "^5.5.3",
-    "wasm-pack": "^0.13.0"
+    "prettier": "^3.9.6",
+    "typescript": "^7.0.2",
+    "wasm-pack": "^0.15.0"
   },
   "lint-staged": {
     "*.{js,ts,css,md}": "prettier --write",
@@ -82,5 +81,9 @@
     "*.rs": [
       "cargo fmt --"
     ]
+  },
+  "allowScripts": {
+    "@swc/core@1.16.1": true,
+    "wasm-pack@0.15.0": true
   }
 }

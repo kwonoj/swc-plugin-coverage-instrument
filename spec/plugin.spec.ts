@@ -1,6 +1,6 @@
 import { assert } from "chai";
-import { getCoverageMagicConstants } from "./swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm";
-import { instrumentSync } from "./util/verifier";
+import { getCoverageMagicConstants } from "./swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm.js";
+import { instrumentSync } from "./util/verifier.ts";
 
 // dummy: initiate wasm compilation before any test runs
 getCoverageMagicConstants();
@@ -61,6 +61,8 @@ ${code}
 
     // Expected output: should preserve label like v0.0.20 did (from GitHub issue)
     // The key difference: label should remain "TabsList", not become ""
+    // The statement counter is prepended instead of wrapping the expression to
+    // preserve /*#__PURE__*/ annotation.
     const expectedOutput = `"use strict";
 Object.defineProperty(exports, "__esModule", {
     value: true
@@ -71,10 +73,7 @@ Object.defineProperty(exports, "TabsList", {
         return TabsList;
     }
 });
-var TabsList = (cov_14220330533750098279().s[0]++, /*#__PURE__*/ styled(TabsListCore, {
-    target: "ebt2y835",
-    label: "TabsList"
-})("margin:0 auto;width:fit-content;")); /*__coverage_data_json_comment__::{"all":false,"path":"test-emotion.js","statementMap":{"0":{"start":{"line":1,"column":36},"end":{"line":4,"column":38}}},"fnMap":{},"branchMap":{},"s":{"0":0},"f":{},"b":{}}*/ 
+cov_14220330533750098279().s[0]++;
 function cov_14220330533750098279() {
     var path = "test-emotion.js";
     var hash = "15339889637910252771";
@@ -117,7 +116,11 @@ function cov_14220330533750098279() {
     }
     return actualCoverage;
 }
-cov_14220330533750098279();`;
+cov_14220330533750098279();
+var TabsList = /*#__PURE__*/ (styled(TabsListCore, {
+    target: "ebt2y835",
+    label: "TabsList"
+}))("margin:0 auto;width:fit-content;"); /*__coverage_data_json_comment__::{"all":false,"path":"test-emotion.js","statementMap":{"0":{"start":{"line":1,"column":36},"end":{"line":4,"column":38}}},"fnMap":{},"branchMap":{},"s":{"0":0},"f":{},"b":{}}*/`;
 
     // Compare whole output.code to the raw output as requested
     // This ensures emotion labels are preserved without explicitly asserting them

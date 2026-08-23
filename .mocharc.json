@@ -1,5 +1,4 @@
 {
-  "require": ["@swc-node/register"],
   "reporter": "dot",
   "extensions": ["ts", "js"],
   "recursive": true,

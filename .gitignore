@@ -10,3 +10,5 @@ a.js
 swc-plugin-coverage-*.tgz
 /tmp
 trace-*.json
+.vscode/
+.github/

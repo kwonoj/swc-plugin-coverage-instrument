@@ -1,10 +1,15 @@
 import * as path from "path";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
-import { create, instrumentSync } from "./util/verifier";
-import * as guards from "./util/guards";
+import { createRequire } from "module";
+import { fileURLToPath } from "url";
+import { create, instrumentSync } from "./util/verifier.ts";
+import * as guards from "./util/guards.ts";
 import { assert } from "chai";
-import { getCoverageMagicConstants } from "./swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm";
+import { getCoverageMagicConstants } from "./swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm.js";
+
+const require = createRequire(import.meta.url);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // dummy: initiate wasm compilation before any test runs
 getCoverageMagicConstants();
@@ -75,7 +80,7 @@ function generateTests(docs) {
               doc.code,
               opts,
               doc.instrumentOpts,
-              doc.inputSourceMap
+              doc.inputSourceMap,
             );
             const test = clone(t);
             const args = test.args;

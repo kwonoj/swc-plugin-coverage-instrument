@@ -1,9 +1,18 @@
-import { Options, transformSync } from "@swc/core";
 import * as path from "path";
+import { createRequire } from "module";
+import { fileURLToPath } from "url";
 import { assert } from "chai";
-import { readInitialCoverage } from "./read-coverage";
+import { readInitialCoverage } from "./read-coverage.ts";
 import { EOL } from "os";
-import { FileCoverageInterop } from "../swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm";
+import { FileCoverageInterop } from "../swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm.js";
+import type { Options } from "@swc/core";
+
+const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const swcCore = require("@swc/core") as typeof import("@swc/core");
+const { transformSync } = swcCore;
 
 const clone: typeof import("lodash.clone") = require("lodash.clone");
 
@@ -45,7 +54,9 @@ const instrumentSync = (
   };
 
   if (process.env.SWC_TRANSFORM_CUSTOM === "1") {
-    const { transformSync } = require("../../spec/swc-coverage-custom-transform");
+    const {
+      transformSync,
+    } = require("../../spec/swc-coverage-custom-transform");
     return transformSync(
       code,
       true,
