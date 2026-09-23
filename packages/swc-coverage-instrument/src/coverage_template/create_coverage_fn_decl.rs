@@ -99,9 +99,12 @@ pub fn create_coverage_fn_decl<C: Clone + Comments>(
         global = IDENT_GLOBAL.clone()
     ));
 
+    // The property name must match the `hash` key of the coverage data
+    // object, as in istanbul. Keep it literal: a `$hash` placeholder here
+    // generates `coverage[path].$hash`.
     stmts.push(quote!(
         r#"
-if (!$coverage[$path] || $coverage[$path].$hash !== $hash) {
+if (!$coverage[$path] || $coverage[$path].hash !== $hash) {
   $coverage[$path] = $coverage_data;
 }
 "# as Stmt,
