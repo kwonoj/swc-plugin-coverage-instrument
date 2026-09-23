@@ -1,4 +1,5 @@
 import { assert } from "chai";
+import * as vm from "node:vm";
 import { getCoverageMagicConstants } from "./swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm.js";
 import { instrumentSync } from "./util/verifier.ts";
 
@@ -105,7 +106,7 @@ function cov_14220330533750098279() {
         hash: "15339889637910252771"
     };
     var coverage = global[gcv] || (global[gcv] = {});
-    if (!coverage[path] || coverage[path].$hash !== hash) {
+    if (!coverage[path] || coverage[path].hash !== hash) {
         coverage[path] = coverageData;
     }
     var actualCoverage = coverage[path];
@@ -129,5 +130,23 @@ var TabsList = /*#__PURE__*/ (styled(TabsListCore, {
       expectedOutput.trim(),
       "Instrumented code should preserve emotion styled component label property",
     );
+  });
+});
+
+tryDescribe("Coverage data reuse", () => {
+  it("should keep counters when the instrumented module is evaluated again", () => {
+    const output = instrumentSync(
+      `function double(value) { return value * 2; }
+double(1);`,
+      "reevaluated.js",
+    );
+    const context = vm.createContext({ exports: {} });
+
+    vm.runInContext(output.code, context);
+    vm.runInContext(output.code, context);
+
+    // Same path and same hash: the second run must reuse the data object from the first run,
+    // as istanbul does after jest.resetModules().
+    assert.equal(context.__coverage__["reevaluated.js"].f["0"], 2);
   });
 });
