@@ -136,7 +136,7 @@ impl<C: Clone + Comments, S: SourceMapper> VisitMut for CoverageVisitor<C, S> {
             _ => false,
         };
 
-        // Articulate root by injecting Program node if visut_mut_program is not called.
+        // Articulate root by injecting Program node if visit_mut_program is not called.
         // TODO: Need to figure out why custom_js_pass doesn't hit visit_mut_program
         // instead of manually injecting node here
         if !root_exists {
@@ -186,14 +186,22 @@ impl<C: Clone + Comments, S: SourceMapper> VisitMut for CoverageVisitor<C, S> {
 
         let (coverage_template, call_coverage_template_stmt) = self.get_coverage_templates();
 
-        // prepend template to the top of the code
-        if items.len() >= 1 {
-            items.insert(1, ModuleItem::Stmt(coverage_template));
-            items.insert(2, ModuleItem::Stmt(call_coverage_template_stmt));
-        } else {
-            items.push(ModuleItem::Stmt(coverage_template));
-            items.push(ModuleItem::Stmt(call_coverage_template_stmt));
-        }
+        // Dynamically locate insertion point past directives ("use strict", "use client") and import statements
+        let insertion_index = items
+            .iter()
+            .position(|item| match item {
+                ModuleItem::Stmt(stmt) => !stmt.directive_continue(),
+                ModuleItem::ModuleDecl(ModuleDecl::Import(_)) => false,
+                _ => true,
+            })
+            .unwrap_or(items.len());
+
+        // Safely insert coverage initialization template after directives & imports
+        items.insert(insertion_index, ModuleItem::Stmt(coverage_template));
+        items.insert(
+            insertion_index + 1,
+            ModuleItem::Stmt(call_coverage_template_stmt),
+        );
 
         if !root_exists {
             self.nodes.pop();
