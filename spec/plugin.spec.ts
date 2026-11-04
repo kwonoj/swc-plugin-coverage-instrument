@@ -73,11 +73,10 @@ Object.defineProperty(exports, "TabsList", {
         return TabsList;
     }
 });
-cov_14220330533750098279().s[0]++;
 function cov_14220330533750098279() {
     var path = "test-emotion.js";
     var hash = "15339889637910252771";
-    var global = new ((function(){}).constructor)("return this")();
+    var global = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof self !== "undefined" ? self : this;
     var gcv = "__coverage__";
     var coverageData = {
         all: false,
@@ -117,6 +116,7 @@ function cov_14220330533750098279() {
     return actualCoverage;
 }
 cov_14220330533750098279();
+cov_14220330533750098279().s[0]++;
 var TabsList = /*#__PURE__*/ (styled(TabsListCore, {
     target: "ebt2y835",
     label: "TabsList"
