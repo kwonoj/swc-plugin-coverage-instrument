@@ -113,6 +113,18 @@ export function readInitialCoverage(code: any, options?: any) {
     ) {
       if (binding?.value !== null && binding?.value !== undefined) {
         obj[resultKey] = binding?.value;
+      } else if (
+        binding?.type === "CallExpression" &&
+        binding.callee.type === "MemberExpression" &&
+        binding.callee.object.type === "Identifier" &&
+        binding.callee.object.value === "JSON" &&
+        binding.callee.property.type === "Identifier" &&
+        binding.callee.property.value === "parse" &&
+        binding.arguments.length === 1 &&
+        !binding.arguments[0].spread &&
+        binding.arguments[0].expression.type === "StringLiteral"
+      ) {
+        obj[resultKey] = JSON.parse(binding.arguments[0].expression.value);
       } else if (binding?.properties) {
         obj[resultKey] = {};
         binding?.properties.forEach((p) => {

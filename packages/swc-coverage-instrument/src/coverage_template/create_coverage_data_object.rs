@@ -168,6 +168,74 @@ fn create_branch_prop(key: &str, value: &Branch) -> PropOrSpread {
     )
 }
 
+// These properties are built exclusively from JSON-compatible coverage metadata.
+struct CoverageLiteral<'a>(&'a Expr);
+
+impl serde::Serialize for CoverageLiteral<'_> {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::{Error, SerializeMap};
+        match self.0 {
+            Expr::Object(object) => {
+                let mut map = serializer.serialize_map(Some(object.props.len()))?;
+                for prop in &object.props {
+                    let PropOrSpread::Prop(prop) = prop else {
+                        return Err(S::Error::custom("unexpected spread in coverage data"));
+                    };
+                    let Prop::KeyValue(prop) = prop.as_ref() else {
+                        return Err(S::Error::custom("expected a coverage property"));
+                    };
+                    match &prop.key {
+                        PropName::Ident(key) => {
+                            map.serialize_entry(key.sym.as_str(), &CoverageLiteral(&prop.value))?
+                        }
+                        PropName::Str(key) => map.serialize_entry(
+                            &key.value.to_string_lossy(),
+                            &CoverageLiteral(&prop.value),
+                        )?,
+                        _ => return Err(S::Error::custom("expected a coverage property name")),
+                    }
+                }
+                map.end()
+            }
+            Expr::Array(array) => serializer.collect_seq(array.elems.iter().map(|item| {
+                CoverageLiteral(
+                    &item
+                        .as_ref()
+                        .expect("coverage metadata arrays are dense")
+                        .expr,
+                )
+            })),
+            Expr::Lit(Lit::Str(s)) => serializer.serialize_str(&s.value.to_string_lossy()),
+            Expr::Lit(Lit::Num(n)) => serializer.serialize_u32(n.value as u32),
+            Expr::Lit(Lit::Bool(b)) => serializer.serialize_bool(b.value),
+            Expr::Lit(Lit::Null(_)) => serializer.serialize_none(),
+            _ => Err(S::Error::custom("expected literal coverage data")),
+        }
+    }
+}
+
+pub(crate) fn compact_coverage_data(object: &mut Expr) {
+    let Expr::Object(object) = object else {
+        unreachable!()
+    };
+    for property in &mut object.props {
+        let PropOrSpread::Prop(property) = property else {
+            continue;
+        };
+        let Prop::KeyValue(property) = property.as_mut() else {
+            continue;
+        };
+        if !matches!(&*property.value, Expr::Object(value) if !value.props.is_empty()) {
+            continue;
+        }
+        let json = serde_json::to_string(&CoverageLiteral(&property.value))
+            .expect("generated coverage properties must contain only JSON literals");
+        let literal = Expr::Lit(Lit::Str(Str::from(json)));
+        property.value =
+            Box::new(swc_core::quote!("JSON.parse($data)" as Expr, data: Expr = literal));
+    }
+}
+
 pub fn create_coverage_data_object(coverage_data: &FileCoverage) -> (String, Expr) {
     // Afaik there's no built-in way to iterate over struct properties via keys.
     let mut props = vec![];

@@ -92,6 +92,7 @@ impl<C: Clone + Comments, S: SourceMapper> CoverageVisitor<C, S> {
             self.cov.borrow().as_ref(),
             &self.comments,
             self.instrument_options.debug_initial_coverage_comment,
+            self.instrument_options.compact,
         );
 
         // explicitly call this.varName to ensure coverage is always initialized
