@@ -53,6 +53,7 @@ pub fn create_coverage_fn_decl<C: Clone + Comments>(
     coverage_data: &FileCoverage,
     comments: &C,
     attach_debug_comment: bool,
+    compact: bool,
 ) -> Stmt {
     // Actual fn body statements will be injected
     let mut stmts = vec![];
@@ -67,7 +68,10 @@ pub fn create_coverage_fn_decl<C: Clone + Comments>(
     );
     stmts.push(path_stmt);
 
-    let (hash, coverage_data_object) = create_coverage_data_object(coverage_data);
+    let (hash, mut coverage_data_object) = create_coverage_data_object(coverage_data);
+    if compact {
+        super::create_coverage_data_object::compact_coverage_data(&mut coverage_data_object);
+    }
 
     // var hash = $HASH;
     let hash_stmt =
@@ -86,6 +90,13 @@ pub fn create_coverage_fn_decl<C: Clone + Comments>(
         })),
     );
     stmts.push(gcv_stmt);
+
+    if compact {
+        stmts.push(quote!(
+            "var JSON = $global.JSON;" as Stmt,
+            global = IDENT_GLOBAL.clone()
+        ));
+    }
 
     // var coverageData = INITIAL;
     let coverage_data_stmt = create_assignment_stmt(&IDENT_COVERAGE_DATA, coverage_data_object);

@@ -42,6 +42,9 @@ jsc: {
 ```
 interface InstrumentationOptions {
   coverageVariable?: String,
+  // Encode generated coverage metadata as compact JSON (default: false).
+  // Function bodies keep their usual formatting. Static readers need to
+  // recognize JSON.parse(stringLiteral) in coverageData when enabled.
   compact?: bool,
   reportLogic?: bool,
   ignoreClassMethods?: Array<String>,

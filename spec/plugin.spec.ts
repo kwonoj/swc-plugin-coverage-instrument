@@ -1,3 +1,5 @@
+import { runInNewContext } from "node:vm";
+import { readInitialCoverage } from "./util/read-coverage.ts";
 import { assert } from "chai";
 import { getCoverageMagicConstants } from "./swc-coverage-instrument-wasm/pkg/swc_coverage_instrument_wasm.js";
 import { instrumentSync } from "./util/verifier.ts";
@@ -7,6 +9,44 @@ getCoverageMagicConstants();
 instrumentSync(`console.log('boo')`, "anon");
 
 const tryDescribe = process.env.SWC_TRANSFORM_CUSTOM ? describe.skip : describe;
+
+describe("compact coverage data", () => {
+  it("preserves initial coverage, runtime counters and function source", () => {
+    const code = `
+      const JSON = null;
+      function run(value) { return value && value > 0 ? JSON : value; }
+      run(3);
+      run.toString();
+    `;
+    const file = "compact.js";
+    const sourceMap = {
+      version: 3,
+      sources: ["original.ts"],
+      names: [],
+      mappings: "AAAA",
+      sourcesContent: ["// quotes ' and \" and a newline\n"],
+    };
+    const compile = (compact?: boolean) =>
+      instrumentSync(code, file, sourceMap, { compact, reportLogic: true })
+        .code;
+    const baseline = compile();
+    const compact = compile(true);
+    assert.equal(compile(false), baseline);
+    assert.include(compact, "JSON.parse(");
+    assert.isBelow(compact.length, baseline.length);
+    const initial = readInitialCoverage(baseline);
+    assert.isOk(initial);
+    assert.deepEqual(readInitialCoverage(compact), initial);
+    const execute = (source: string) => {
+      const context = { __coverage__: {} };
+      const functionSource = runInNewContext(source, context);
+      assert.isString(functionSource);
+      assert.property(context.__coverage__, file);
+      return { functionSource, coverage: context.__coverage__ };
+    };
+    assert.deepEqual(execute(compact), execute(baseline));
+  });
+});
 
 tryDescribe("Plugin options", () => {
   it("should able to exclude", () => {
